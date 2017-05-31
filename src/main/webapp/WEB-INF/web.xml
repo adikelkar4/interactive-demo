@@ -57,66 +57,14 @@
         <servlet-name>storefront-welcome</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.WelcomeServlet</servlet-class>
     </servlet>
-<!--     <servlet>
-        <servlet-name>storefront-store-products</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.StoreProductsServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>storefront-store-product</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.StoreProductServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>storefront-store-cart</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.StoreCartServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>storefront-controlpanel-database</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.ControlPanelDatabaseServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>storefront-controlpanel-log</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.ControlPanelLogServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>storefront-controlpanel-processes</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.ControlPanelProcessesServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>storefront-controlpanel-products</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.ControlPanelProductsServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>storefront-controlpanel-regions</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.ControlPanelRegionsServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>storefront-controlpanel-tenants</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.ControlPanelTenantsServlet</servlet-class>
-    </servlet>
     <servlet>
         <servlet-name>storefront-controlpanel-users</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.ControlPanelUsersServlet</servlet-class>
     </servlet>
     <servlet>
-        <servlet-name>storefront-tour-continuousavailability</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.TourContinuousAvailabilityServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>storefront-tour-geodistribution</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.TourGeoDistributionServlet</servlet-class>
-    </servlet> -->
-    <servlet>
         <servlet-name>storefront-tour-scaleout</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.TourScaleOutServlet</servlet-class>
     </servlet>
-<!--     <servlet>
-        <servlet-name>storefront-tour-multitenant</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.TourMultiTenantServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>storefront-tour-noknobsadmin</servlet-name>
-        <servlet-class>com.nuodb.storefront.servlet.TourNoKnobsAdminServlet</servlet-class>
-    </servlet> -->
 
     <!-- URL mappings -->
     <servlet-mapping>
@@ -127,64 +75,12 @@
         <servlet-name>storefront-welcome</servlet-name>
         <url-pattern>/welcome</url-pattern>
     </servlet-mapping>
-<!--     <servlet-mapping>
-        <servlet-name>storefront-store-products</servlet-name>
-        <url-pattern>/store-products</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>storefront-store-product</servlet-name>
-        <url-pattern>/store-product</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>storefront-store-cart</servlet-name>
-        <url-pattern>/store-cart</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>storefront-controlpanel-database</servlet-name>
-        <url-pattern>/control-panel-database</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>storefront-controlpanel-log</servlet-name>
-        <url-pattern>/control-panel-log</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>storefront-controlpanel-processes</servlet-name>
-        <url-pattern>/control-panel-processes</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>storefront-controlpanel-products</servlet-name>
-        <url-pattern>/control-panel-products</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>storefront-controlpanel-regions</servlet-name>
-        <url-pattern>/control-panel-regions</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>storefront-controlpanel-tenants</servlet-name>
-        <url-pattern>/control-panel-tenants</url-pattern>
-    </servlet-mapping>
     <servlet-mapping>
         <servlet-name>storefront-controlpanel-users</servlet-name>
         <url-pattern>/control-panel-users</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
-        <servlet-name>storefront-tour-continuousavailability</servlet-name>
-        <url-pattern>/tour-continuous-availability</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>storefront-tour-geodistribution</servlet-name>
-        <url-pattern>/tour-region-distribution</url-pattern>
-    </servlet-mapping> -->
-    <servlet-mapping>
         <servlet-name>storefront-tour-scaleout</servlet-name>
         <url-pattern>/tour-scale-out</url-pattern>
     </servlet-mapping>
-<!--     <servlet-mapping>
-        <servlet-name>storefront-tour-multitenant</servlet-name>
-        <url-pattern>/tour-multi-tenant</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>storefront-tour-noknobsadmin</servlet-name>
-        <url-pattern>/tour-no-knobs-admin</url-pattern>
-    </servlet-mapping> -->
 </web-app>
