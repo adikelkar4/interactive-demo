@@ -1,0 +1,689 @@
+/* Copyright (c) 2013-2015 NuoDB, Inc. */
+
+@import "prefixer";
+
+body {
+	overflow-y: scroll;
+	padding: 20px 6px 10px 6px;
+	
+	&.nuo-header-visible {
+		padding-top: 70px;
+	}
+}
+
+.container-fluid {
+	min-width: 940px;
+}
+
+.dropdown > a {
+	text-decoration: none;
+	outline: 0;
+}
+
+.dropdown-menu .divider {
+	cursor: default;
+}
+
+form {
+	margin: 0;
+}
+
+.loading {
+	background: transparent url(../img/loading.gif) no-repeat 50% 50%;
+	width: 100%;
+	height: 100px;
+}
+
+.hidden {
+	display: none;
+}
+
+.icon-github {
+	background: url(../img/github.png);
+	width: 16px;
+	height: 16px;
+	margin-top: 0;
+}
+
+.icon-nuodb {
+	background: url(../img/nuodb.png);
+	width: 16px;
+	height: 16px;
+	margin-top: 0;
+}
+
+th.text-right, td.text-right {
+	text-align: right;
+}
+
+th.text-center, td.text-center {
+	text-align: center;
+}
+
+textarea.no-resize-x {
+  resize: vertical;
+}
+
+#top-bar {
+	label {
+		float: left;
+		margin: 10px 20px 0 5px;
+		font-size: 20px;
+		font-weight: bold;
+		color: #777;
+
+		> a {
+			text-decoration: none !important;
+			
+			> img {
+				height: 36px;
+				width: 36px;
+				float: left;
+				margin-top: -10px;
+				margin-right: 5px;
+			}
+		}
+	}	
+	
+	.nav > li > a {
+		padding: 10px;
+	}
+	
+	.cart {
+		.badge {
+			margin-left: 10px;
+		}
+	}
+	
+	#logo {
+		max-width: none;	// prevent wrapping in IE8
+	}
+	
+	#admin-link {
+		display: none;
+	}
+	
+	.search {
+		position: relative;
+		
+		.search-query {
+			line-height: normal;
+			padding-right: 29px;
+			width: 175px;
+		}
+		
+		.search-icon {
+		    position: absolute;
+		    top: 7px;
+		    right: 11px;
+		    width: 16px;
+		    height: 16px;
+		    
+		    a, i {
+		    	width: 16px;
+		    	height: 16px;
+		 		position: absolute;
+		 		top: 0;
+		 		left: 0;		    
+		    }
+		    
+		    .search-glass {
+		 		background: transparent url(../img/search.png) no-repeat 0 0;
+		    }
+		    
+		    .search-clear {
+		    	display: none;
+		 		font-size: 20px;
+		 		color: #000;
+		 		cursor: pointer;
+		 		top: -2px;
+				text-decoration: none;	    
+		    }
+		}
+		
+		.search-icon-clear {
+			.search-glass {
+				display: none;
+			}
+			
+			.search-clear {
+				display: block;
+			}
+		}
+	}
+	
+	
+	.navbar-text {
+		padding-right: 10px;
+	}
+	
+	.btn {
+		margin-left: 10px;
+	}
+}
+
+#category-nav {
+	li .close {
+		color: #fff;
+		display: none;
+		opacity: 1;
+		font-weight: normal;
+		text-shadow: rgb(0,0,0) 0px 1px 0px;
+	}
+	
+	li.active {
+	    .close {
+	    	display: block; 
+	    }
+	    
+	    a {
+	        background-color: #005580;
+	        color: #fff;
+	        cursor: pointer;
+	    }
+	}
+}
+
+#col-content {
+	.navbar {
+		min-height: 35px;
+	}
+}
+
+.sidebar {
+	h3 {
+		font-size: 18px;
+		margin-top: 5px;
+	}
+}
+
+.thumbnails-prod {
+	a:hover, a:active {
+		text-decoration: none;
+	}
+	
+	img {
+		height: 210px;
+		max-width: 210px;
+		width: auto;
+	}
+}
+
+.price {
+	color: #900 !important;
+	font-weight: bold;
+}
+
+.prod-metadata {
+	margin-top: 2px;
+	
+	div {
+		margin: 2px 0;
+		line-height: normal;
+	}
+	
+	div.rateit {
+		div {
+			margin: 0 0;
+		}
+	}
+
+	.name {
+		font-weight: bold;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	
+	.desc {
+		color: #888;
+		font-size: 12px;
+	}
+	
+	.price, .rating {
+		margin-bottom: 5px;
+	}
+	
+	.rating {
+		color: #888;
+		font-size: 10px;
+		
+		.rateit {
+			vertical-align: middle;
+		}
+	}
+}
+
+.add-to-cart {
+	button {
+		margin-top: 10px;
+	}
+}
+
+.media-review {
+	margin-bottom: 10px;
+	
+	.date, .byline {
+		color: #888;
+		font-size: 10px;
+		line-height: normal;
+	}
+	
+	.comment {
+		margin-top: 10px;
+	}
+	
+}
+
+#reviews {
+	margin-top: 20px;
+}
+
+#dlg-add-review {
+	.rateit {
+		margin-top: 5px;
+	}
+	
+	.help-block {
+		color: #888;
+		font-size: 10px;
+		line-height: normal;
+	}
+}
+
+#checkout, #product-info {
+	.form-inline {
+		padding: 20px 0 20px 35px;
+	}
+}
+
+.img-gravitar {
+	background: #fff url(../img/gravitar.jpg) no-repeat 50% 50%;
+	width: 64px;
+	height: 64px;
+}
+
+.footer {
+	border-top: solid 1px #eee;
+	padding: 5px;
+	margin: 20px 0 10px;
+	color: #aaa;
+	letter-spacing: 0.1em;
+	font-size: 11px;
+	text-align: center;
+}
+
+#welcome {	
+	p {
+		color: #888;
+		line-height: 2em;
+	}
+}
+
+#control-panel {
+	.label {
+		text-align: right;
+	}
+	
+	.label-status {
+		.border-radius(10px);
+		width: 16px;
+	}
+	
+	.label-tab {
+		background-color: #08c;
+		.opacity(0.5);
+	}
+	
+	li.active .label-tab {
+		background-color: #444;
+	}
+	
+	.controls .btn-change {
+		width: 88px; 
+	}
+	
+	.progress {
+		margin: 0;
+		height: 28px;
+		
+		> .bar {
+			background-image: none;
+			
+			&.empty {
+				background-color: transparent;
+				.box-shadow(none);
+			}
+		}		
+	}
+	
+	.progress-inline {
+		display: inline-block;
+		height: 20px;
+		width: 100px;
+		
+		> .bar {
+			background-color: #c0cd30;
+		}
+	}
+	
+	.tab-content {
+		overflow: visible;
+	}
+	
+	h3 {
+		margin-top: 50px;
+	}
+	
+	h4 {
+		margin: 25px 0 10px 0;
+		font-size: 14px;
+		
+		label {
+			display: inline-block;
+			margin-left: 20px;		
+		}
+	}	
+	
+	#table-regions.table {
+		table-layout: fixed;
+		
+		th {
+			vertical-align: top;
+			
+			.label {
+				min-width: 32px;
+			}
+			
+			h3 {
+				margin: 0 0 4px 0;
+				font-size: 18px;
+				line-height: normal;
+			}
+			
+			h4 {
+				margin: 10px 0 0 0;
+			}
+			
+			.btn-group {
+				padding-right: 4px;
+			}		
+			
+			ul {
+				margin: 0 0 0 15px;
+			}
+			
+			li {
+				font-weight: normal;
+				margin: 4px 0;
+			}
+		}
+		
+		td {
+			vertical-align: middle;
+			
+			&.lbl-instances,
+			&.currency,
+			&.lbl-users,
+			&.users,
+			&.controls {
+				border-left-width: 0;
+			}
+			
+			&.lbl-users {
+				padding-left: 0;
+			}
+			
+			&.lbl-instances,
+			&.currency,
+			&.lbl-users {
+				text-align: right;
+				
+				.dropdown-menu {
+					text-align: left;
+				}
+			}
+			
+			&.currency .btn {
+				width: 116px;
+				text-align: right;			
+			}
+		}
+		
+		tr td {
+			.btn-change {
+				display: inline;
+			}
+			
+			.btn-hide {
+				display: none;
+			}		
+		}
+		
+		tr.active > td {
+			background-color: #fafbf3;
+			
+			.btn-change {
+				display: none;
+			}
+			
+			.btn-hide {
+				display: inline;
+			}
+		}
+		
+		tr.region-details > td {
+			border-top-width: 0;
+			
+			> .details-box {
+				padding: 0 6px;
+				
+				> table {
+					margin-bottom: 5px;
+					table-layout: fixed;
+					
+					th, tbody > tr > td {
+						border-bottom-left-radius: 0;
+					}
+					
+					.progress {
+						margin-left: 3px;
+					}
+					
+					th.users, td.users {
+						text-align: right;
+						border-left-width: 0;
+						
+						.input-mini {
+							width: 68px;
+							text-align: right;
+						}
+						
+						.btn {
+							width: 83px;
+						}
+					}
+				}
+			}
+		}
+		
+		input {
+			margin-bottom: 0 !important;
+		}
+		
+		.label-success {
+			background-color: #4be123;
+		}
+		
+		.label-warning {
+			background-color: #d7db22;
+		}
+		
+		.label-important {
+			background-color: #c76424;
+		}
+	}
+}
+
+.label-refreshing {
+	background-color: transparent !important; 
+	
+	img {
+		visibility: visible;
+	}
+}
+
+.label-color-0  	{ background-color: #26a9e0 !important; }
+.label-color-1  	{ background-color: #24e0cc !important; }
+.label-color-2  	{ background-color: #4be123 !important; }
+.label-color-3  	{ background-color: #d7db22 !important; }
+.label-color-4  	{ background-color: #cca61b !important; }
+.label-color-5  	{ background-color: #c76424 !important; }
+.label-color-6  	{ background-color: #e5624d !important; }
+.label-color-7  	{ background-color: #ff4b5c !important; }
+.label-color-8  	{ background-color: #e650af !important; }
+.label-color-9  	{ background-color: #bd50e5 !important; }
+.label-color-10  	{ background-color: #8e6892 !important; }
+.label-color-11 	{ background-color: #6084a9 !important; }
+.label-color-12 	{ background-color: #88979d !important; }
+.label-color-13 	{ background-color: #97aea0 !important; }
+.label-color-14 	{ background-color: #b0c3c9 !important; }
+.label-color-real  	{ background-color: #777 !important; }
+
+.tour-figure {
+	margin-bottom: 50px;
+	
+	h3 {
+		font-size: 15px;
+		line-height: 20px;
+		text-align: center;
+		height: 40px;
+		margin-bottom: 15px;
+	}
+	
+	.thumbnail {
+		position: relative;
+		
+		> .caption { 
+			text-transform: uppercase;
+			color: #769fc3;
+			font-weight: bold;
+			font-size: 12px;
+			position: absolute;
+			left: 0;
+			top: -5px;
+			
+			&.text-right {
+				right: 0;
+				left: auto;
+			}
+			
+			&.text-center {
+				right: 0;
+			}
+		}
+	}
+	
+	.span1 {
+		height: 155px;
+		background: transparent url(../img/tour-arrow.png) 50% bottom no-repeat;
+	}
+
+	&.tall {
+		h3 { 
+			height: 60px;
+		}
+		
+		.span1 {
+			height: 175px;
+		}
+	}	
+}
+
+.tour-text {
+	font-size: 15px;
+	font-weight: bold;
+}
+
+.tour-steps {
+	list-item-style: none;
+    counter-reset: li;
+    margin-bottom: 30px;
+	
+	> li {
+		margin-top: 15px;
+	    position:relative;
+	    list-style:none;
+	    padding-left: 2px;
+	    
+	    &:before {
+		    content: counter(li);
+		    counter-increment: li;
+		    position:absolute;
+		    top:-2px;
+		    left:-2em;
+		    background-color: #444;
+		    color: #eee;
+		    .border-radius(9px);
+		    width: 18px;
+		    height: 18px;
+		    text-align: center;
+		    font-weight: bold;
+		    font-size: 12px;    
+	    }
+	}
+}
+
+.tour-links {
+	li {
+		margin-top: 15px;
+		padding-left: 2px;
+	}
+}
+
+#progress-container {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(255,255,255,0.9);
+    
+    > .progress {
+	    width: 400px;
+	    height: 30px;
+	    margin-left: 50%;
+	    left: -200px;
+	    position: relative;
+	    top: 150px;
+    }
+}
+
+pre.log {
+	font-size: 12px;
+	line-height: normal;
+	letter-spacing: -0.05em;
+}
+
+#ddl {
+	font-family: monospace;
+	white-space: pre-wrap;
+	background-color: #fff;
+  	box-shadow: none;
+  	
+  	.ddl-keyword {
+  		color: #708;
+  	}
+  	
+  	.ddl-comment {
+  		color: #a50;
+  	}
+  	
+  	.ddl-type {
+  		color: #30a;
+  	}
+  	
+  	.ddl-number {
+  		color: #164;
+  	}
+}
