@@ -57,7 +57,7 @@
         <servlet-name>storefront-welcome</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.WelcomeServlet</servlet-class>
     </servlet>
-    <servlet>
+<!--     <servlet>
         <servlet-name>storefront-store-products</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.StoreProductsServlet</servlet-class>
     </servlet>
@@ -104,19 +104,19 @@
     <servlet>
         <servlet-name>storefront-tour-geodistribution</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.TourGeoDistributionServlet</servlet-class>
-    </servlet>
+    </servlet> -->
     <servlet>
         <servlet-name>storefront-tour-scaleout</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.TourScaleOutServlet</servlet-class>
     </servlet>
-    <servlet>
+<!--     <servlet>
         <servlet-name>storefront-tour-multitenant</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.TourMultiTenantServlet</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>storefront-tour-noknobsadmin</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.TourNoKnobsAdminServlet</servlet-class>
-    </servlet>
+    </servlet> -->
 
     <!-- URL mappings -->
     <servlet-mapping>
@@ -127,7 +127,7 @@
         <servlet-name>storefront-welcome</servlet-name>
         <url-pattern>/welcome</url-pattern>
     </servlet-mapping>
-    <servlet-mapping>
+<!--     <servlet-mapping>
         <servlet-name>storefront-store-products</servlet-name>
         <url-pattern>/store-products</url-pattern>
     </servlet-mapping>
@@ -174,17 +174,17 @@
     <servlet-mapping>
         <servlet-name>storefront-tour-geodistribution</servlet-name>
         <url-pattern>/tour-region-distribution</url-pattern>
-    </servlet-mapping>
+    </servlet-mapping> -->
     <servlet-mapping>
         <servlet-name>storefront-tour-scaleout</servlet-name>
         <url-pattern>/tour-scale-out</url-pattern>
     </servlet-mapping>
-    <servlet-mapping>
+<!--     <servlet-mapping>
         <servlet-name>storefront-tour-multitenant</servlet-name>
         <url-pattern>/tour-multi-tenant</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>storefront-tour-noknobsadmin</servlet-name>
         <url-pattern>/tour-no-knobs-admin</url-pattern>
-    </servlet-mapping>
+    </servlet-mapping> -->
 </web-app>

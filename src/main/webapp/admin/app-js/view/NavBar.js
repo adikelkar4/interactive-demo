@@ -16,65 +16,69 @@ Ext.define('App.view.NavBar', {
         title: 'Demo Overview',
         href: '/welcome',
         icon: 'ico-home.png'
-    }, {
-        title: 'Store'
-    }, {
-        title: 'Storefront Website',
-        href: '/store-products',
-        icon: 'ico-cart.png'
-    }, {
-        title: 'Products',
-        href: '/control-panel-products',
-        icon: 'ico-product.png'
-    }, {
-        title: 'Simulated Users',
-        href: '/control-panel-users',
-        icon: 'ico-users.png'
-    }, {
+    },
+//    {
+//        title: 'Store'
+//    }, {
+//        title: 'Storefront Website',
+//        href: '/store-products',
+//        icon: 'ico-cart.png'
+//    }, {
+//        title: 'Products',
+//        href: '/control-panel-products',
+//        icon: 'ico-product.png'
+//    }, {
+//        title: 'Simulated Users',
+//        href: '/control-panel-users',
+//        icon: 'ico-users.png'
+//    },
+    {
         title: 'Guided Tours',
     }, {
         title: 'Scale Out Performance',
-        href: '/tour-scale-out',
-        prefix: '1.'
-    }, {
-        title: 'Multi-Tenant',
-        href: '/tour-multi-tenant',
-        prefix: '2.'
-    }, {
-        title: 'Region Distribution',
-        href: '/tour-region-distribution',
-        prefix: '3.'
-    }, {
-        title: 'No-Knobs Administration',
-        href: '/tour-no-knobs-admin',
-        prefix: '4.'
-    }, {
-        title: 'Continuous Availability',
-        href: '/tour-continuous-availability',
-        prefix: '5.'
-    }, {
-        title: 'Control Panel'
-    }, {
-        title: 'Database',
-        href: '/control-panel-database',
-        icon: 'ico-db.png'
-    }, {
-        title: 'Hosts & Processes',
-        href: '/control-panel-processes',
-        icon: 'ico-process.png'
-    }, {
-        title: 'Regions',
-        href: '/control-panel-regions',
-        icon: 'ico-pin.png'
-    }, {
-        title: 'Storefront Tenants',
-        href: '/control-panel-tenants',
-        icon: 'ico-tenants.png'
-    }, {
-        title: 'Log',
-        href: '/control-panel-log',
-        icon: 'ico-log.png'
-    }],
+        href: '/tour-scale-out'
+//        prefix: '1.'
+    },
+//    {
+//        title: 'Multi-Tenant',
+//        href: '/tour-multi-tenant',
+//        prefix: '2.'
+//    }, {
+//        title: 'Region Distribution',
+//        href: '/tour-region-distribution',
+//        prefix: '3.'
+//    }, {
+//        title: 'No-Knobs Administration',
+//        href: '/tour-no-knobs-admin',
+//        prefix: '4.'
+//    }, {
+//        title: 'Continuous Availability',
+//        href: '/tour-continuous-availability',
+//        prefix: '5.'
+//    }, {
+//        title: 'Control Panel'
+//    }, {
+//        title: 'Database',
+//        href: '/control-panel-database',
+//        icon: 'ico-db.png'
+//    }, {
+//        title: 'Hosts & Processes',
+//        href: '/control-panel-processes',
+//        icon: 'ico-process.png'
+//    }, {
+//        title: 'Regions',
+//        href: '/control-panel-regions',
+//        icon: 'ico-pin.png'
+//    }, {
+//        title: 'Storefront Tenants',
+//        href: '/control-panel-tenants',
+//        icon: 'ico-tenants.png'
+//    }, {
+//        title: 'Log',
+//        href: '/control-panel-log',
+//        icon: 'ico-log.png'
+//    }
+    ],
 
     /** @Override */
     initComponent: function() {
