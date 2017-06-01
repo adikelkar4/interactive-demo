@@ -1,176 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright (c) 2013-2015 NuoDB, Inc. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>com.nuodb.storefront</groupId>
-    <artifactId>StorefrontDemo</artifactId>
-    <packaging>war</packaging>
-    <version>1.0-SNAPSHOT</version>
-    <name>NuoDB Storefront Demo</name>
-    <url></url>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.nuodb.storefront</groupId>
+	<artifactId>StorefrontDemo</artifactId>
+	<packaging>pom</packaging>
+	<version>1.0-SNAPSHOT</version>
+	<name>NuoDB Storefront Demo</name>
+	<url />
 
-    <repositories>
-        <repository>
-            <id>maven2-repository.java.net</id>
-            <name>Java.net Repository for Maven</name>
-            <url>http://download.java.net/maven/2/</url>
-            <layout>default</layout>
-        </repository>
-    </repositories>
+	<repositories>
+		<repository>
+			<id>maven2-repository.java.net</id>
+			<name>Java.net Repository for Maven</name>
+			<url>http://download.java.net/maven/2/</url>
+			<layout>default</layout>
+		</repository>
+	</repositories>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jersey.version>1.12</jersey.version>
-        <nuodb.jdbc.gid>com.nuodb.jdbc</nuodb.jdbc.gid>
-        <nuodb.jdbc.aid>nuodb-jdbc</nuodb.jdbc.aid>
-        <nuodb.jdbc.version>2.3.1</nuodb.jdbc.version>
-        <nuodb.hibernate.gid>com.nuodb.hibernate</nuodb.hibernate.gid>
-        <nuodb.hibernate.aid>nuodb-hibernate</nuodb.hibernate.aid>
-        <nuodb.hibernate.version>2.3.1</nuodb.hibernate.version>
-    </properties>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<jersey.version>1.12</jersey.version>
+		<nuodb.jdbc.gid>com.nuodb.jdbc</nuodb.jdbc.gid>
+		<nuodb.jdbc.aid>nuodb-jdbc</nuodb.jdbc.aid>
+		<nuodb.jdbc.version>2.3.1</nuodb.jdbc.version>
+		<nuodb.hibernate.gid>com.nuodb.hibernate</nuodb.hibernate.gid>
+		<nuodb.hibernate.aid>nuodb-hibernate</nuodb.hibernate.aid>
+		<nuodb.hibernate.version>2.3.1</nuodb.hibernate.version>
+	</properties>
 
-    <dependencies>
-        <!-- Logging -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.6.4</version>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-            <version>1.6.4</version>
-            <scope>runtime</scope>
-        </dependency>
+	<modules>
+		<module>StorefrontUser</module>
+		<module>StorefrontWeb</module>
+	</modules>
+	<dependencyManagement>
+		<dependencies>
+			<!-- Logging -->
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-log4j12</artifactId>
+				<version>1.6.4</version>
+			</dependency>
+			<dependency>
+				<groupId>log4j</groupId>
+				<artifactId>log4j</artifactId>
+				<version>1.2.17</version>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>jul-to-slf4j</artifactId>
+				<version>1.6.4</version>
+				<scope>runtime</scope>
+			</dependency>
 
-        <!-- Common utils -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.3.2</version>
-        </dependency>
+			<!-- Common utils -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>3.3.2</version>
+			</dependency>
 
-        <!-- Servlet -->
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>3.0.1</version>
-            <scope>provided</scope>
-        </dependency>
+			<!-- Servlet -->
+			<dependency>
+				<groupId>javax.servlet</groupId>
+				<artifactId>javax.servlet-api</artifactId>
+				<version>3.0.1</version>
+				<scope>provided</scope>
+			</dependency>
 
-        <!-- RESTful API -->
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-servlet</artifactId>
-            <version>${jersey.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-json</artifactId>
-            <version>${jersey.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>${jersey.version}</version>
-        </dependency>
+			<!-- RESTful API -->
+			<dependency>
+				<groupId>com.sun.jersey</groupId>
+				<artifactId>jersey-servlet</artifactId>
+				<version>${jersey.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.sun.jersey</groupId>
+				<artifactId>jersey-json</artifactId>
+				<version>${jersey.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.sun.jersey</groupId>
+				<artifactId>jersey-client</artifactId>
+				<version>${jersey.version}</version>
+			</dependency>
 
-        <!-- Hibernate -->
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-core</artifactId>
-            <version>4.3.8.Final</version>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-validator</artifactId>
-            <version>4.1.0.Final</version>
-        </dependency>
-        <dependency>
-            <groupId>javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.12.0.GA</version>
-        </dependency>
+			<!-- Hibernate -->
+			<dependency>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate-core</artifactId>
+				<version>4.3.8.Final</version>
+			</dependency>
+			<dependency>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate-validator</artifactId>
+				<version>4.1.0.Final</version>
+			</dependency>
+			<dependency>
+				<groupId>javassist</groupId>
+				<artifactId>javassist</artifactId>
+				<version>3.12.0.GA</version>
+			</dependency>
 
-        <!-- NuoDB JDBC + Hibernate dialect -->
-        <dependency>
-            <groupId>${nuodb.jdbc.gid}</groupId>
-            <artifactId>${nuodb.jdbc.aid}</artifactId>
-            <version>${nuodb.jdbc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${nuodb.hibernate.gid}</groupId>
-            <artifactId>${nuodb.hibernate.aid}</artifactId>
-            <version>${nuodb.hibernate.version}</version>
-        </dependency>
+			<!-- NuoDB JDBC + Hibernate dialect -->
+			<dependency>
+				<groupId>${nuodb.jdbc.gid}</groupId>
+				<artifactId>${nuodb.jdbc.aid}</artifactId>
+				<version>${nuodb.jdbc.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${nuodb.hibernate.gid}</groupId>
+				<artifactId>${nuodb.hibernate.aid}</artifactId>
+				<version>${nuodb.hibernate.version}</version>
+			</dependency>
 
-        <!-- DAO -->
-        <dependency>
-            <groupId>com.googlecode.genericdao</groupId>
-            <artifactId>dao-hibernate</artifactId>
-            <version>1.2.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.persistence</groupId>
-                    <artifactId>persistence-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-    </dependencies>
-
-    <build>
-        <finalName>StorefrontDemo</finalName>
-        <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
-                <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>com.nuodb.storefront.StorefrontApp</mainClass>
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <finalName>StorefrontDriver</finalName>
-                    <appendAssemblyId>false</appendAssemblyId>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.tomcat.maven</groupId>
-                <artifactId>tomcat7-maven-plugin</artifactId>
-                <version>2.1</version>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-war-plugin</artifactId>
-                <version>2.3</version>
-            </plugin>
-        </plugins>
-    </build>
+			<!-- DAO -->
+			<dependency>
+				<groupId>com.googlecode.genericdao</groupId>
+				<artifactId>dao-hibernate</artifactId>
+				<version>1.2.0</version>
+				<exclusions>
+					<exclusion>
+						<groupId>javax.persistence</groupId>
+						<artifactId>persistence-api</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>
