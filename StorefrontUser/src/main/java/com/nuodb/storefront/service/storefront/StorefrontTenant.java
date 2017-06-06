@@ -143,8 +143,8 @@ public class StorefrontTenant implements IStorefrontTenant {
 
 	public void shutDown() {
 		synchronized (lock) {
-			if (executor == null) {
-				executor.shutdown();
+			if (executor != null) {
+				executor.shutdownNow();
 			}
 			if (simulatorSvc != null) {
 				simulatorSvc.removeAll();
@@ -310,6 +310,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 
 	protected SessionFactory getOrCreateSessionFactory() {
 		if (!initializedApp) {
+			
 			synchronized (lock) {
 				if (sessionFactory == null) {
 					ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()

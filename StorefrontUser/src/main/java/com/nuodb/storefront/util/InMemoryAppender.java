@@ -34,7 +34,7 @@ public class InMemoryAppender extends WriterAppender {
     protected synchronized void subAppend(LoggingEvent event) {
         String[] loggerNameParts = event.getLoggerName().split(StorefrontApp.LOGGER_NAME_TENANT_SEP, 2);
         String tenantName = loggerNameParts.length > 1 ? loggerNameParts[1] : null;
-        StringWriter writer = StorefrontTenantManager.getTenantOrDefault(tenantName).getLogWriter();
+        StringWriter writer = StorefrontTenantManager.getTenant(tenantName).getLogWriter();
         setWriter(writer);
         StringBuffer buff = writer.getBuffer();
 

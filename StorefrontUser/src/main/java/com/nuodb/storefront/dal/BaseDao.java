@@ -30,9 +30,10 @@ public class BaseDao extends GeneralDAOImpl implements IBaseDao {
         Long startTimeObj = transactionStartTime.get();
         long startTime = (startTimeObj != null) ? startTimeObj.longValue() : System.currentTimeMillis();
 
-        Session session = getSession();
+        Session session = null;
         Transaction t = null;
         try {
+        	session = this.getSessionFactory().getCurrentSession();
             t = session.beginTransaction();
             prepareSession(transactionType);
             T result = c.call();
@@ -43,7 +44,11 @@ public class BaseDao extends GeneralDAOImpl implements IBaseDao {
             if (t != null) {
                 t.rollback();
             } else {
-                session.close();
+            	if (session != null) {
+            		if (session.isOpen()) {            			
+            			session.close();
+            		}
+            	}
             }
             onTransactionComplete(name, startTime, false);
             if (e instanceof RuntimeException) {

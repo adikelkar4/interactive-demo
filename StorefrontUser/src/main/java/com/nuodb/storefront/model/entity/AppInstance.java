@@ -2,6 +2,7 @@
 
 package com.nuodb.storefront.model.entity;
 
+import java.net.URL;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -22,8 +23,9 @@ import com.nuodb.storefront.util.LoggerToStringStyle;
 @Entity
 @Table(indexes = { @Index(name = "idx_app_instance_last_heartbeat", columnList = "lastHeartbeat") })
 public class AppInstance extends UuidEntity {
-    @NotNull
-    private String url;
+    
+	@NotNull
+	private String url;
 
     @NotNull
     private String region;
@@ -76,6 +78,9 @@ public class AppInstance extends UuidEntity {
     }
 
     public String getUrl() {
+    	if (url == null) {
+    		return "localhost";
+    	}
         return url;
     }
 
