@@ -129,6 +129,7 @@ public class StatsApi extends BaseApi {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
+        // TODO - Break this off into its own threaded process, should only respond with acknowledged receipt of stats  - AndyM/KevinW
         synchronized (this.heapLock) { // Always synchronize on the heapLock so both maps are protected simultaneously
             if (!this.transactionStatHeap.containsKey(NUODB_MAP_KEY) || !this.workloadStatHeap.containsKey(NUODB_MAP_KEY)) {
                 return Response.status(Response.Status.BAD_REQUEST).build();
