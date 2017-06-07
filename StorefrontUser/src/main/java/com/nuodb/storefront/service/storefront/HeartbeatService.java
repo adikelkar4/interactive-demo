@@ -116,11 +116,6 @@ public class HeartbeatService implements IHeartbeatService, IStorefrontPeerServi
     }
 
     public void asyncWakeStorefrontsInOtherRegions() {
-        if (tenant != StorefrontTenantManager.getDefaultTenant()) {
-            // Don't wake other Storefronts if we're not the default tenant. We don't want to presume the other tenants can/should have the same
-            // Storefront footprint as the default tenant.
-            return;
-        }
 
         // Assume no regions are covered
         Collection<RegionStats> regions = tenant.getDbApi().getRegionStats();

@@ -53,308 +53,291 @@ import com.sun.jersey.api.client.config.DefaultClientConfig;
  * Service container and factory for a single instance of Storefront.
  */
 public class StorefrontTenant implements IStorefrontTenant {
-    private static final ClientConfig s_apiCfg = new DefaultClientConfig();
-    private static final String[] TRANSACTION_NAMES = new String[] {
-            "addProduct", "addProductReview", "addToCart", "checkout", "getAppInstances", "getCategories", "getCustomerCart", "getDbNodes",
-            "getProductDetails", "getProductReviews", "getProducts", "getStorefrontStats", "updateCart", "sendHeartbeat" };
+	private static final ClientConfig s_apiCfg = new DefaultClientConfig();
+	private static final String[] TRANSACTION_NAMES = new String[] { "addProduct", "addProductReview", "addToCart",
+			"checkout", "getAppInstances", "getCategories", "getCustomerCart", "getDbNodes", "getProductDetails",
+			"getProductReviews", "getProducts", "getStorefrontStats", "updateCart", "sendHeartbeat" };
 
-    private Object lock = new Object();
-    private boolean initializedApp = false;
-    private final AppInstance appInstance;
-    private final Configuration hibernateCfg;
-    private SessionFactory sessionFactory;
-    private ISimulatorService simulatorSvc;
-    private IHeartbeatService heartbeatSvc;
-    private IDbApi dbApi;
-    private ConnInfo apiConnInfo;
-    private ScheduledExecutorService executor;
-    private final StringWriter logWriter = new StringWriter();
-    private final Map<String, TransactionStats> transactionStatsMap = new HashMap<String, TransactionStats>();
+	private Object lock = new Object();
+	private boolean initializedApp = false;
+	private final AppInstance appInstance;
+	private final Configuration hibernateCfg;
+	private SessionFactory sessionFactory;
+	private ISimulatorService simulatorSvc;
+	private IHeartbeatService heartbeatSvc;
+	private IDbApi dbApi;
+	private ConnInfo apiConnInfo;
+	private ScheduledExecutorService executor;
+	private final StringWriter logWriter = new StringWriter();
+	private final Map<String, TransactionStats> transactionStatsMap = new HashMap<String, TransactionStats>();
 
-    // Initialize API client config
-    static {
-        Map<String, Object> props = s_apiCfg.getProperties();
-        props.put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, StorefrontApp.DBAPI_CONNECT_TIMEOUT_SEC * 1000);
-        props.put(ClientConfig.PROPERTY_READ_TIMEOUT, StorefrontApp.DBAPI_READ_TIMEOUT_SEC * 1000);
+	// Initialize API client config
+	static {
+		Map<String, Object> props = s_apiCfg.getProperties();
+		props.put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, StorefrontApp.DBAPI_CONNECT_TIMEOUT_SEC * 1000);
+		props.put(ClientConfig.PROPERTY_READ_TIMEOUT, StorefrontApp.DBAPI_READ_TIMEOUT_SEC * 1000);
 
-        s_apiCfg.getSingletons().add(new JacksonJaxbJsonProvider().configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false));
-    }
+		s_apiCfg.getSingletons().add(new JacksonJaxbJsonProvider()
+				.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false));
+	}
 
-    // Initialize Hibernate
-    public StorefrontTenant(AppInstance appInstance) {
-        this.appInstance = appInstance;
+	// Initialize Hibernate
+	public StorefrontTenant(AppInstance appInstance) {
+		this(appInstance, StorefrontApp.DB_NAME, StorefrontApp.DB_USER, StorefrontApp.DB_PASSWORD,
+				StorefrontApp.DB_OPTIONS);
+	}
 
-        hibernateCfg = new Configuration();
-        hibernateCfg.setNamingStrategy(new UpperCaseNamingStrategy());
-        hibernateCfg.configure();
+	public StorefrontTenant(AppInstance appInstance, String dbName, String dbUser, String dbPassword,
+			String dbOptions) {
+		this.appInstance = appInstance;
+		hibernateCfg = new Configuration();
+		hibernateCfg.setNamingStrategy(new UpperCaseNamingStrategy());
+		hibernateCfg.configure();
 
-        String dbName = StorefrontApp.DB_NAME;
-        String dbUser = StorefrontApp.DB_USER;
-        String dbPassword = StorefrontApp.DB_PASSWORD;
-        String dbOptions = StorefrontApp.DB_OPTIONS;
-        if (dbName != null) {
-            dbName = dbName.replace("{domain.broker}", StorefrontApp.DB_DOMAIN_BROKER);
+		if (dbName != null) {
+			dbName = dbName.replace("{domain.broker}", StorefrontApp.DB_DOMAIN_BROKER);
 
-            Matcher dbNameMatcher = Pattern.compile("([^@]*)@([^@:]*(?::\\d+|$))").matcher(dbName);
-            if (!dbNameMatcher.matches()) {
-                throw new IllegalArgumentException("Database name must be of the format name@host[:port]");
-            }
-            String name = dbNameMatcher.group(1);
-            String host = dbNameMatcher.group(2);
+			Matcher dbNameMatcher = Pattern.compile("([^@]*)@([^@:]*(?::\\d+|$))").matcher(dbName);
+			if (!dbNameMatcher.matches()) {
+				throw new IllegalArgumentException("Database name must be of the format name@host[:port]");
+			}
+			String name = dbNameMatcher.group(1);
+			String host = dbNameMatcher.group(2);
 
-            String url = "jdbc:com.nuodb://" + host + "/" + name;
-            if (dbOptions != null) {
-                url = url + "?" + dbOptions;
-            }
-            hibernateCfg.setProperty(Environment.URL, url);
-        }
-        if (dbUser != null) {
-            hibernateCfg.setProperty(Environment.USER, dbUser);
-        }
-        if (dbPassword != null) {
-            hibernateCfg.setProperty(Environment.PASS, dbPassword);
-        }
+			String url = "jdbc:com.nuodb://" + host + "/" + name;
+			if (dbOptions != null) {
+				url = url + "?" + dbOptions;
+			}
+			hibernateCfg.setProperty(Environment.URL, url);
+		}
+		if (dbUser != null) {
+			hibernateCfg.setProperty(Environment.USER, dbUser);
+		}
+		if (dbPassword != null) {
+			hibernateCfg.setProperty(Environment.PASS, dbPassword);
+		}
 
-        for (String transactionName : TRANSACTION_NAMES) {
-            transactionStatsMap.put(transactionName, new TransactionStats());
-        }
-    }
+		for (String transactionName : TRANSACTION_NAMES) {
+			transactionStatsMap.put(transactionName, new TransactionStats());
+		}
+	}
 
-    
-    public AppInstance getAppInstance() {
-        return appInstance;
-    }
+	public AppInstance getAppInstance() {
+		return appInstance;
+	}
 
-    
-    public void startUp() {
-        synchronized (lock) {
-            if (executor == null) {
-                executor = Executors.newSingleThreadScheduledExecutor();
-                executor.scheduleAtFixedRate(getHeartbeatService(), 0, StorefrontApp.HEARTBEAT_INTERVAL_SEC, TimeUnit.SECONDS);
+	public void startUp() {
+		synchronized (lock) {
+			if (executor == null) {
+				executor = Executors.newSingleThreadScheduledExecutor();
+				executor.scheduleAtFixedRate(getHeartbeatService(), 0, StorefrontApp.HEARTBEAT_INTERVAL_SEC,
+						TimeUnit.SECONDS);
 
-                Runnable sampler = PerformanceUtil.createSampler();
-                if (sampler != null) {
-                    executor.scheduleAtFixedRate(sampler, 0, StorefrontApp.CPU_SAMPLING_INTERVAL_SEC, TimeUnit.SECONDS);
-                }
-            }
-        }
-    }
+				Runnable sampler = PerformanceUtil.createSampler();
+				if (sampler != null) {
+					executor.scheduleAtFixedRate(sampler, 0, StorefrontApp.CPU_SAMPLING_INTERVAL_SEC, TimeUnit.SECONDS);
+				}
+			}
+		}
+	}
 
-    
-    public void shutDown() {
-        synchronized (lock) {
-            if (executor == null) {
-                executor.shutdown();
-            }
-            if (simulatorSvc != null) {
-                simulatorSvc.removeAll();
-            }
-            if (sessionFactory != null) {
-                sessionFactory.close();
-            }
-        }
-    }
+	public void shutDown() {
+		synchronized (lock) {
+			if (executor != null) {
+				executor.shutdownNow();
+			}
+			if (simulatorSvc != null) {
+				simulatorSvc.removeAll();
+			}
+			if (sessionFactory != null) {
+				sessionFactory.close();
+			}
+		}
+	}
 
-    
-    public DbConnInfo getDbConnInfo() {
-        String url = hibernateCfg.getProperty(Environment.URL);
-        Matcher dbNameMatcher = Pattern.compile("jdbc:com.nuodb://([^/:]+)(:[^/]*)?/(.+)$").matcher(url);
+	public DbConnInfo getDbConnInfo() {
+		String url = hibernateCfg.getProperty(Environment.URL);
+		Matcher dbNameMatcher = Pattern.compile("jdbc:com.nuodb://([^/:]+)(:[^/]*)?/(.+)$").matcher(url);
 
-        DbConnInfo info = new DbConnInfo();
-        info.setUrl(url);
-        if (dbNameMatcher.matches()) {
-            info.setHost(dbNameMatcher.group(1));
-            info.setDbName(dbNameMatcher.group(3));
-        } else {
-            info.setHost(StorefrontApp.DEFAULT_DB_HOST);
-            info.setDbName(StorefrontApp.DEFAULT_DB_NAME);
-        }
-        info.setUsername(hibernateCfg.getProperty(Environment.USER));
-        info.setPassword(hibernateCfg.getProperty(Environment.PASS));
-        info.setDbProcessTag(StorefrontApp.DB_PROCESS_TAG.replace("${db.name}", info.getDbName()));
-        return info;
-    }
+		DbConnInfo info = new DbConnInfo();
+		info.setUrl(url);
+		if (dbNameMatcher.matches()) {
+			info.setHost(dbNameMatcher.group(1));
+			info.setDbName(dbNameMatcher.group(3));
+		} else {
+			info.setHost(StorefrontApp.DEFAULT_DB_HOST);
+			info.setDbName(StorefrontApp.DEFAULT_DB_NAME);
+		}
+		info.setUsername(hibernateCfg.getProperty(Environment.USER));
+		info.setPassword(hibernateCfg.getProperty(Environment.PASS));
+		info.setDbProcessTag(StorefrontApp.DB_PROCESS_TAG.replace("${db.name}", info.getDbName()));
+		return info;
+	}
 
-    
-    public void setDbConnInfo(DbConnInfo dbConnInfo) {
-        hibernateCfg.setProperty(Environment.USER, dbConnInfo.getUsername());
-        hibernateCfg.setProperty(Environment.PASS, dbConnInfo.getPassword());
-        hibernateCfg.setProperty(Environment.URL, dbConnInfo.getUrl());
+	public void setDbConnInfo(DbConnInfo dbConnInfo) {
+		hibernateCfg.setProperty(Environment.USER, dbConnInfo.getUsername());
+		hibernateCfg.setProperty(Environment.PASS, dbConnInfo.getPassword());
+		hibernateCfg.setProperty(Environment.URL, dbConnInfo.getUrl());
 
-        synchronized (lock) {
-            dbApi = null;
-            if (sessionFactory != null) {
-                sessionFactory.close();
-                sessionFactory = null;
-            }
-        }
-    }
+		synchronized (lock) {
+			dbApi = null;
+			if (sessionFactory != null) {
+				sessionFactory.close();
+				sessionFactory = null;
+			}
+		}
+	}
 
-    
-    public ConnInfo getApiConnInfo() {
-        synchronized (lock) {
-            if (apiConnInfo == null) {
-                String host = getDbApiHost();
-                int port = StorefrontApp.DBAPI_PORT;
-                ConnInfo info = new ConnInfo();
-                info.setUsername(StorefrontApp.DBAPI_USERNAME);
-                info.setPassword(StorefrontApp.DBAPI_PASSWORD);
-                info.setUrl("http://" + host + ":" + port + "/api/1");
-                apiConnInfo = info;
-            }
-        }
-        return new ConnInfo(apiConnInfo);
-    }
+	public ConnInfo getApiConnInfo() {
+		synchronized (lock) {
+			if (apiConnInfo == null) {
+				String host = getDbApiHost();
+				int port = StorefrontApp.DBAPI_PORT;
+				ConnInfo info = new ConnInfo();
+				info.setUsername(StorefrontApp.DBAPI_USERNAME);
+				info.setPassword(StorefrontApp.DBAPI_PASSWORD);
+				info.setUrl("http://" + host + ":" + port + "/api/1");
+				apiConnInfo = info;
+			}
+		}
+		return new ConnInfo(apiConnInfo);
+	}
 
-    
-    public void setApiConnInfo(ConnInfo info) {
-        synchronized (lock) {
-            apiConnInfo = new ConnInfo(info);
-            dbApi = null;
-        }
-    }
+	public void setApiConnInfo(ConnInfo info) {
+		synchronized (lock) {
+			apiConnInfo = new ConnInfo(info);
+			dbApi = null;
+		}
+	}
 
-    
-    public String getAdminConsoleUrl() {
-        String host = getDbApiHost();
-        int port = StorefrontApp.DBAPI_PORT;
-        return "http://" + host + ":" + port + "/console";
-    }
+	public String getAdminConsoleUrl() {
+		String host = getDbApiHost();
+		int port = StorefrontApp.DBAPI_PORT;
+		return "http://" + host + ":" + port + "/console";
+	}
 
-    
-    public String getSqlExplorerUrl() {
-        String host = getDbApiHost();
-        int port = StorefrontApp.SQLEXPLORER_PORT;
-        return "http://" + host + ":" + port + "/explorer.jsp";
-    }
+	public String getSqlExplorerUrl() {
+		String host = getDbApiHost();
+		int port = StorefrontApp.SQLEXPLORER_PORT;
+		return "http://" + host + ":" + port + "/explorer.jsp";
+	}
 
-    
-    public SchemaExport createSchemaExport() {
-        SchemaExport export = new SchemaExport(hibernateCfg);
-        export.setDelimiter(";");
-        return export;
-    }
+	public SchemaExport createSchemaExport() {
+		SchemaExport export = new SchemaExport(hibernateCfg);
+		export.setDelimiter(";");
+		return export;
+	}
 
-    
-    public void createSchema() {
-        new SchemaExport(hibernateCfg).create(false, true);
-    }
+	public void createSchema() {
+		new SchemaExport(hibernateCfg).create(false, true);
+	}
 
-    
-    public IStorefrontService createStorefrontService() {
-        return new StorefrontService(appInstance, createStorefrontDao());
-    }
+	public IStorefrontService createStorefrontService() {
+		return new StorefrontService(appInstance, createStorefrontDao());
+	}
 
-    
-    public IDataGeneratorService createDataGeneratorService() {
-        SessionFactory factory = getOrCreateSessionFactory();
-        try {
-            Connection connection = factory.getSessionFactoryOptions().getServiceRegistry().getService(ConnectionProvider.class).getConnection();
-            StatelessSession session = factory.openStatelessSession(connection);
-            connection.setAutoCommit(true);
-            return new DataGeneratorService(session, connection, appInstance.getRegion());
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public IDataGeneratorService createDataGeneratorService() {
+		SessionFactory factory = getOrCreateSessionFactory();
+		try {
+			Connection connection = factory.getSessionFactoryOptions().getServiceRegistry()
+					.getService(ConnectionProvider.class).getConnection();
+			StatelessSession session = factory.openStatelessSession(connection);
+			connection.setAutoCommit(true);
+			return new DataGeneratorService(session, connection, appInstance.getRegion());
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    
-    public ISimulatorService getSimulatorService() {
-        if (simulatorSvc == null) {
-            synchronized (lock) {
-                if (simulatorSvc == null) {
-                    simulatorSvc = new SimulatorService(createStorefrontService());
-                }
-            }
-        }
-        return simulatorSvc;
-    }
+	public ISimulatorService getSimulatorService() {
+		if (simulatorSvc == null) {
+			synchronized (lock) {
+				if (simulatorSvc == null) {
+					simulatorSvc = new SimulatorService(createStorefrontService());
+				}
+			}
+		}
+		return simulatorSvc;
+	}
 
-    
-    public IDbApi getDbApi() {
-        if (dbApi == null) {
-            synchronized (lock) {
-                if (dbApi == null) {
-                    dbApi = createDbApi();
-                }
-            }
-        }
-        return dbApi;
-    }
+	public IDbApi getDbApi() {
+		if (dbApi == null) {
+			synchronized (lock) {
+				if (dbApi == null) {
+					dbApi = createDbApi();
+				}
+			}
+		}
+		return dbApi;
+	}
 
-    
-    public IStorefrontDao createStorefrontDao() {
-        return createStorefrontDao(getOrCreateSessionFactory());
-    }
+	public IStorefrontDao createStorefrontDao() {
+		return createStorefrontDao(getOrCreateSessionFactory());
+	}
 
-    
-    public IStorefrontPeerService getStorefrontPeerService() {
-        return (IStorefrontPeerService) getHeartbeatService();
-    }
+	public IStorefrontPeerService getStorefrontPeerService() {
+		return (IStorefrontPeerService) getHeartbeatService();
+	}
 
-    
-    public Client createApiClient() {
-        return Client.create(s_apiCfg);
-    }
+	public Client createApiClient() {
+		return Client.create(s_apiCfg);
+	}
 
-    
-    public Logger getLogger(Class<?> clazz) {
-        return Logger.getLogger(clazz.getName() + StorefrontApp.LOGGER_NAME_TENANT_SEP + appInstance.getTenantName());
-    }
+	public Logger getLogger(Class<?> clazz) {
+		return Logger.getLogger(clazz.getName() + StorefrontApp.LOGGER_NAME_TENANT_SEP + appInstance.getTenantName());
+	}
 
-    
-    public StringWriter getLogWriter() {
-        return logWriter;
-    }
+	public StringWriter getLogWriter() {
+		return logWriter;
+	}
 
-    
-    public Map<String, TransactionStats> getTransactionStats() {
-        return transactionStatsMap;
-    }
+	public Map<String, TransactionStats> getTransactionStats() {
+		return transactionStatsMap;
+	}
 
-    protected IDbApi createDbApi() {
-        return new DbApiProxy(this);
-    }
+	protected IDbApi createDbApi() {
+		return new DbApiProxy(this);
+	}
 
-    protected IHeartbeatService getHeartbeatService() {
-        if (heartbeatSvc == null) {
-            synchronized (lock) {
-                heartbeatSvc = new HeartbeatService(this);
-            }
-        }
-        return heartbeatSvc;
-    }
+	protected IHeartbeatService getHeartbeatService() {
+		if (heartbeatSvc == null) {
+			synchronized (lock) {
+				heartbeatSvc = new HeartbeatService(this);
+			}
+		}
+		return heartbeatSvc;
+	}
 
-    protected SessionFactory getOrCreateSessionFactory() {
-        if (!initializedApp) {
-            synchronized (lock) {
-                if (sessionFactory == null) {
-                    ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
-                            .applySettings(hibernateCfg.getProperties())
-                            .applySettings(Environment.getProperties())
-                            .build();
-                    sessionFactory = hibernateCfg.buildSessionFactory(serviceRegistry);
-                }
-                try {
-                    new AppInstanceInitService(createStorefrontDao(sessionFactory)).init(appInstance);
-                    initializedApp = true;
-                } catch (Exception e) {
-                    throw (e instanceof RuntimeException) ? ((RuntimeException) e) : new RuntimeException(e);
-                }
-            }
-        }
-        return sessionFactory;
-    }
+	protected SessionFactory getOrCreateSessionFactory() {
+		if (!initializedApp) {
+			
+			synchronized (lock) {
+				if (sessionFactory == null) {
+					ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
+							.applySettings(hibernateCfg.getProperties()).applySettings(Environment.getProperties())
+							.build();
+					sessionFactory = hibernateCfg.buildSessionFactory(serviceRegistry);
+				}
+				try {
+					new AppInstanceInitService(createStorefrontDao(sessionFactory)).init(appInstance);
+					initializedApp = true;
+				} catch (Exception e) {
+					throw (e instanceof RuntimeException) ? ((RuntimeException) e) : new RuntimeException(e);
+				}
+			}
+		}
+		return sessionFactory;
+	}
 
-    protected IStorefrontDao createStorefrontDao(SessionFactory sf) {
-        StorefrontDao dao = new StorefrontDao(transactionStatsMap);
-        dao.setSessionFactory(sf);
-        return dao;
-    }
+	protected IStorefrontDao createStorefrontDao(SessionFactory sf) {
+		StorefrontDao dao = new StorefrontDao(transactionStatsMap);
+		dao.setSessionFactory(sf);
+		return dao;
+	}
 
-    protected String getDbApiHost() {
-        String apiHost = StorefrontApp.DBAPI_HOST;
-        return (!StringUtils.isEmpty(apiHost)) ? apiHost : getDbConnInfo().getHost();
-    }
+	protected String getDbApiHost() {
+		String apiHost = StorefrontApp.DBAPI_HOST;
+		return (!StringUtils.isEmpty(apiHost)) ? apiHost : getDbConnInfo().getHost();
+	}
 
 }
