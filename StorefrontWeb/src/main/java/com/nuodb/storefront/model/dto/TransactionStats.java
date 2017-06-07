@@ -23,8 +23,8 @@ public class TransactionStats {
     public void applyDeltas(TransactionStats stats) {
         this.successCount += stats.successCount;
         this.failureCount += stats.failureCount;
-        this.minDurationMs = stats.minDurationMs;
-        this.maxDurationMs = stats.maxDurationMs;
+        this.minDurationMs = Math.min(stats.minDurationMs, this.minDurationMs);
+        this.maxDurationMs = Math.max(stats.maxDurationMs, this.maxDurationMs);
         this.totalDurationMs += stats.totalDurationMs;
 
         return;

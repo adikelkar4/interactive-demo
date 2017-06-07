@@ -120,14 +120,10 @@ public class StatsApi extends BaseApi {
 
         Map<String, Map> payload = stats.getPayload();
 
-        if (!payload.containsKey(TRANSACTION_STATS_MAP_KEY) || !payload.containsKey(WORKLOAD_STATS_MAP_KEY)) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        }
-
         @SuppressWarnings("unchecked")
-        Map<String, TransactionStats> tStats = (Map<String, TransactionStats>)payload.get(TRANSACTION_STATS_MAP_KEY);
+        Map<String, TransactionStats> tStats = (Map<String, TransactionStats>)payload.getOrDefault(TRANSACTION_STATS_MAP_KEY, new HashMap<>());
         @SuppressWarnings("unchecked")
-        Map<String, WorkloadStats> wStats = (Map<String, WorkloadStats>)payload.get(WORKLOAD_STATS_MAP_KEY);
+        Map<String, WorkloadStats> wStats = (Map<String, WorkloadStats>)payload.getOrDefault(WORKLOAD_STATS_MAP_KEY, new HashMap<>());
 
         if (tStats.size() < 1 && wStats.size() < 1) {
             return Response.status(Response.Status.BAD_REQUEST).build();
