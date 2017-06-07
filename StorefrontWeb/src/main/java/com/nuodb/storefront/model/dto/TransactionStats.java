@@ -20,6 +20,16 @@ public class TransactionStats {
         this.totalDurationMs = stats.totalDurationMs;
     }
 
+    public void applyDeltas(TransactionStats stats) {
+        this.successCount += stats.successCount;
+        this.failureCount += stats.failureCount;
+        this.minDurationMs = Math.min(stats.minDurationMs, this.minDurationMs);
+        this.maxDurationMs = Math.max(stats.maxDurationMs, this.maxDurationMs);
+        this.totalDurationMs += stats.totalDurationMs;
+
+        return;
+    }
+
     public int getSuccessCount() {
         return successCount;
     }
