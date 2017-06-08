@@ -1,11 +1,8 @@
 pipeline {
     agent { docker 'maven:3.3.9' }
+    triggers { pollSCM('H/3 * * * *') }
+
     stages {
-        stage('checkout') {
-    	  steps {
-  	    checkout scm
-	  }
-	}
         stage('dependencies') {
             steps {
                 sh 'mvn dependency:resolve '
@@ -16,5 +13,15 @@ pipeline {
                 sh 'mvn clean install '
             }
         }
+    }
+
+    post {
+      always {
+        archive '*/target/*.jar,*/target/*.war'
+
+        step([$class: 'Mailer',
+           notifyEveryUnstableBuild: true,
+           recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
+                                      [$class: 'RequesterRecipientProvider']])])      }
     }
 }
