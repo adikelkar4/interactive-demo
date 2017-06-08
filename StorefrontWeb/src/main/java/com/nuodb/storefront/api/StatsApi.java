@@ -43,7 +43,10 @@ public class StatsApi extends BaseApi {
         StorefrontStatsReport rpt = getSimulator(req).getStorefrontStatsReport();
         DbFootprint footprint = getDbApi(req).getDbFootprint();
 
+        rpt.setAppInstance(getTenant(req).getAppInstance());
         rpt.setDbStats(footprint);
+        rpt.setWorkloadStats(this.workloadStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
+        rpt.setTransactionStats(this.transactionStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
         clearWorkloadProperty(rpt.getWorkloadStats());
 
         if (footprint.usedRegionCount > 1) {
@@ -65,14 +68,14 @@ public class StatsApi extends BaseApi {
     @Path("/transactions")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, TransactionStats> getTransactionStats(@Context HttpServletRequest req) {
-        return getService(req).getTransactionStats();
+        return this.transactionStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>());
     }
 
     @GET
     @Path("/workloads")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, WorkloadStats> getWorkloadStats(@Context HttpServletRequest req) {
-        return clearWorkloadProperty(getSimulator(req).getWorkloadStats());
+        return this.workloadStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>());
     }
 
     @GET
@@ -129,6 +132,7 @@ public class StatsApi extends BaseApi {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
+        // TODO - Break this off into its own threaded process, should only respond with acknowledged receipt of stats  - AndyM/KevinW
         synchronized (this.heapLock) { // Always synchronize on the heapLock so both maps are protected simultaneously
             if (!this.transactionStatHeap.containsKey(NUODB_MAP_KEY) || !this.workloadStatHeap.containsKey(NUODB_MAP_KEY)) {
                 return Response.status(Response.Status.BAD_REQUEST).build();
