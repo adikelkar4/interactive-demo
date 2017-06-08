@@ -50,20 +50,6 @@ Ext.define('App.view.HeaderBar', {
             }
         }, {
             xtype: 'metricwell',
-            text: '<b>Regions</b>',
-            icon: 'ico-pin.png',
-            metric: 'dbStats.usedRegionCount',
-            itemId: 'metrics-regions',
-            input: 'slider',
-            inputMaxMetric: 'dbStats.regionCount',
-            flex: 0.7,
-            href: '/control-panel-regions',
-            listeners: {
-                click: clickHandler,
-                change: changeHandler
-            }
-        }, {
-            xtype: 'metricwell',
             text: '<b>Throughput</b><br />transactions/sec',
             icon: 'ico-dashboard.png',
             format: ',.0',

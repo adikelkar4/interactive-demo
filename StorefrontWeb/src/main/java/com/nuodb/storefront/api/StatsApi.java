@@ -43,7 +43,10 @@ public class StatsApi extends BaseApi {
         StorefrontStatsReport rpt = getSimulator(req).getStorefrontStatsReport();
         DbFootprint footprint = getDbApi(req).getDbFootprint();
 
+        rpt.setAppInstance(getTenant(req).getAppInstance());
         rpt.setDbStats(footprint);
+        rpt.setWorkloadStats(this.workloadStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
+        rpt.setTransactionStats(this.transactionStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
         clearWorkloadProperty(rpt.getWorkloadStats());
 
         if (footprint.usedRegionCount > 1) {
@@ -65,14 +68,14 @@ public class StatsApi extends BaseApi {
     @Path("/transactions")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, TransactionStats> getTransactionStats(@Context HttpServletRequest req) {
-        return getService(req).getTransactionStats();
+        return this.transactionStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>());
     }
 
     @GET
     @Path("/workloads")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, WorkloadStats> getWorkloadStats(@Context HttpServletRequest req) {
-        return clearWorkloadProperty(getSimulator(req).getWorkloadStats());
+        return this.workloadStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>());
     }
 
     @GET

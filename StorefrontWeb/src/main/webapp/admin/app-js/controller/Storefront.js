@@ -184,9 +184,6 @@ Ext.define('App.controller.Storefront', {
                     return;
                 }
 
-                me.checkForHeavyLoad(stats.appInstance);
-                me.checkForRegionCoverage(stats.appInstance, stats.dbStats.usedRegions);
-
                 // If we're talking to a new Storefront instance (maybe service was bounced), throw away old data so deltas aren't bogus
                 if (me.instancesAvailableHaveChanged(stats)) {
                     me.resetStats();
