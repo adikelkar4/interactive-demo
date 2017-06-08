@@ -10,16 +10,15 @@ import com.nuodb.storefront.util.Randoms;
 public class Workload {
     public static final int DEFAULT_MAX_WORKERS = 50000;
 
-    public static final Workload BROWSER = new Workload("Customer:  Browsing only", true, 2000, 1000, DEFAULT_MAX_WORKERS,
+    public static final Workload BROWSER = new Workload(WorkloadStep.MULTI_BROWSE.name(), "Customer:  Browsing only", false, 2000, 1000, DEFAULT_MAX_WORKERS,
             WorkloadStep.MULTI_BROWSE);
-    public static final Workload REVIEWER = new Workload("Customer:  Browsing & reviews", true, 2000, 1000, DEFAULT_MAX_WORKERS,
+    public static final Workload REVIEWER = new Workload(WorkloadStep.MULTI_BROWSE_AND_REVIEW.name(), "Customer:  Browsing & reviews", false, 2000, 1000, DEFAULT_MAX_WORKERS,
             WorkloadStep.MULTI_BROWSE_AND_REVIEW);
-    public static final Workload SHOPPER = new Workload("Customer:  Slow purchaser", true, 2000, 1000, DEFAULT_MAX_WORKERS, WorkloadStep.MULTI_SHOP);
-    public static final Workload SHOPPER_FAST = new Workload("Customer:  Fast purchaser", true, 500, 250, DEFAULT_MAX_WORKERS,
-            WorkloadStep.MULTI_SHOP);
-    public static final Workload ANALYST = new Workload("Back office analyst", true, 2000, 1000, DEFAULT_MAX_WORKERS, WorkloadStep.ADMIN_RUN_REPORT);
+    public static final Workload SHOPPER = new Workload(WorkloadStep.MULTI_SHOP.name(), "Customer:  Slow purchaser", false, 2000, 1000, DEFAULT_MAX_WORKERS, WorkloadStep.MULTI_SHOP);
+    public static final Workload ANALYST = new Workload(WorkloadStep.ADMIN_RUN_REPORT.name(), "Back office analyst", false, 2000, 1000, DEFAULT_MAX_WORKERS, WorkloadStep.ADMIN_RUN_REPORT);
 
     private final String name;
+    private final String description;
     private double avgThinkTimeMs;
     private double thinkTimeVariance;
     private boolean autoRepeat;
@@ -28,15 +27,16 @@ public class Workload {
     private int maxWorkers;
 
     public Workload(String name) {
-        this(name, false, 0, 0, DEFAULT_MAX_WORKERS);
+        this(name, name, false, 0, 0, DEFAULT_MAX_WORKERS);
     }
 
-    public Workload(String name, boolean autoRepeat, int avgThinkTimeMs, int thinkTimeStdDev, int maxWorkers, WorkloadStep... steps) {
+    public Workload(String name, String description, boolean autoRepeat, int avgThinkTimeMs, int thinkTimeStdDev, int maxWorkers, WorkloadStep... steps) {
         if (name == null) {
             throw new IllegalArgumentException("name");
         }
 
         this.name = name;
+        this.description = description;
         this.autoRepeat = autoRepeat;
         this.avgThinkTimeMs = avgThinkTimeMs;
         this.thinkTimeVariance = Math.pow(thinkTimeStdDev, 2);
@@ -113,4 +113,8 @@ public class Workload {
     public String toString() {
         return name;
     }
+
+	public String getDescription() {
+		return description;
+	}
 }
