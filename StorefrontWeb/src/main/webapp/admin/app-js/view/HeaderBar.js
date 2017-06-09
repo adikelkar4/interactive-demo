@@ -36,11 +36,10 @@ Ext.define('App.view.HeaderBar', {
             }
         }, {
             xtype: 'metricwell',
-            text: '<b>Hosts</b><br />per region',
+            text: '<b>Processes</b>',
             icon: 'ico-process.png',
             metric: 'dbStats.usedHostCount',
             itemId: 'metrics-hosts',
-            input: 'slider',
             inputMaxMetric: 'dbStats.hostCount',
             flex: 0.7,
             href: '/control-panel-processes',
@@ -157,7 +156,7 @@ Ext.define('App.view.HeaderBar', {
                 
                 // Unless we're stopping all, adjust non-analyst workloads only
                 if (value == 0 || !/analyst/.test($(this).attr('name'))) {
-                    $(this).val((value > 0) ? currentVal + 10 : (value < 0) ? Math.max(0, currentVal - 10) : 0);
+                    $(this).val((value > 0) ? currentVal + 25 : (value < 0) ? Math.max(0, currentVal - 25) : 0);
                 }
             });
 
