@@ -170,7 +170,7 @@ Ext.define('App.view.HeaderBar', {
                 
                 // Unless we're stopping all, adjust non-analyst workloads only
                 if (value == 0 || !/analyst/.test($(this).attr('name'))) {
-                    $(this).val((value > 0) ? currentVal + 25 : (value < 0) ? Math.max(0, currentVal - 10) : 0);
+                    $(this).val((value > 0) ? currentVal + 25 : (value < 0) ? Math.max(0, currentVal - 25) : 0);
                 }
             });
 
