@@ -32,6 +32,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
     private ScheduledThreadPoolExecutor threadPool;
     private final IStorefrontService svc;
     private final Map<String, WorkloadStats> workloadStatsMap = new HashMap<String, WorkloadStats>();
+    private final Map<String, WorkloadStats> aggregateWorkloadStats = new HashMap<>();
     private final Map<WorkloadStep, AtomicInteger> stepCompletionCounts = new TreeMap<WorkloadStep, AtomicInteger>();
 
     public SimulatorService(IStorefrontService svc) {
@@ -216,7 +217,19 @@ public class SimulatorService implements ISimulator, ISimulatorService {
         }
     }
 
-    protected class RunnableWorker implements Runnable {
+    public Map<String, WorkloadStats> getAggregateWorkloadStats() {
+		return aggregateWorkloadStats;
+	}
+    
+    public void aggregateCompletedWorkerStats(Workload workload, WorkloadStats stats) {
+    	if (!aggregateWorkloadStats.containsKey(workload.getName())) {
+    		aggregateWorkloadStats.put(workload.getName(), new WorkloadStats(workload));
+    	}
+    	WorkloadStats workloadStats = aggregateWorkloadStats.get(workload.getName());
+		workloadStats.setCompletedWorkerCount(workloadStats.getCompletedWorkerCount() + stats.getCompletedWorkerCount());
+    }
+
+	protected class RunnableWorker implements Runnable {
         private final IWorker worker;
         private long completionWorkTimeMs;
         private final ScheduledThreadPoolExecutor originalThreadPool;
@@ -292,6 +305,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
                 if (workerFailed) {
                     stats.setFailedWorkerCount(stats.getFailedWorkerCount() + 1);
                 }
+                aggregateCompletedWorkerStats(workload, stats);
             }
 
             // Queue up next run

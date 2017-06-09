@@ -2,14 +2,8 @@
 
 package com.nuodb.storefront;
 
-import java.io.DataOutputStream;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +12,6 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
-import org.codehaus.jettison.json.JSONObject;
 
 import com.nuodb.storefront.model.dto.Workload;
 import com.nuodb.storefront.model.dto.WorkloadStats;
@@ -119,6 +112,7 @@ public class StorefrontApp {
 		workloadArgs.forEach(setting -> workloadSettings.put(setting.split("=")[0], setting.split("=")[1]));
 		appArgs.forEach(setting -> appSettings.put(setting.split("=")[0], setting.split("=")[1]));
 		IStorefrontTenant tenant = StorefrontTenantManager.createTenant(dbSettings.get("db.name").split("@")[0], dbSettings);
+		tenant.setAppSettings(appSettings);
 		ISimulatorService simulator = tenant.getSimulatorService();
 		executeTasks(simulator, workloadSettings);
 		while(tenantActive(simulator, workloadSettings)) {
@@ -126,43 +120,20 @@ public class StorefrontApp {
 		}
 		printSimulatorStats(simulator, System.out);
 		StorefrontTenantManager.destroyTenant(dbSettings.get("db.name").split("@")[0]);
-//		postStatsAsJson(tenant, appSettings, tenant.getTransactionStats());
-//		postStatsAsJson(tenant, appSettings, tenant.getSimulatorService().getWorkloadStats());
 	}
 
 	private static boolean tenantActive(ISimulatorService simulator, Map<String, String> workloadSettings) {
 		int requestedThreads = workloadSettings.values().stream().mapToInt(value -> Integer.parseInt(value)).sum();
-		int completedThreads = simulator.getWorkloadStats().values().stream().mapToInt(value -> value.getCompletedWorkerCount()).sum();
-		return requestedThreads + 1 > completedThreads;
-	}
-
-	@SuppressWarnings("rawtypes")
-	private static void postStatsAsJson(IStorefrontTenant tenant, Map<String, String> appSettings, Map stats)
-			throws MalformedURLException, IOException, ProtocolException {
-		HttpURLConnection connection = buildStatsConnection(appSettings, "POST");
-		DataOutputStream stream = new DataOutputStream(connection.getOutputStream());
-		JSONObject object = new JSONObject(stats);
-		stream.writeBytes(object.toString());
-		stream.flush();
-		stream.close();
-	}
-
-	private static HttpURLConnection buildStatsConnection(Map<String, String> appSettings, String method)
-			throws MalformedURLException, IOException, ProtocolException {
-		URL url = new URL(appSettings.get("app.url"));
-		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-		connection.setRequestMethod(method);
-		connection.setRequestProperty("Content-Type", "application/json");
-		connection.setDoOutput(true);
-		return connection;
+		int completedThreads = simulator.getAggregateWorkloadStats().values().stream().mapToInt(value -> value.getCompletedWorkerCount()).sum();
+		return requestedThreads > completedThreads;
 	}
 
 	public static void executeTasks(ISimulatorService simulator, Map<String, String> workloadSettings)
 			throws InterruptedException {
 		for (String setting : workloadSettings.keySet()) {
 			WorkloadStep step = WorkloadStep.valueOf(setting.split("\\.")[1].toUpperCase());
-			simulator.addWorkers(new Workload(step.name() + "-" + Long.toString(System.currentTimeMillis()), false, 2000,
-					1500, Workload.DEFAULT_MAX_WORKERS, step), Integer.parseInt(workloadSettings.get(setting)), 25);
+			simulator.adjustWorkers(simulator.getWorkloadStats().get(step.name()).getWorkload(),
+					Integer.parseInt(workloadSettings.get(setting)), Integer.parseInt(workloadSettings.get(setting)));
 		}
 	}
 	
@@ -170,7 +141,7 @@ public class StorefrontApp {
         out.println();
         out.println(String.format("%-30s %8s %8s %8s %8s | %7s %9s %7s %9s", "Workload", "Active", "Failed", "Killed", "Complete", "Steps",
                 "Avg (s)", "Work", "Avg (s)"));
-        for (Map.Entry<String, WorkloadStats> statsEntry : simulator.getWorkloadStats().entrySet()) {
+        for (Map.Entry<String, WorkloadStats> statsEntry : simulator.getAggregateWorkloadStats().entrySet()) {
             String workloadName = statsEntry.getKey();
             WorkloadStats stats = statsEntry.getValue();
 

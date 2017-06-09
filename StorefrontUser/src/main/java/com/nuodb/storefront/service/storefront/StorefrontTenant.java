@@ -41,6 +41,7 @@ import com.nuodb.storefront.service.ISimulatorService;
 import com.nuodb.storefront.service.IStorefrontPeerService;
 import com.nuodb.storefront.service.IStorefrontService;
 import com.nuodb.storefront.service.IStorefrontTenant;
+import com.nuodb.storefront.service.TenantStatisticsService;
 import com.nuodb.storefront.service.datagen.DataGeneratorService;
 import com.nuodb.storefront.service.dbapi.DbApiProxy;
 import com.nuodb.storefront.service.simulator.SimulatorService;
@@ -62,6 +63,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 	private boolean initializedApp = false;
 	private final AppInstance appInstance;
 	private final Configuration hibernateCfg;
+	private Map<String, String> appSettings;
 	private SessionFactory sessionFactory;
 	private ISimulatorService simulatorSvc;
 	private IHeartbeatService heartbeatSvc;
@@ -70,6 +72,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 	private ScheduledExecutorService executor;
 	private final StringWriter logWriter = new StringWriter();
 	private final Map<String, TransactionStats> transactionStatsMap = new HashMap<String, TransactionStats>();
+	private TenantStatisticsService statsSvc;
 
 	// Initialize API client config
 	static {
@@ -137,6 +140,8 @@ public class StorefrontTenant implements IStorefrontTenant {
 				if (sampler != null) {
 					executor.scheduleAtFixedRate(sampler, 0, StorefrontApp.CPU_SAMPLING_INTERVAL_SEC, TimeUnit.SECONDS);
 				}
+				
+				executor.scheduleAtFixedRate(getStatsSvc(), 0, 500, TimeUnit.MILLISECONDS);
 			}
 		}
 	}
@@ -144,7 +149,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 	public void shutDown() {
 		synchronized (lock) {
 			if (executor != null) {
-				executor.shutdownNow();
+				executor.shutdown();
 			}
 			if (simulatorSvc != null) {
 				simulatorSvc.removeAll();
@@ -153,6 +158,8 @@ public class StorefrontTenant implements IStorefrontTenant {
 				sessionFactory.close();
 			}
 		}
+		Thread thread = new Thread(statsSvc);
+		thread.run();
 	}
 
 	public DbConnInfo getDbConnInfo() {
@@ -338,6 +345,23 @@ public class StorefrontTenant implements IStorefrontTenant {
 	protected String getDbApiHost() {
 		String apiHost = StorefrontApp.DBAPI_HOST;
 		return (!StringUtils.isEmpty(apiHost)) ? apiHost : getDbConnInfo().getHost();
+	}
+
+	public Map<String, String> getAppSettings() {
+		return appSettings;
+	}
+	public void setAppSettings(Map<String, String> newValue) {
+		this.appSettings = newValue;
+	}
+
+	public TenantStatisticsService getStatsSvc() {
+		if (statsSvc == null) {
+			statsSvc = new TenantStatisticsService(this);
+		}
+		return statsSvc;
+	}
+	public void setStatsSvc(TenantStatisticsService statsSvc) {
+		this.statsSvc = statsSvc;
 	}
 
 }

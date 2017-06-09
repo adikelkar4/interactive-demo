@@ -67,4 +67,8 @@ public interface IStorefrontTenant {
     public StringWriter getLogWriter();
     
     public Map<String, TransactionStats> getTransactionStats();
+    
+    public Map<String, String> getAppSettings();
+    
+    public void setAppSettings(Map<String, String> newValue);
 }
