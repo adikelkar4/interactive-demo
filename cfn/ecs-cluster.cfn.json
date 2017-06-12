@@ -1,0 +1,1063 @@
+{ "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "AWS CloudFormation template to create a new VPC or use an existing VPC for ECS deployment",
+
+  "Mappings" : {
+
+    "VpcCidrs" : {
+      "eu-central-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "sa-east-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "ap-northeast-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "eu-west-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "us-east-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "us-east-2" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "us-west-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "us-west-2" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "ap-southeast-2" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "ap-southeast-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" }
+    },
+
+    "ARNNamespace": {
+      "us-east-1":      { "Partition": "aws" },
+      "us-east-2":      { "Partition": "aws" },
+      "us-west-2":      { "Partition": "aws" },
+      "us-west-1":      { "Partition": "aws" },
+      "eu-west-1":      { "Partition": "aws" },
+      "eu-central-1":   { "Partition": "aws" },
+      "ap-southeast-1": { "Partition": "aws" },
+      "ap-northeast-1": { "Partition": "aws" },
+      "ap-southeast-2": { "Partition": "aws" },
+      "sa-east-1":      { "Partition": "aws" },
+      "us-gov-west-1":  { "Partition": "aws-us-gov" }
+    },
+
+    "S3Region": {
+      "us-east-1":      { "Region": "us-east-1" },
+      "us-east-2":      { "Region": "us-east-2" },
+      "us-west-2":      { "Region": "us-east-1" },
+      "us-west-1":      { "Region": "us-east-1" },
+      "eu-west-1":      { "Region": "us-east-1" },
+      "eu-central-1":   { "Region": "us-east-1" },
+      "ap-southeast-1": { "Region": "us-east-1" },
+      "ap-northeast-1": { "Region": "us-east-1" },
+      "ap-southeast-2": { "Region": "us-east-1" },
+      "sa-east-1":      { "Region": "us-east-1" },
+      "us-gov-west-1":  { "Region": "us-gov-west-1" }
+    }
+
+  },
+
+  "Parameters" : {
+    "Buckets": {
+      "Description": "List deploy and media buckets",
+      "Type": "CommaDelimitedList"
+    },
+
+    "DeployBucketPrefix" : {
+      "Description" : "not used anymore",
+      "Type" : "String",
+      "Default" : "blank"
+    },
+
+    "storeFrontWebDocker" : {
+      "Description" : "Storefront Web docker container address in docker.io",
+      "Type": "String",
+      "Default": "docker.io/nuodb/storefrontweb-demo:latest"
+    },
+
+    "storeFrontUserDocker" : {
+      "Description" : "Storefront User work load container address in docker.io",
+      "Type" : "String",
+      "Default" : "docker.io/nuodb/storefrontuser-demo:latest"
+    },
+
+    "nuodbDocker" : {
+      "Description" : "NuoDB docker container stored in docker.io",
+      "Type" : "String",
+      "Default" : "docker.io/nuodb/nuodb-ce-2.6.1:latest"
+    },
+
+    "dbuser" : {
+      "Description": "Database user name",
+      "Type": "String"
+    },
+
+    "dbpassword" : {
+      "Description": "Database user password",
+      "Type": "String"
+    },
+
+    "dbname" : {
+      "Description": "Database name",
+      "Type": "String"
+    },
+
+    "EcsAmiId" : {
+      "Type" : "String",
+      "Description" : "ECS AMI Id"
+    },
+
+    "EcsInstanceType" : {
+      "Type" : "String",
+      "Description" : "ECS EC2 instance type",
+      "Default" : "m4.large"
+    },
+
+    "KeyName" : {
+      "Type" : "String",
+      "Description" : "Optional - Name of an existing EC2 KeyPair to enable SSH access to the ECS instances",
+      "Default" : ""
+    },
+
+    "VpcId" : {
+      "Type" : "String",
+      "Description" : "Optional - VPC Id of existing VPC. Leave blank to have a new VPC created",
+      "Default" : "",
+      "AllowedPattern" : "^(?:vpc-[0-9a-f]{8}|)$",
+      "ConstraintDescription" : "VPC Id must begin with 'vpc-' or leave blank to have a new VPC created"
+    },
+
+    "SubnetIds" : {
+      "Type" : "CommaDelimitedList",
+      "Description" : "Optional - Comma separated list of existing VPC Subnet Ids where ECS instances will run",
+      "Default" : ""
+    },
+
+    "AsgMaxSize" : {
+      "Type" : "Number",
+      "Description" : "Maximum size and initial Desired Capacity of ECS Auto Scaling Group",
+      "Default" : "1"
+    },
+
+    "EcsClusterName" : {
+      "Type" : "String",
+      "Description" : "ECS Cluster Name",
+      "Default" : "default"
+    },
+
+    "EcsPort" : {
+      "Type" : "String",
+      "Description" : "Optional - Security Group port to open on ECS instances - defaults to port 80",
+      "Default" : "48004"
+    },
+
+    "ElbPort" : {
+      "Type" : "String",
+      "Description" : "Optional - Security Group port to open on ELB - port 80 will be open by default",
+      "Default" : "48004"
+    },
+
+    "ElbProtocol" : {
+      "Type" : "String",
+      "Description" : "Optional - ELB Protocol - defaults to HTTP",
+      "Default" : "TCP"
+    },
+
+    "ElbHealthCheckTarget" : {
+      "Type" : "String",
+      "Description" : "Optional - Health Check Target for ELB - defaults to TCP:48004",
+      "Default" : "TCP:48004"
+    },
+
+    "SourceCidr" : {
+      "Type" : "String",
+      "Description" : "Optional - CIDR/IP range for EcsPort and ElbPort - defaults to 0.0.0.0/0",
+      "Default" : "0.0.0.0/0"
+    },
+
+    "EcsEndpoint" : {
+      "Type" : "String",
+      "Description" : "Optional : ECS Endpoint for the ECS Agent to connect to",
+      "Default" : ""
+    },
+
+    "CreateElasticLoadBalancer" : {
+      "Type" : "String",
+      "Description" : "Optional : When set to true, creates a ELB for ECS Service",
+      "Default" : "true"
+    }
+
+  },
+
+  "Conditions" : {
+    "CreateVpcResources" : { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] },
+    "ExistingVpcResources" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] } ] },
+    "SetEndpointToECSAgent" : { "Fn::Not" : [ {
+      "Fn::Equals" : [ { "Ref" : "EcsEndpoint" }, "" ]
+    } ] },
+    "CreateELBForExistingVpc" : { "Fn::And" : [
+      { "Fn::Equals" : [ { "Ref" : "CreateElasticLoadBalancer" }, "true" ] },
+      { "Condition" : "ExistingVpcResources" }
+    ] },
+    "CreateELBForNewVpc" : { "Fn::And" : [
+      { "Fn::Equals" : [ { "Ref" : "CreateElasticLoadBalancer" }, "true" ] },
+      { "Condition" : "CreateVpcResources" }
+    ] },
+    "CreateELB" : { "Fn::Or": [ { "Condition" : "CreateELBForExistingVpc" }, { "Condition" : "CreateELBForNewVpc" } ] },
+    "CreateEC2LCWithKeyPair" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "KeyName" }, "" ] } ] },
+    "CreateEC2LCWithoutKeyPair" : { "Fn::Equals" : [ { "Ref" : "KeyName" }, "" ] }
+  },
+
+  "Resources" : {
+
+    "Vpc" : {
+      "Condition" : "CreateVpcResources",
+      "Type" : "AWS::EC2::VPC",
+      "Properties" : {
+        "CidrBlock" : { "Fn::FindInMap" : [ "VpcCidrs", { "Ref" : "AWS::Region" }, "vpc" ] },
+        "EnableDnsSupport" : "true",
+        "EnableDnsHostnames" : "true"
+      }
+    },
+
+    "PubSubnetAz1" : {
+      "Condition" : "CreateVpcResources",
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "VpcId" : { "Ref" : "Vpc" },
+        "CidrBlock" : { "Fn::FindInMap" : [ "VpcCidrs", { "Ref" : "AWS::Region" }, "pubsubnet1" ] },
+        "AvailabilityZone" : { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+      }
+    },
+
+    "PubSubnetAz2" : {
+      "Condition" : "CreateVpcResources",
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "VpcId" : { "Ref" : "Vpc" },
+        "CidrBlock" : { "Fn::FindInMap" : [ "VpcCidrs", { "Ref" : "AWS::Region" }, "pubsubnet2" ] },
+        "AvailabilityZone" : { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+      }
+    },
+
+    "InternetGateway" : {
+      "Condition" : "CreateVpcResources",
+      "Type" : "AWS::EC2::InternetGateway"
+    },
+
+    "AttachGateway" : {
+      "Condition" : "CreateVpcResources",
+      "Type" : "AWS::EC2::VPCGatewayAttachment",
+      "Properties" : {
+        "VpcId" : { "Ref" : "Vpc" },
+        "InternetGatewayId" : { "Ref" : "InternetGateway" }
+      }
+    },
+
+    "RouteViaIgw" : {
+      "Condition" : "CreateVpcResources",
+      "Type" : "AWS::EC2::RouteTable",
+      "Properties" : {
+        "VpcId" : {"Ref" : "Vpc"}
+      }
+    },
+
+    "PublicRouteViaIgw" : {
+      "Condition" : "CreateVpcResources",
+      "Type" : "AWS::EC2::Route",
+      "Properties" : {
+        "RouteTableId" : { "Ref" : "RouteViaIgw" },
+        "DestinationCidrBlock" : "0.0.0.0/0",
+        "GatewayId" : { "Ref" : "InternetGateway" }
+      }
+    },
+
+    "PubSubnet1RouteTableAssociation" : {
+      "Condition" : "CreateVpcResources",
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "SubnetId" : { "Ref" : "PubSubnetAz1" },
+        "RouteTableId" : { "Ref" : "RouteViaIgw" }
+      }
+    },
+
+    "PubSubnet2RouteTableAssociation" : {
+      "Condition" : "CreateVpcResources",
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "SubnetId" : { "Ref" : "PubSubnetAz2" },
+        "RouteTableId" : { "Ref" : "RouteViaIgw" }
+      }
+    },
+
+    "ElbSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "ELB Allowed Ports",
+        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "ElbPort" }, "ToPort" : { "Ref" : "ElbPort" },
+            "CidrIp" : { "Ref" : "SourceCidr" } }
+        ]
+      }
+    },
+
+    "EcsSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "ECS Allowed Ports",
+        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
+        "SecurityGroupIngress" : { "Fn::If" : [ "CreateELB",
+          [
+            { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "EcsPort" }, "ToPort" : { "Ref" : "EcsPort" },
+              "CidrIp" : { "Ref" : "SourceCidr" } },
+            { "IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "SourceSecurityGroupId" :  { "Ref" : "ElbSecurityGroup" } }
+          ],
+          [
+            { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "EcsPort" }, "ToPort" : { "Ref" : "EcsPort" },
+              "CidrIp" : { "Ref" : "SourceCidr" } }
+          ]
+        ] }
+      }
+    },
+
+    "EcsElasticLoadBalancer" : {
+      "Condition" : "CreateELBForNewVpc",
+      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties" : {
+        "SecurityGroups" : [ { "Ref" : "ElbSecurityGroup" } ],
+        "Subnets" : [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ],
+        "CrossZone" : "true",
+        "Listeners" : [ {
+          "LoadBalancerPort" : { "Ref" : "ElbPort" },
+          "InstancePort" : { "Ref" : "EcsPort" },
+          "Protocol" : { "Ref" : "ElbProtocol" }
+        } ],
+        "HealthCheck" : {
+          "Target" : { "Ref" : "ElbHealthCheckTarget" },
+          "HealthyThreshold" : "2",
+          "UnhealthyThreshold" : "10",
+          "Interval" : "30",
+          "Timeout" : "5"
+        }
+      }
+    },
+
+    "EcsElasticLoadBalancerExistingVpc" : {
+      "Condition" : "CreateELBForExistingVpc",
+      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties" : {
+        "SecurityGroups" : [ { "Ref" : "ElbSecurityGroup" } ],
+        "Subnets" : { "Ref" : "SubnetIds" },
+        "CrossZone" : "true",
+        "Listeners" : [ {
+          "LoadBalancerPort" : { "Ref" : "ElbPort" },
+          "InstancePort" : { "Ref" : "EcsPort" },
+          "Protocol" : { "Ref" : "ElbProtocol" }
+        } ],
+        "HealthCheck" : {
+          "Target" : { "Ref" : "ElbHealthCheckTarget" },
+          "HealthyThreshold" : "2",
+          "UnhealthyThreshold" : "10",
+          "Interval" : "30",
+          "Timeout" : "5"
+        }
+      }
+    },
+
+    "ECSInstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement":
+          [
+            {
+              "Effect": "Allow",
+              "Principal" : { "Service": [ "ec2.amazonaws.com", "ecs-tasks.amazonaws.com" ] },
+              "Action": [ "sts:AssumeRole" ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies":
+        [
+          {
+            "PolicyName": "deployRead",
+            "PolicyDocument": {
+              "Statement":
+              [
+                {
+                  "Action": [ "s3:Get*", "s3:List*" ],
+                  "Effect": "Allow",
+                  "Resource":
+                  [
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":s3:::", { "Fn::Select" : [ "0", {"Ref" : "Buckets"}]}, "/"]]},
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":s3:::", { "Fn::Select" : [ "0", {"Ref" : "Buckets"}]}, "/*"]]}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "deployBucketRead",
+            "PolicyDocument": {
+              "Statement":
+              [
+                {
+                  "Action": [  "s3:List*" ],
+                  "Effect": "Allow",
+                  "Resource":
+                  [
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":s3:::", { "Fn::Select" : [ "0", {"Ref" : "Buckets"}]}]]}
+                  ]
+                }
+              ]
+            }
+          },
+
+          {
+            "PolicyName": "cloudwatchLogs",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:GetLogEvents",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogGroups",
+                    "logs:DescribeLogStreams"
+                  ],
+                  "Resource": [
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":logs:*:*:*" ]]}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName" : "ECSCreateCluster",
+            "PolicyDocument" : {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "createandattachvolume",
+            "PolicyDocument":  {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "Stmt1441831086000",
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:AttachVolume",
+                    "ec2:CreateVolume",
+                    "ec2:DescribeVolumes",
+                    "ec2:CreateSnapshot",
+                    "ec2:DeleteSnapshot",
+                    "ec2:DescribeSnapshots",
+                    "ec2:CreateTags",
+                    "ec2:ModifyInstanceAttribute"
+                  ],
+                  "Resource": [ "*" ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "manageElb",
+            "PolicyDocument":  {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "Stmt1441831086000",
+                  "Effect": "Allow",
+                  "Action": [
+                    "elasticloadbalancing:*"
+                  ],
+                  "Resource": [ "*" ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    "ECSInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [ { "Ref": "ECSInstanceRole" } ]
+      }
+    },
+
+
+
+    "EcsInstanceLc" : {
+      "DependsOn" : "EcsCluster",
+      "Condition" : "CreateEC2LCWithKeyPair",
+      "Type" : "AWS::AutoScaling::LaunchConfiguration",
+      "Properties" : {
+        "ImageId": {
+          "Ref": "EcsAmiId"
+        },
+        "InstanceType": {
+          "Ref": "EcsInstanceType"
+        },
+        "AssociatePublicIpAddress": true,
+        "IamInstanceProfile": {
+          "Ref": "ECSInstanceProfile"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "EcsSecurityGroup"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\n",
+                "echo ECS_CLUSTER=", {"Ref": "EcsClusterName"}, " >> /etc/ecs/ecs.config\n",
+                "echo ECS_BACKEND_HOST=", {"Ref": "EcsEndpoint"}, " >> /etc/ecs/ecs.config\n"
+              ]
+            ]
+          }
+        }
+      }
+    },
+
+    "EcsInstanceLcWithoutKeyPair" : {
+      "Condition" : "CreateEC2LCWithoutKeyPair",
+      "Type" : "AWS::AutoScaling::LaunchConfiguration",
+      "Properties" : {
+        "ImageId" : { "Ref" : "EcsAmiId" },
+        "InstanceType" : { "Ref" : "EcsInstanceType" },
+        "AssociatePublicIpAddress" : true,
+        "IamInstanceProfile": { "Ref": "ECSInstanceProfile" },
+        "SecurityGroups" : [ { "Ref" : "EcsSecurityGroup" } ],
+        "UserData" : { "Fn::If" : [
+          "SetEndpointToECSAgent" ,
+          { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+            "echo ECS_CLUSTER=", { "Ref" : "EcsClusterName" }, " >> /etc/ecs/ecs.config",
+            "\necho ECS_BACKEND_HOST=", { "Ref" : "EcsEndpoint" }, " >> /etc/ecs/ecs.config"
+          ] ] } },
+          { "Fn::Base64" : { "Fn::Join" : ["", [
+            "#!/bin/bash\n",
+            "echo ECS_CLUSTER=", { "Ref" : "EcsClusterName" }, " >> /etc/ecs/ecs.config"
+          ] ] } }
+        ] }
+      }
+    },
+
+    "EcsInstanceAsg" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "Properties" : {
+        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }, { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
+        "VPCZoneIdentifier" : { "Fn::If" : [ "CreateVpcResources", [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ], { "Ref" : "SubnetIds" } ] },
+        "LaunchConfigurationName" : { "Fn::If" : [ "CreateEC2LCWithKeyPair", { "Ref" : "EcsInstanceLc" }, { "Ref" : "EcsInstanceLcWithoutKeyPair" } ] },
+        "MinSize" : "1",
+        "MaxSize" : { "Ref" : "AsgMaxSize" },
+        "DesiredCapacity" : { "Ref" : "AsgMaxSize" },
+        "Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : ["", [ "ECS Instance - ", { "Ref" : "AWS::StackName" } ] ] }, "PropagateAtLaunch" : "true" } ]
+      }
+    },
+
+    "EcsCluster" : {
+      "Type" : "AWS::ECS::Cluster",
+      "Properties" : {
+        "ClusterName" : { "Ref" : "EcsClusterName" }
+      }
+    },
+
+    "LambdaInstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement":
+          [
+            {
+              "Effect": "Allow",
+              "Principal" : { "Service": [ "lambda.amazonaws.com" ] },
+              "Action": [ "sts:AssumeRole" ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies":
+        [
+          {
+            "PolicyName": "ec2ContainerServices",
+            "PolicyDocument":{
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    "deployNuodbContainers": {
+      "DependsOn": [
+        "EcsInstanceAsg"
+      ],
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaInstanceRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile" : { "Fn::Join" : ["\n", [
+            "import boto3",
+            "import cfnresponse",
+
+            "client = boto3.client('ecs')",
+
+            "def handler(event, context):",
+            "    print(event)",
+            "    dockerImage = event['ResourceProperties']['dockerImage']",
+            "    region = event['ResourceProperties']['region']",
+            "    peer_address = event['ResourceProperties']['peer_address']",
+            "    cluster = event['ResourceProperties']['cluster']",
+            "    role = event['ResourceProperties']['role']",
+            "    containerType = [['BROKER', 'SM', 'TE'], ['48004', '48010', '48011']]",
+            "    elbName = event['ResourceProperties']['elbName']",
+
+            "    for x in range(0,3):",
+            "        try:",
+            "            response = client.register_task_definition(",
+            "                family=containerType[0][x] + '-family',",
+            "                taskRoleArn=role,",
+            "                containerDefinitions=[",
+            "                 {",
+            "                   'name': containerType[0][x] + '-definition',",
+            "                   'image': dockerImage,",
+            "                   'cpu': 10,",
+            "                   'memoryReservation': 4096,",
+            "                   'readonlyRootFilesystem': False,",
+            "                   'privileged': True,",
+            "                   'environment': [",
+            "                     {",
+            "                       'name': 'NODE_REGION',",
+            "                       'value': region",
+            "                     },",
+            "                     {",
+            "                       'name': 'ENV_TYPE',",
+            "                       'value': 'AWSECS'",
+            "                     },",
+            "                     {",
+            "                       'name': 'AGENT_PORT',",
+            "                       'value': '48011'",
+            "                     },",
+            "                     {",
+            "                       'name': 'BROKER_PORT',",
+            "                       'value': '48004'",
+            "                     },",
+            "                     {",
+            "                       'name': 'NODE_PORT',",
+            "                       'value': '48010'",
+            "                     },",
+            "                     {",
+            "                       'name': 'NODE_TYPE',",
+            "                       'value': containerType[0][x]",
+            "                     },",
+            "                     {",
+            "                       'name': 'PEER_ADDRESS',",
+            "                       'value': peer_address + ':48004'",
+            "                     }",
+            "                   ],",
+            "                   'portMappings': [",
+            "                     {",
+            "                       'containerPort': 48004,",
+            "                       'hostPort': 48004,",
+            "                       'protocol': 'tcp'",
+            "                     }",
+            "                   ],",
+            "                 }",
+            "               ]",
+            "            )",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Successful task registration: ' + containerType[0][x] + '-definition'",
+            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "        except Exception as e:",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Failed to create broker task definition'",
+            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')",
+            "        try:",
+            "            if containerType[0][x] == 'BROKER':",
+            "                lbdata=[{'loadBalancerName': elbName,'containerName': 'BROKER-definition', 'containerPort': 48004 }]",
+            "            else:",
+            "                lbdata=[]",
+
+            "            response = client.create_service(",
+            "                cluster=cluster,",
+            "                serviceName=containerType[0][x] + '-service',",
+            "                taskDefinition=containerType[0][x] + '-family',",
+            "                desiredCount=1,",
+            "                placementStrategy=[",
+            "                  {",
+            "                    'type': 'random'",
+            "                  }",
+            "                ],",
+            "                loadBalancers=lbdata",
+            "            )",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Successful task registration: ' + containerType[0][x] + '-service'",
+            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "        except Exception as e:",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Failed to create broker service'",
+            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
+
+          ]]}
+        },
+        "Runtime": "python2.7",
+        "Timeout": "300"
+      }
+    },
+
+    "deployDemoWebContainer": {
+      "DependsOn": [
+        "EcsInstanceAsg"
+      ],
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaInstanceRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile" : { "Fn::Join" : ["\n", [
+            "import boto3",
+            "import cfnresponse",
+
+            "client = boto3.client('ecs')",
+
+            "def handler(event, context):",
+            "    print(event)",
+            "    dockerImage = event['ResourceProperties']['dockerImage']",
+            "    region = event['ResourceProperties']['region']",
+            "    cluster = event['ResourceProperties']['cluster']",
+            "    role = event['ResourceProperties']['role']",
+            "    jdbc_url = event['ResourceProperties']['jdbc_url']",
+            "    dbuser = event['ResourceProperties']['dbuser']",
+            "    dbpassword = event['ResourceProperties']['dbpassword']",
+            "    dbname = event['ResourceProperties']['dbname']",
+
+            "    try:",
+            "        response = client.register_task_definition(",
+            "            family='storefront-family',",
+            "            taskRoleArn=role,",
+            "            containerDefinitions=[",
+            "              {",
+            "                'name': 'storefront-definition',",
+            "                'image': dockerImage,",
+            "                'cpu': 10,",
+            "                'memoryReservation': 4096,",
+            "                'readonlyRootFilesystem': False,",
+            "                'privileged': True,",
+            "                'environment': [",
+            "                   {",
+            "                     'name': 'ENV_TYPE',",
+            "                     'value': 'AWSECS'",
+            "                   },",
+            "                   {",
+            "                     'name': 'JDBC_URL',",
+            "                     'value': jdbc_url",
+            "                   },",
+            "                   {",
+            "                     'name': 'BROKER_PORT',",
+            "                     'value': '48004'",
+            "                   }",
+            "                ],",
+            "                'portMappings': [",
+            "                  {",
+            "                    'containerPort': 8080,",
+            "                    'hostPort': 8080,",
+            "                    'protocol': 'tcp'",
+            "                  }",
+            "                ],",
+            "              }",
+            "           ]",
+            "        )",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Successful task registration: storefront-definition'",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "    except Exception as e:",
+            "            print(e.args)",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Failed to create storefront task definition'",
+            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')",
+            "    try:",
+            "        response = client.create_service(",
+            "                cluster=cluster,",
+            "                serviceName='storefront-service',",
+            "                taskDefinition='storefront-family',",
+            "                desiredCount=1,",
+            "                placementStrategy=[",
+            "                  {",
+            "                    'type': 'random'",
+            "                  }",
+            "                ]",
+            "        )",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Successful task registration: storefront-service'",
+            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "    except Exception as e:",
+            "            print(e.args)",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Failed to create storefront service'",
+            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
+
+          ]]}
+        },
+        "Runtime": "python2.7",
+        "Timeout": "300"
+      }
+    },
+
+    "deployUserContainer": {
+      "DependsOn": [
+        "EcsInstanceAsg"
+      ],
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaInstanceRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile" : { "Fn::Join" : ["\n", [
+            "import boto3",
+            "import cfnresponse",
+
+            "client = boto3.client('ecs')",
+
+            "def handler(event, context):",
+            "    print(event)",
+            "    dockerImage = event['ResourceProperties']['dockerImage']",
+            "    region = event['ResourceProperties']['region']",
+            "    cluster = event['ResourceProperties']['cluster']",
+            "    role = event['ResourceProperties']['role']",
+            "    jdbc_url = event['ResourceProperties']['jdbc_url']",
+            "    dbuser = event['ResourceProperties']['dbuser']",
+            "    dbpassword = event['ResourceProperties']['dbpassword']",
+            "    dbname = event['ResourceProperties']['dbname']",
+
+            "    try:",
+            "        response = client.register_task_definition(",
+            "            family='storefrontuser-family',",
+            "            taskRoleArn=role,",
+            "            containerDefinitions=[",
+            "             {",
+            "               'name': 'storefrontuser-definition',",
+            "               'image': dockerImage,",
+            "               'cpu': 10,",
+            "               'memoryReservation': 4096,",
+            "               'readonlyRootFilesystem': False,",
+            "               'privileged': True,",
+            "               'environment': [",
+            "                         {",
+            "                           'name': 'ENV_TYPE',",
+            "                           'value': 'AWSECS'",
+            "                         },",
+            "                         {",
+            "                           'name': 'JDBC_URL',",
+            "                           'value': jdbc_url",
+            "                         },",
+            "                         {",
+            "                           'name': 'BROKER_PORT',",
+            "                           'value': '48004'",
+            "                         }",
+            "               ],",
+            "               'portMappings': [",
+            "                 {",
+            "                   'containerPort': 8080,",
+            "                   'hostPort': 8080,",
+            "                   'protocol': 'tcp'",
+            "                 }",
+            "               ],",
+            "             }",
+            "           ]",
+            "        )",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Successful task registration: storefrontuser-definition'",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "    except Exception as e:",
+            "        print(e.args)",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Failed to create storefrontuser task definition'",
+            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')",
+            "    try:",
+            "        response = client.create_service(",
+            "            cluster=cluster,",
+            "            serviceName='storefrontuser-service',",
+            "            taskDefinition='storefrontuser-family',",
+            "            desiredCount=0,",
+            "            placementStrategy=[",
+            "              {",
+            "                'type': 'random'",
+            "              }",
+            "            ]",
+            "        )",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Successful task registration: storefrontuser-service'",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "    except Exception as e:",
+            "        print(e.args)",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Failed to create storefrontuser service'",
+            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
+
+          ]]}
+        },
+        "Runtime": "python2.7",
+        "Timeout": "300"
+      }
+    },
+
+
+    "UpdateUserLoad": {
+      "DependsOn": [
+        "EcsInstanceAsg"
+      ],
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaInstanceRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile" : { "Fn::Join" : ["", [
+            "import boto3\n",
+            "import cfnresponse\n",
+
+            "client = boto3.client('ecs')\n",
+
+            "def handler(event, context):\n",
+            "    print(event)\n",
+            "    serviceName = event['ResourceProperties']['serviceName']\n",
+            "    count = event['ResourceProperties']['count']\n",
+            "    try:\n",
+
+            "        response = client.update_service(\n",
+            "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
+            "            service=serviceName,\n",
+            "            desiredCount=count\n",
+            "        )\n",
+
+            "            responseData = {}\n",
+            "            responseData['Data'] = 'Successful updated service'\n",
+            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)\n",
+            "    except Exception as e:\n",
+            "            print(e.args)\n",
+            "            responseData = {}\n",
+            "            responseData['Data'] = 'Failed to update service'\n",
+            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')\n"
+          ]]}
+        },
+        "Runtime": "python2.7",
+        "Timeout": "300"
+      }
+    },
+
+    "DeployUserContainer" : {
+      "DependsOn" : ["deployUserContainer"],
+      "Type": "Custom::LaunchWebContainer",
+      "Version" : "1.0",
+      "Properties" : {
+        "ServiceToken": {"Fn::GetAtt" : [ "deployUserContainer", "Arn"] },
+        "dockerImage": { "Ref" : "storeFrontUserDocker" },
+        "peer_address" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "role" : { "Ref" : "ECSInstanceRole" },
+        "region": { "Ref" : "AWS::Region" },
+        "cluster" : { "Ref" : "EcsClusterName" },
+        "jdbc_url" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "dbuser" : { "Ref" : "dbuser" },
+        "dbpassword": { "Ref" : "dbpassword" },
+        "dbname" : { "Ref": "dbname" }
+      }
+    },
+
+    "DeployNuoDBContainer" : {
+      "DependsOn" : ["deployDemoWebContainer"],
+      "Type": "Custom::LaunchWebContainer",
+      "Version" : "1.0",
+      "Properties" : {
+        "ServiceToken": {"Fn::GetAtt" : [ "deployNuodbContainers", "Arn"] },
+        "dockerImage": { "Ref" : "nuodbDocker" },
+        "peer_address" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "role" : { "Ref" : "ECSInstanceRole" },
+        "region": { "Ref" : "AWS::Region" },
+        "cluster" : { "Ref" : "EcsClusterName" },
+        "elbName" : { "Ref" : "EcsElasticLoadBalancer" },
+        "dbuser" : { "Ref" : "dbuser" },
+        "dbpassword": { "Ref" : "dbpassword" },
+        "dbname" : { "Ref": "dbname" }
+      }
+    },
+
+    "DeployWebContainer" : {
+      "DependsOn" : ["DeployNuoDBContainer"],
+      "Type": "Custom::LaunchWebContainer",
+      "Version" : "1.0",
+      "Properties" : {
+        "ServiceToken": {"Fn::GetAtt" : [ "deployDemoWebContainer", "Arn"] },
+        "dockerImage": { "Ref" : "storeFrontWebDocker" },
+        "jdbc_url" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "role" : { "Ref" : "ECSInstanceRole" },
+        "region": { "Ref" : "AWS::Region" },
+        "cluster" : { "Ref" : "EcsClusterName" },
+        "dbuser" : { "Ref" : "dbuser" },
+        "dbpassword": { "Ref" : "dbpassword" },
+        "dbname" : { "Ref": "dbname" }
+      }
+    }
+
+  },
+
+  "Outputs" : {
+
+    "EcsInstanceAsgName" : {
+      "Description" : "Auto Scaling Group Name for ECS Instances",
+      "Value" : { "Ref" : "EcsInstanceAsg" }
+    },
+    "EcsElbName" : {
+      "Description" : "Load Balancer for ECS Service",
+      "Value" : { "Fn::If" : [ "CreateELB",
+        { "Fn::If" : [ "CreateELBForNewVpc", { "Ref" : "EcsElasticLoadBalancer" }, { "Ref" : "EcsElasticLoadBalancerExistingVpc" } ] },
+        ""
+      ] }
+    }
+
+  }
+
+}
