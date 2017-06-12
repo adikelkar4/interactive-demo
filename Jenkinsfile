@@ -1,21 +1,44 @@
+def tag_prefix=env.BRANCH_NAME.replaceAll(/[^a-zA-Z0-9_]/,"_")
+
 node('aml') {
-   stage 'Maven'
+   stage('checkout') {
+      checkout scm
+   }
    docker.image("maven:3.3.9").inside {
-       sh 'mvn clean install '
+     stage('Downloading Dependencies') {
+       sh 'mvn dependency:resolve -Dmaven.repo.local=./maven-local'
+     }
+     stage('Maven Build') {
+       sh 'mvn clean install -Dmaven.repo.local=./maven-local'
+     }
+     stage('Archiving') {
        archive '*/target/*.jar,*/target/*.war'
+     }
    }
 
-   stage 'docker build'
    echo "Branch name is ${BRANCH_NAME}"
 
-   withDockerRegistry([credentialsId: 'docker.io-nuodb-push', url: 'https://index.docker.io/v1/']) {
-     dir("StorefrontUser") {
-       def user = docker.build "nuodb/storefrontuser-demo"
-       user.push("${JOB_BASE_NAME}-${BUILD_NUMBER}")
+   withDockerRegistry([credentialsId: 'docker.io-nuodb-push']) {
+     def web
+     def user
+     stage('docker build') {
+       dir("StorefrontUser") {
+         user = docker.build "nuodb/storefrontuser-demo"
+       }
+       dir("StorefrontWeb") {
+         web = docker.build "nuodb/storefrontweb-demo"
+       }
      }
-     dir("StorefrontWeb") {
-       def web = docker.build "nuodb/storefrontweb-demo"
-       web.push("${JOB_BASE_NAME}-${BUILD_NUMBER}")
+     stage('docker push') {
+       user.push("${tag_prefix}-${BUILD_NUMBER}")
+       web.push("${tag_prefix}-${BUILD_NUMBER}")
+       user.push("${tag_prefix}")
+       web.push("${tag_prefix}")
+
+       if(env.BRANCH_NAME.equals("release")) {
+         user.push("latest")
+         web.push("latest")
+       }
      }
-   }
+  }
 }
