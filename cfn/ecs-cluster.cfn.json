@@ -77,6 +77,21 @@
       "Default" : "docker.io/nuodb/nuodb-ce-2.6.1:latest"
     },
 
+    "dbuser" : {
+      "Description": "Database user name",
+      "Type": "String"
+    },
+
+    "dbpassword" : {
+      "Description": "Database user password",
+      "Type": "String"
+    },
+
+    "dbname" : {
+      "Description": "Database name",
+      "Type": "String"
+    },
+
     "EcsAmiId" : {
       "Type" : "String",
       "Description" : "ECS AMI Id"
@@ -478,30 +493,43 @@
       }
     },
 
+
+
     "EcsInstanceLc" : {
       "DependsOn" : "EcsCluster",
       "Condition" : "CreateEC2LCWithKeyPair",
       "Type" : "AWS::AutoScaling::LaunchConfiguration",
       "Properties" : {
-        "ImageId" : { "Ref" : "EcsAmiId" },
-        "InstanceType" : { "Ref" : "EcsInstanceType" },
-        "AssociatePublicIpAddress" : true,
-        "IamInstanceProfile": { "Ref": "ECSInstanceProfile" },
-        "KeyName" : { "Ref" : "KeyName" },
-        "SecurityGroups" : [ { "Ref" : "EcsSecurityGroup" } ],
-        "UserData" : { "Fn::If" : [
-          "SetEndpointToECSAgent" ,
-          { "Fn::Base64" : { "Fn::Join" : ["", [
-            "#!/bin/bash\n",
-            "echo ECS_CLUSTER=", { "Ref" : "EcsClusterName" }, " >> /etc/ecs/ecs.config",
-            "\necho ECS_BACKEND_HOST=", { "Ref" : "EcsEndpoint" }, " >> /etc/ecs/ecs.config"
-          ] ] } },
-          { "Fn::Base64" : { "Fn::Join" : ["", [
-            "#!/bin/bash\n",
-            "echo ECS_CLUSTER=", { "Ref" : "EcsClusterName" }, " >> /etc/ecs/ecs.config"
-          ] ] } }
-
-        ] }
+        "ImageId": {
+          "Ref": "EcsAmiId"
+        },
+        "InstanceType": {
+          "Ref": "EcsInstanceType"
+        },
+        "AssociatePublicIpAddress": true,
+        "IamInstanceProfile": {
+          "Ref": "ECSInstanceProfile"
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "EcsSecurityGroup"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\n",
+                "echo ECS_CLUSTER=", {"Ref": "EcsClusterName"}, " >> /etc/ecs/ecs.config\n",
+                "echo ECS_BACKEND_HOST=", {"Ref": "EcsEndpoint"}, " >> /etc/ecs/ecs.config\n"
+              ]
+            ]
+          }
+        }
       }
     },
 
@@ -598,10 +626,111 @@
           ]
         },
         "Code": {
-          "S3Bucket": { "Fn::Select" : [ "0", {"Ref" : "Buckets"}]},
-          "S3Key": "cfn/lambda/deploy-nuodb-containers.zip"
+          "ZipFile" : { "Fn::Join" : ["\n", [
+            "import boto3",
+            "import cfnresponse",
+
+            "client = boto3.client('ecs')",
+
+            "def handler(event, context):",
+            "    print(event)",
+            "    dockerImage = event['ResourceProperties']['dockerImage']",
+            "    region = event['ResourceProperties']['region']",
+            "    peer_address = event['ResourceProperties']['peer_address']",
+            "    cluster = event['ResourceProperties']['cluster']",
+            "    role = event['ResourceProperties']['role']",
+            "    containerType = [['BROKER', 'SM', 'TE'], ['48004', '48010', '48011']]",
+            "    elbName = event['ResourceProperties']['elbName']",
+
+            "    for x in range(0,3):",
+            "        try:",
+            "            response = client.register_task_definition(",
+            "                family=containerType[0][x] + '-family',",
+            "                taskRoleArn=role,",
+            "                containerDefinitions=[",
+            "                 {",
+            "                   'name': containerType[0][x] + '-definition',",
+            "                   'image': dockerImage,",
+            "                   'cpu': 10,",
+            "                   'memory': 4096,",
+            "                   'readonlyRootFilesystem': False,",
+            "                   'privileged': True,",
+            "                   'environment': [",
+            "                     {",
+            "                       'name': 'NODE_REGION',",
+            "                       'value': region",
+            "                     },",
+            "                     {",
+            "                       'name': 'ENV_TYPE',",
+            "                       'value': 'AWSECS'",
+            "                     },",
+            "                     {",
+            "                       'name': 'AGENT_PORT',",
+            "                       'value': '48011'",
+            "                     },",
+            "                     {",
+            "                       'name': 'BROKER_PORT',",
+            "                       'value': '48004'",
+            "                     },",
+            "                     {",
+            "                       'name': 'NODE_PORT',",
+            "                       'value': '48010'",
+            "                     },",
+            "                     {",
+            "                       'name': 'NODE_TYPE',",
+            "                       'value': containerType[0][x]",
+            "                     },",
+            "                     {",
+            "                       'name': 'PEER_ADDRESS',",
+            "                       'value': peer_address + ':48004'",
+            "                     }",
+            "                   ],",
+            "                   'portMappings': [",
+            "                     {",
+            "                       'containerPort': 48004,",
+            "                       'hostPort': 48004,",
+            "                       'protocol': 'tcp'",
+            "                     }",
+            "                   ],",
+            "                 }",
+            "               ]",
+            "            )",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Successful task registration: ' + containerType[0][x] + '-definition'",
+            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "        except Exception as e:",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Failed to create broker task definition'",
+            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')",
+            "        try:",
+            "            if containerType[0][x] == 'BROKER':",
+            "                lbdata=[{'loadBalancerName': elbName,'containerName': 'BROKER-definition', 'containerPort': 48004 }]",
+            "            else:",
+            "                lbdata=[]",
+
+            "            response = client.create_service(",
+            "                cluster=cluster,",
+            "                serviceName=containerType[0][x] + '-service',",
+            "                taskDefinition=containerType[0][x] + '-family',",
+            "                desiredCount=1,",
+            "                placementStrategy=[",
+            "                  {",
+            "                    'type': 'random'",
+            "                  }",
+            "                ],",
+            "                loadBalancers=lbdata",
+            "            )",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Successful task registration: ' + containerType[0][x] + '-service'",
+            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "        except Exception as e:",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Failed to create broker service'",
+            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
+
+          ]]}
         },
-        "Runtime": "nodejs4.3",
+        "Runtime": "python2.7",
         "Timeout": "300"
       }
     },
@@ -621,90 +750,91 @@
         },
         "Code": {
           "ZipFile" : { "Fn::Join" : ["\n", [
-            "var aws = require('aws-sdk');",
-            "var response = require('cfn-response');",
-            "var ecs = new aws.ECS();",
+            "import boto3",
+            "import cfnresponse",
 
+            "client = boto3.client('ecs')",
 
-            "exports.handler = (event, context, callback) => {",
+            "def handler(event, context):",
+            "    print(event)",
+            "    dockerImage = event['ResourceProperties']['dockerImage']",
+            "    region = event['ResourceProperties']['region']",
+            "    cluster = event['ResourceProperties']['cluster']",
+            "    role = event['ResourceProperties']['role']",
+            "    jdbc_url = event['ResourceProperties']['jdbc_url']",
+            "    dbuser = event['ResourceProperties']['dbuser']",
+            "    dbpassword = event['ResourceProperties']['dbpassword']",
+            "    dbname = event['ResourceProperties']['dbname']",
 
-            "  aws.config.update({",
-            "  region: event.region",
-            "});",
-            "console.log('event payload: ', event)",
-            "//web params",
-            "var web_params = {",
-            "  \"containerDefinitions\": [",
-            "    {",
-            "      \"name\": \"storefront-web\",",
-            "      \"image\": \"\" + event.dockerImage + \"\",",
-            "      \"cpu\": 10,",
-            "      \"memory\": 4096,",
-            "      \"readonlyRootFilesystem\": false,",
-            "      \"environment\": [",
-            "        {",
-            "          \"name\": \"ENV_TYPE\",",
-            "          \"value\": \"AWSECS\"",
-            "        },",
-            "        {",
-            "          \"name\": \"JDBC_URL\",",
-            "          \"value\": \"\" + event.JDBC_URL + \"\"",
-            "        },",
-            "        {",
-            "          \"name\": \"BROKER_PORT\",",
-            "          \"value\": \"48004\"",
-            "        }",
-            "      ],",
-            "      \"essential\": true,",
-            "      \"portMappings\": [",
-            "        {",
-            "          containerPort: 8080,",
-            "          hostPort: 8080,",
-            "          protocol: \"TCP\"",
-            "        }",
-            "      ],",
-            "    }",
-            "  ],",
-            "  \"family\": \"storefront-web\"",
-            "  //\"taskRoleArn\": \"\" + event.role + \"\"",
-            "};",
+            "    for x in range(0,3):",
+            "        try:",
+            "            response = client.register_task_definition(",
+            "                family='storefront-family',",
+            "                taskRoleArn=role,",
+            "                containerDefinitions=[",
+            "                 {",
+            "                   'name': 'storefront-definition',",
+            "                   'image': dockerImage,",
+            "                   'cpu': 10,",
+            "                   'memory': 4096,",
+            "                   'readonlyRootFilesystem': False,",
+            "                   'privileged': True,",
+            "                   'environment': [",
+            "                             {",
+            "                               'name': 'ENV_TYPE',",
+            "                               'value': 'AWSECS'",
+            "                             },",
+            "                             {",
+            "                               'name': 'JDBC_URL',",
+            "                               'value': jdbc_url",
+            "                             },",
+            "                             {",
+            "                               'name': 'BROKER_PORT',",
+            "                               'value': '48004'",
+            "                             }",
+            "                   ],",
+            "                   'portMappings': [",
+            "                     {",
+            "                       'containerPort': 8080,",
+            "                       'hostPort': 8080,",
+            "                       'protocol': 'tcp'",
+            "                     }",
+            "                   ],",
+            "                 }",
+            "               ]",
+            "            )",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Successful task registration: storefront-definition'",
+            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "        except Exception as e:",
+            "            print(e.args)",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Failed to create storefront task definition'",
+            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')",
+            "        try:",
+            "            response = client.create_service(",
+            "                cluster=cluster,",
+            "                serviceName='storefront-service',",
+            "                taskDefinition='storefront-family',",
+            "                desiredCount=1,",
+            "                placementStrategy=[",
+            "                  {",
+            "                    'type': 'random'",
+            "                  }",
+            "                ]",
+            "            )",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Successful task registration: storefront-service'",
+            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "        except Exception as e:",
+            "            print(e.args)",
+            "            responseData = {}",
+            "            responseData['Data'] = 'Failed to create storefront service'",
+            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
 
-            "ecs.registerTaskDefinition(web_params, function(err, data) {",
-            "  if (err) {",
-            "  console.log('storefront definition error: ', err, err.stack);",
-            "} else {",
-            "  console.log('storefront definition created: ', data)",
-
-            "  //create service group for broker",
-            "  var params = {",
-            "  desiredCount: 1,",
-            "  serviceName: \"storefront-web-service\",",
-            "  taskDefinition: \"storefront-web\",",
-            "  cluster: \"\" + event.cluster + \"\",",
-            "  placementStrategy: [",
-            "    {",
-            "      field: 'instanceId',",
-            "      type: 'spread'",
-            "    }",
-            "  ],",
-            "  //    role: \"\" + event.role + \"\"",
-            "};",
-            "ecs.createService(params, function(err, data) {",
-            "  if (err) {",
-            "  console.log('Create Service for storefront web failed: ', err, err.stack);",
-            "  response.send(event, context, response.FAILED, data);",
-            "} else {",
-            "  console.log('Create Service for storefront successful: ', data);",
-            "  response.send(event, context, response.SUCCESS, data);",
-            "}",
-            "});",
-            "}",
-            "});",
-
-            "};"
           ]]}
         },
-        "Runtime": "nodejs4.3",
+        "Runtime": "python2.7",
         "Timeout": "300"
       }
     },
@@ -723,25 +853,193 @@
           ]
         },
         "Code": {
-          "S3Bucket": { "Fn::Select" : [ "0", {"Ref" : "Buckets"}]},
-          "S3Key": "cfn/lambda/launchWebContainer.zip"
+          "ZipFile" : { "Fn::Join" : ["\n", [
+            "import boto3",
+            "import cfnresponse",
+
+            "client = boto3.client('ecs')",
+
+            "def handler(event, context):",
+            "    print(event)",
+            "    dockerImage = event['ResourceProperties']['dockerImage']",
+            "    region = event['ResourceProperties']['region']",
+            "    cluster = event['ResourceProperties']['cluster']",
+            "    role = event['ResourceProperties']['role']",
+            "    jdbc_url = event['ResourceProperties']['jdbc_url']",
+            "    dbuser = event['ResourceProperties']['dbuser']",
+            "    dbpassword = event['ResourceProperties']['dbpassword']",
+            "    dbname = event['ResourceProperties']['dbname']",
+
+            "    try:",
+            "        response = client.register_task_definition(",
+            "            family='storefrontuser-family',",
+            "            taskRoleArn=role,",
+            "            containerDefinitions=[",
+            "             {",
+            "               'name': 'storefrontuser-definition',",
+            "               'image': dockerImage,",
+            "               'cpu': 10,",
+            "               'memory': 4096,",
+            "               'readonlyRootFilesystem': False,",
+            "               'privileged': True,",
+            "               'environment': [",
+            "                         {",
+            "                           'name': 'ENV_TYPE',",
+            "                           'value': 'AWSECS'",
+            "                         },",
+            "                         {",
+            "                           'name': 'JDBC_URL',",
+            "                           'value': jdbc_url",
+            "                         },",
+            "                         {",
+            "                           'name': 'BROKER_PORT',",
+            "                           'value': '48004'",
+            "                         }",
+            "               ],",
+            "               'portMappings': [",
+            "                 {",
+            "                   'containerPort': 8080,",
+            "                   'hostPort': 8080,",
+            "                   'protocol': 'tcp'",
+            "                 }",
+            "               ],",
+            "             }",
+            "           ]",
+            "        )",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Successful task registration: storefrontuser-definition'",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "    except Exception as e:",
+            "        print(e.args)",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Failed to create storefrontuser task definition'",
+            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')",
+            "    try:",
+            "        response = client.create_service(",
+            "            cluster=cluster,",
+            "            serviceName='storefrontuser-service',",
+            "            taskDefinition='storefrontuser-family',",
+            "            desiredCount=0,",
+            "            placementStrategy=[",
+            "              {",
+            "                'type': 'random'",
+            "              }",
+            "            ]",
+            "        )",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Successful task registration: storefrontuser-service'",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "    except Exception as e:",
+            "        print(e.args)",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Failed to create storefrontuser service'",
+            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
+
+          ]]}
         },
-        "Runtime": "nodejs4.3",
+        "Runtime": "python2.7",
         "Timeout": "300"
       }
     },
 
-    "DeployWebContainer" : {
+
+    "UpdateUserLoad": {
+      "DependsOn": [
+        "EcsInstanceAsg"
+      ],
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaInstanceRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile" : { "Fn::Join" : ["", [
+            "import boto3\n",
+            "import cfnresponse\n",
+
+            "client = boto3.client('ecs')\n",
+
+            "def handler(event, context):\n",
+            "    print(event)\n",
+            "    serviceName = event['ResourceProperties']['serviceName']\n",
+            "    count = event['ResourceProperties']['count']\n",
+            "    try:\n",
+
+            "        response = client.update_service(\n",
+            "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
+            "            service=serviceName,\n",
+            "            desiredCount=count\n",
+            "        )\n",
+
+            "            responseData = {}\n",
+            "            responseData['Data'] = 'Successful updated service'\n",
+            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)\n",
+            "    except Exception as e:\n",
+            "            print(e.args)\n",
+            "            responseData = {}\n",
+            "            responseData['Data'] = 'Failed to update service'\n",
+            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')\n"
+          ]]}
+        },
+        "Runtime": "python2.7",
+        "Timeout": "300"
+      }
+    },
+
+    "DeployUserContainer" : {
+      "DependsOn" : ["deployUserContainer"],
+      "Type": "Custom::LaunchWebContainer",
+      "Version" : "1.0",
+      "Properties" : {
+        "ServiceToken": {"Fn::GetAtt" : [ "deployUserContainer", "Arn"] },
+        "dockerImage": { "Ref" : "storeFrontUserDocker" },
+        "peer_address" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "role" : { "Ref" : "ECSInstanceRole" },
+        "region": { "Ref" : "AWS::Region" },
+        "cluster" : { "Ref" : "EcsClusterName" },
+        "jdbc_url" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "dbuser" : { "Ref" : "dbuser" },
+        "dbpassword": { "Ref" : "dbpassword" },
+        "dbname" : { "Ref": "dbname" }
+      }
+    },
+
+    "DeployNuoDBContainer" : {
       "DependsOn" : ["deployDemoWebContainer"],
+      "Type": "Custom::LaunchWebContainer",
+      "Version" : "1.0",
+      "Properties" : {
+        "ServiceToken": {"Fn::GetAtt" : [ "deployNuodbContainers", "Arn"] },
+        "dockerImage": { "Ref" : "nuodbDocker" },
+        "peer_address" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "role" : { "Ref" : "ECSInstanceRole" },
+        "region": { "Ref" : "AWS::Region" },
+        "cluster" : { "Ref" : "EcsClusterName" },
+        "elbName" : { "Ref" : "EcsElasticLoadBalancer" },
+        "dbuser" : { "Ref" : "dbuser" },
+        "dbpassword": { "Ref" : "dbpassword" },
+        "dbname" : { "Ref": "dbname" }
+      }
+    },
+
+    "DeployWebContainer" : {
+      "DependsOn" : ["DeployNuoDBContainer"],
       "Type": "Custom::LaunchWebContainer",
       "Version" : "1.0",
       "Properties" : {
         "ServiceToken": {"Fn::GetAtt" : [ "deployDemoWebContainer", "Arn"] },
         "dockerImage": { "Ref" : "storeFrontWebDocker" },
-        "JDBC_URL" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
-        "role" : { "Ref" : "ECSInstanceProfile" },
+        "jdbc_url" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "role" : { "Ref" : "ECSInstanceRole" },
         "region": { "Ref" : "AWS::Region" },
-        "cluster" : { "Ref" : "EcsClusterName" }
+        "cluster" : { "Ref" : "EcsClusterName" },
+        "dbuser" : { "Ref" : "dbuser" },
+        "dbpassword": { "Ref" : "dbpassword" },
+        "dbname" : { "Ref": "dbname" }
       }
     }
 
