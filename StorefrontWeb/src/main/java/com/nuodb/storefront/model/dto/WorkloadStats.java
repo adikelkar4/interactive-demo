@@ -2,6 +2,8 @@
 
 package com.nuodb.storefront.model.dto;
 
+import java.util.Map;
+
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
 import com.nuodb.storefront.service.simulator.IWorker;
@@ -22,6 +24,10 @@ public class WorkloadStats {
     private long totalWorkTimeMs;
     private long totalWorkCompletionTimeMs;
     
+    public WorkloadStats() {
+    	
+    }
+    
     public WorkloadStats(Workload workload) {
         this.workload = workload;
     }
@@ -39,16 +45,18 @@ public class WorkloadStats {
         this.totalWorkCompletionTimeMs = stats.totalWorkCompletionTimeMs;
     }
 
-    public void applyDeltas(WorkloadStats stats) {
-        this.activeWorkerLimit += stats.activeWorkerLimit;
-        this.activeWorkerCount += stats.activeWorkerCount;
-        this.failedWorkerCount += stats.failedWorkerCount;
-        this.killedWorkerCount += stats.killedWorkerCount;
-        this.completedWorkerCount += stats.completedWorkerCount;
-        this.workInvocationCount += stats.workInvocationCount;
-        this.workCompletionCount += stats.workCompletionCount;
-        this.totalWorkTimeMs += stats.totalWorkTimeMs;
-        this.totalWorkCompletionTimeMs += stats.totalWorkCompletionTimeMs;
+    public void applyDeltas(Map<String, Integer> stats) {
+    	if (stats.get("activeWorkerLimit") != null) {    		
+    		this.activeWorkerLimit += (int) stats.get("activeWorkerLimit");
+    	}
+        this.activeWorkerCount += stats.get("activeWorkerCount");
+        this.failedWorkerCount += stats.get("failedWorkerCount");
+        this.killedWorkerCount += stats.get("killedWorkerCount");
+        this.completedWorkerCount += stats.get("completedWorkerCount");
+        this.workInvocationCount += stats.get("workInvocationCount");
+        this.workCompletionCount += stats.get("workCompletionCount");
+        this.totalWorkTimeMs += stats.get("totalWorkTimeMs");
+        this.totalWorkCompletionTimeMs += stats.get("totalWorkCompletionTimeMs");
 
         return;
     }

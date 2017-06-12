@@ -2,6 +2,7 @@ package com.nuodb.storefront.service;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -9,8 +10,15 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClients;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import com.nuodb.storefront.model.dto.TenantStatistics;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.dto.WorkloadStats;
 
@@ -19,6 +27,8 @@ public class TenantStatisticsService implements Runnable {
 	private TenantStatistics allStats;
 	private IStorefrontTenant tenant;
 	private ObjectMapper mapper;
+	
+	private static final String storefrontStatsEndpoint = "/api/stats";
 	
 	public TenantStatisticsService(IStorefrontTenant tenant) {
 		this.setTenant(tenant);
@@ -40,15 +50,15 @@ public class TenantStatisticsService implements Runnable {
 			this.tenant.getSimulatorService().getWorkloadStats().clear();
 		}
 		Map<String, Map> payload = new HashMap<>();
-		payload.put("transactionStatistics", transactionStats);
-		payload.put("workloadStatistics", workloadStats);
+		payload.put("transactionStats", transactionStats);
+		payload.put("workloadStats", workloadStats);
 		allStats.setDatabaseType("nuodb");
 		allStats.setPayload(payload);
-//		try {
-//			postStatsAsJson(this.tenant.getAppSettings(), allStats);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
+		try {
+			postStatsAsJson(this.tenant.getAppSettings(), allStats);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public TenantStatistics getAllStats() {
@@ -67,20 +77,17 @@ public class TenantStatisticsService implements Runnable {
 	
 	private void postStatsAsJson(Map<String, String> appSettings, TenantStatistics stats)
 			throws MalformedURLException, IOException, ProtocolException {
-		HttpURLConnection connection = buildStatsConnection(appSettings, "POST");
-		DataOutputStream stream = new DataOutputStream(connection.getOutputStream());
-		stream.writeBytes(mapper.writeValueAsString(stats));
-		stream.flush();
-		stream.close();
+		HttpClient client = HttpClients.createDefault();
+		HttpPost postRequest = this.buildStatsConnection(appSettings);
+		postRequest.setEntity(new StringEntity(mapper.writeValueAsString(stats), ContentType.APPLICATION_JSON));
+		HttpResponse response = client.execute(postRequest);
+		System.out.println(response.getStatusLine().getStatusCode() + ": " + response.getStatusLine().getReasonPhrase());
 	}
 
-	private static HttpURLConnection buildStatsConnection(Map<String, String> appSettings, String method)
+	private HttpPost buildStatsConnection(Map<String, String> appSettings)
 			throws MalformedURLException, IOException, ProtocolException {
-		URL url = new URL(appSettings.get("app.url"));
-		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-		connection.setRequestMethod(method);
-		connection.setRequestProperty("Content-Type", "application/json");
-		connection.setDoOutput(true);
-		return connection;
+		HttpPost postRequest = new HttpPost(appSettings.get("app.host") + storefrontStatsEndpoint);
+		postRequest.addHeader("Content-Type", ContentType.APPLICATION_JSON.toString());
+		return postRequest;
 	}
 }

@@ -96,13 +96,7 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
                 + " (SELECT COUNT(*) FROM PRODUCT_REVIEW) AS PRODUCT_REVIEW_COUNT,"
                 + " (SELECT COUNT(*) FROM CUSTOMER) AS CUSTOMER_COUNT,"
                 + " (SELECT COUNT(*) FROM CUSTOMER WHERE DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME) AS ACTIVE_CUSTOMER_COUNT,"
-                + " (SELECT COUNT(*) FROM CUSTOMER WHERE WORKLOAD IS NULL AND DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME) AS ACTIVE_WEB_CUSTOMER_COUNT,"
-                + " (SELECT SUM(QUANTITY) FROM CART_SELECTION) AS CART_ITEM_COUNT,"
-                + " (SELECT SUM(CAST(QUANTITY AS DECIMAL(16,2)) * UNIT_PRICE) FROM CART_SELECTION) AS CART_VALUE,"
-                + " (SELECT COUNT(*) FROM PURCHASE) AS PURCHASE_COUNT,"
-                + " (SELECT SUM(QUANTITY) FROM PURCHASE_SELECTION) AS PURCHASE_ITEM_COUNT,"
-                + " (SELECT SUM(CAST(QUANTITY AS DECIMAL(16,2)) * UNIT_PRICE) FROM PURCHASE_SELECTION) AS PURCHASE_VALUE,"
-                + " (SELECT MIN(DATE_STARTED) FROM APP_INSTANCE WHERE LAST_HEARTBEAT >= :MIN_HEARTBEAT_TIME) AS START_TIME"
+                + " (SELECT COUNT(*) FROM CUSTOMER WHERE WORKLOAD IS NULL AND DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME) AS ACTIVE_WEB_CUSTOMER_COUNT"
                 + " FROM DUAL;";
 
         final String RECENT_STATS_QUERY = "SELECT"
@@ -111,13 +105,7 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
                 + " (SELECT COUNT(*) FROM PRODUCT_REVIEW WHERE DATE_ADDED >= :MIN_MODIFIED_TIME) AS PRODUCT_REVIEW_COUNT,"
                 + " (SELECT NULL AS CUSTOMER_COUNT FROM DUAL),"
                 + " (SELECT COUNT(*) FROM CUSTOMER WHERE DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME) AS ACTIVE_CUSTOMER_COUNT,"
-                + " (SELECT COUNT(*) FROM CUSTOMER WHERE DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME AND WORKLOAD IS NULL) AS ACTIVE_WEB_CUSTOMER_COUNT,"
-                + " (SELECT SUM(QUANTITY) FROM CART_SELECTION WHERE DATE_MODIFIED >= :MIN_MODIFIED_TIME) AS CART_ITEM_COUNT,"
-                + " (SELECT SUM(CAST(QUANTITY AS DECIMAL(16,2)) * UNIT_PRICE) FROM CART_SELECTION WHERE DATE_MODIFIED >= :MIN_MODIFIED_TIME) AS CART_VALUE,"
-                + " (SELECT COUNT(*) FROM PURCHASE WHERE DATE_PURCHASED >= :MIN_MODIFIED_TIME) AS PURCHASE_COUNT,"
-                + " (SELECT SUM(QUANTITY) FROM PURCHASE_SELECTION WHERE DATE_MODIFIED >= :MIN_MODIFIED_TIME) AS PURCHASE_ITEM_COUNT,"
-                + " (SELECT SUM(CAST(QUANTITY AS DECIMAL(16,2)) * UNIT_PRICE) FROM PURCHASE_SELECTION WHERE DATE_MODIFIED >= :MIN_MODIFIED_TIME) AS PURCHASE_VALUE,"
-                + " (SELECT MIN(DATE_STARTED) FROM APP_INSTANCE WHERE LAST_HEARTBEAT >= :MIN_HEARTBEAT_TIME) AS START_TIME"
+                + " (SELECT COUNT(*) FROM CUSTOMER WHERE DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME AND WORKLOAD IS NULL) AS ACTIVE_WEB_CUSTOMER_COUNT"
                 + " FROM DUAL;";
 
         // Run query
@@ -133,15 +121,15 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
         stats.setCustomerCount(getIntValue(result[3]));
         stats.setActiveCustomerCount(getIntValue(result[4]));
         stats.setActiveWebCustomerCount(getIntValue(result[5]));
-        stats.setCartItemCount(getIntValue(result[6]));
-        stats.setCartValue(getBigDecimalValue(result[7]));
-        stats.setPurchaseCount(getIntValue(result[8]));
-        stats.setPurchaseItemCount(getIntValue(result[9]));
-        stats.setPurchaseValue(getBigDecimalValue(result[10]));
+//        stats.setCartItemCount(getIntValue(result[6]));
+//        stats.setCartValue(getBigDecimalValue(result[7]));
+//        stats.setPurchaseCount(getIntValue(result[8]));
+//        stats.setPurchaseItemCount(getIntValue(result[9]));
+//        stats.setPurchaseValue(getBigDecimalValue(result[10]));
 
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(getLongValue(result[11]));
-        stats.setDateStarted(cal);
+//        Calendar cal = Calendar.getInstance();
+//        cal.setTimeInMillis(getLongValue(result[11]));
+//        stats.setDateStarted(cal);
 
         return stats;
     }
@@ -357,9 +345,9 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
         }
 
         // MIN_HEARTBEAT_TIME
-        Calendar minHeartbeatTime = (Calendar) now.clone();
-        minHeartbeatTime.add(Calendar.SECOND, -StorefrontApp.MAX_HEARTBEAT_AGE_SEC);
-        query.setParameter("MIN_HEARTBEAT_TIME", minHeartbeatTime);
+//        Calendar minHeartbeatTime = (Calendar) now.clone();
+//        minHeartbeatTime.add(Calendar.SECOND, -StorefrontApp.MAX_HEARTBEAT_AGE_SEC);
+//        query.setParameter("MIN_HEARTBEAT_TIME", minHeartbeatTime);
     }
 
     protected static String toNumericString(Object o) {
