@@ -4,12 +4,9 @@ pipeline {
 
     stages {
         stage('maven build') {
-    agent { docker 'maven:3.3.9' }
+	    agent { docker 'maven:3.3.9' }
             steps {
                 sh 'mvn clean install '
-//		script {
-// 		   stash '*/target/*.jar,*/target/*.war'
-//		}
             }
             post {
              always {
@@ -26,13 +23,13 @@ pipeline {
 	}
     }
 
-//    post {
-//      always {
+    post {
+      always {
 
- //       step([$class: 'Mailer',
-//           notifyEveryUnstableBuild: true,
-//           recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
-//                                      [$class: 'RequesterRecipientProvider']])])      
-//      }
-//    }
+       step([$class: 'Mailer',
+           notifyEveryUnstableBuild: true,
+           recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
+                                      [$class: 'RequesterRecipientProvider']])])      
+      }
+    }
 }
