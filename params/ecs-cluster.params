@@ -9,14 +9,14 @@ EcsInstanceType: m4.large
 
 KeyName: ben-higgins-pem
 
-EcsClusterName: interactive-demo-11
+EcsClusterName: interactive-demo-22
 
 
 #docker container images
 
 storeFrontWebDocker: docker.io/nuodb/storefrontweb-demo:latest
 storeFrontUserDocker: docker.io/nuodb/storefrontuser-demo:latest
-nuodbDocker: docker.io/nuodb/nuodb-ce-2.6.1:latest
+nuodbDocker: docker.io/nuodb/nuodb-ce-2.6.1:1.0
 
 
 dbuser: bird
