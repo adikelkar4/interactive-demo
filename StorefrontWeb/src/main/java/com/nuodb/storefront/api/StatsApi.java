@@ -8,6 +8,7 @@ import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Consumes;
@@ -26,16 +27,9 @@ public class StatsApi extends BaseApi {
     private static final String TRANSACTION_STATS_MAP_KEY = "transactionStats";
     private static final String WORKLOAD_STATS_MAP_KEY = "workloadStats";
 
-    private Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
-    private Map<String, Map<String, WorkloadStats>> workloadStatHeap = new HashMap<>();
+    private static Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
+    private static Map<String, Map<String, WorkloadStats>> workloadStatHeap = new HashMap<>();
     private final Object heapLock = new Object();
-
-    public StatsApi() {
-        this.transactionStatHeap.put(NUODB_MAP_KEY, new HashMap<>());
-        this.workloadStatHeap.put(NUODB_MAP_KEY, new HashMap<>());
-
-        return;
-    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -45,8 +39,8 @@ public class StatsApi extends BaseApi {
 
         rpt.setAppInstance(getTenant(req).getAppInstance());
         rpt.setDbStats(footprint);
-        rpt.setWorkloadStats(this.workloadStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
-        rpt.setTransactionStats(this.transactionStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
+        rpt.setWorkloadStats(workloadStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
+        rpt.setTransactionStats(transactionStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
         clearWorkloadProperty(rpt.getWorkloadStats());
 
         if (footprint.usedRegionCount > 1) {
@@ -68,14 +62,14 @@ public class StatsApi extends BaseApi {
     @Path("/transactions")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, TransactionStats> getTransactionStats(@Context HttpServletRequest req) {
-        return this.transactionStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>());
+        return transactionStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>());
     }
 
     @GET
     @Path("/workloads")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, WorkloadStats> getWorkloadStats(@Context HttpServletRequest req) {
-        return this.workloadStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>());
+        return workloadStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>());
     }
 
     @GET
@@ -112,8 +106,7 @@ public class StatsApi extends BaseApi {
         return getDbApi(req).getRegionStats();
     }
 
-    @PUT
-    @Path("/put")
+    @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response putContainerStats(@Context HttpServletRequest req, StatsPayload stats) {
@@ -124,9 +117,9 @@ public class StatsApi extends BaseApi {
         Map<String, Map> payload = stats.getPayload();
 
         @SuppressWarnings("unchecked")
-        Map<String, TransactionStats> tStats = (Map<String, TransactionStats>)payload.getOrDefault(TRANSACTION_STATS_MAP_KEY, new HashMap<>());
+        Map<String, Map<String, Integer>> tStats = (Map<String, Map<String, Integer>>)payload.getOrDefault(TRANSACTION_STATS_MAP_KEY, new HashMap<>());
         @SuppressWarnings("unchecked")
-        Map<String, WorkloadStats> wStats = (Map<String, WorkloadStats>)payload.getOrDefault(WORKLOAD_STATS_MAP_KEY, new HashMap<>());
+        Map<String, Map<String, Integer>> wStats = (Map<String, Map<String, Integer>>)payload.getOrDefault(WORKLOAD_STATS_MAP_KEY, new HashMap<>());
 
         if (tStats.size() < 1 && wStats.size() < 1) {
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -134,26 +127,33 @@ public class StatsApi extends BaseApi {
 
         // TODO - Break this off into its own threaded process, should only respond with acknowledged receipt of stats  - AndyM/KevinW
         synchronized (this.heapLock) { // Always synchronize on the heapLock so both maps are protected simultaneously
-            if (!this.transactionStatHeap.containsKey(NUODB_MAP_KEY) || !this.workloadStatHeap.containsKey(NUODB_MAP_KEY)) {
-                return Response.status(Response.Status.BAD_REQUEST).build();
+            if (!transactionStatHeap.containsKey(NUODB_MAP_KEY)) {
+                transactionStatHeap.put(NUODB_MAP_KEY, new HashMap<>());
             }
+            if(!workloadStatHeap.containsKey(NUODB_MAP_KEY)) {
+                workloadStatHeap.put(NUODB_MAP_KEY, new HashMap<>());
+            }
+            Map<String, TransactionStats> tTmp = transactionStatHeap.get(NUODB_MAP_KEY);
+            Map<String, WorkloadStats> wTmp = workloadStatHeap.get(NUODB_MAP_KEY);
 
-            Map<String, TransactionStats> tTmp = this.transactionStatHeap.get(NUODB_MAP_KEY);
-            Map<String, WorkloadStats> wTmp = this.workloadStatHeap.get(NUODB_MAP_KEY);
-
-            for (Map.Entry<String, TransactionStats> entry : tStats.entrySet()) {
+            for (Map.Entry<String, Map<String, Integer>> entry : tStats.entrySet()) {
                 if (tTmp.containsKey(entry.getKey())) {
                     tTmp.get(entry.getKey()).applyDeltas(entry.getValue());
                 } else {
-                    tTmp.put(entry.getKey(), entry.getValue());
+                	TransactionStats newStats = new TransactionStats();
+                	newStats.applyDeltas(entry.getValue());
+                    tTmp.put(entry.getKey(), newStats);
                 }
             }
 
-            for (Map.Entry<String, WorkloadStats> entry : wStats.entrySet()) {
+            for (Map.Entry<String, Map<String, Integer>> entry : wStats.entrySet()) {
                 if (wTmp.containsKey(entry.getKey())) {
                     wTmp.get(entry.getKey()).applyDeltas(entry.getValue());
                 } else {
-                    wTmp.put(entry.getKey(), entry.getValue());
+                	WorkloadStats newStats = new WorkloadStats();
+                	newStats.setActiveWorkerLimit(0);
+                	newStats.applyDeltas(entry.getValue());
+                    wTmp.put(entry.getKey(), newStats);
                 }
             }
         }

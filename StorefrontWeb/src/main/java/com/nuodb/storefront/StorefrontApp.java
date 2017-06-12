@@ -193,7 +193,7 @@ public class StorefrontApp {
     }
 
     public static void benchmark(ISimulatorService simulator) throws InterruptedException {
-        Workload shoppersWithNoWait = new Workload("Customer:  Instant purchaser", true, 0, 0, Workload.DEFAULT_MAX_WORKERS, WorkloadStep.MULTI_SHOP);
+        Workload shoppersWithNoWait = new Workload(WorkloadStep.MULTI_SHOP.name(), "Customer:  Instant purchaser", true, 0, 0, Workload.DEFAULT_MAX_WORKERS, WorkloadStep.MULTI_SHOP);
 
         simulator.addWorkers(shoppersWithNoWait, 100, 0);
         Thread.sleep(BENCHMARK_DURATION_MS);
@@ -204,7 +204,6 @@ public class StorefrontApp {
     public static void simulateActivity(ISimulatorService simulator) throws InterruptedException {
         simulator.adjustWorkers(Workload.BROWSER, 20, 25);
         simulator.addWorkers(Workload.BROWSER, 20, 250);
-        simulator.addWorkers(Workload.SHOPPER_FAST, 20, 250);
         simulator.addWorkers(Workload.REVIEWER, 20, 250);
 
         for (int i = 0; i < 20; i++) {

@@ -2,6 +2,8 @@
 
 package com.nuodb.storefront.model.dto;
 
+import java.util.Map;
+
 public class TransactionStats {
     private int successCount;
     private int failureCount;
@@ -20,12 +22,12 @@ public class TransactionStats {
         this.totalDurationMs = stats.totalDurationMs;
     }
 
-    public void applyDeltas(TransactionStats stats) {
-        this.successCount += stats.successCount;
-        this.failureCount += stats.failureCount;
-        this.minDurationMs = Math.min(stats.minDurationMs, this.minDurationMs);
-        this.maxDurationMs = Math.max(stats.maxDurationMs, this.maxDurationMs);
-        this.totalDurationMs += stats.totalDurationMs;
+    public void applyDeltas(Map<String, Integer> stats) {
+        this.successCount += stats.get("successCount");
+        this.failureCount += stats.get("failureCount");
+        this.minDurationMs = Math.min(stats.get("minDurationMs"), this.minDurationMs);
+        this.maxDurationMs = Math.max(stats.get("maxDurationMs"), this.maxDurationMs);
+        this.totalDurationMs += stats.get("totalDurationMs");
 
         return;
     }
