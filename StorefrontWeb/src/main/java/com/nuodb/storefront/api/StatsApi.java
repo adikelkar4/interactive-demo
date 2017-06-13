@@ -23,13 +23,10 @@ import com.nuodb.storefront.model.dto.*;
 
 @Path("/stats")
 public class StatsApi extends BaseApi {
-    private static final String NUODB_MAP_KEY = "nuodb";
     private static final String TRANSACTION_STATS_MAP_KEY = "transactionStats";
     private static final String WORKLOAD_STATS_MAP_KEY = "workloadStats";
 
     private static Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
-    private static Map<String, Map<String, WorkloadStats>> workloadStatHeap = new HashMap<>();
-    private final Object heapLock = new Object();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
