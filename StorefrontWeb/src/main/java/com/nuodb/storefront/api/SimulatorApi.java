@@ -71,6 +71,11 @@ public class SimulatorApi extends BaseApi {
                     }
                     try {
                         simulator.adjustWorkers(workload, quantity, quantity);
+
+                        if (workloadStatHeap.containsKey(NUODB_MAP_KEY) && workloadStatHeap.get(NUODB_MAP_KEY).containsKey(workloadName)) {
+                            workloadStatHeap.get(NUODB_MAP_KEY).get(workloadName).setActiveWorkerCount(quantity);
+                            workloadStatHeap.get(NUODB_MAP_KEY).get(workloadName).setActiveWorkerLimit(quantity);
+                        }
                     } catch (Exception e) {
                         messages.add(new Message(e));
                     }
