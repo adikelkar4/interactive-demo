@@ -21,12 +21,15 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.model.dto.Message;
 import com.nuodb.storefront.model.dto.Workload;
 import com.nuodb.storefront.model.dto.WorkloadStats;
 import com.nuodb.storefront.model.dto.WorkloadStep;
 import com.nuodb.storefront.model.type.MessageSeverity;
 import com.nuodb.storefront.service.ISimulatorService;
+import com.storefront.workload.launcher.LocalLauncher;
+import com.storefront.workload.launcher.UserLauncher;
 
 @Path("/simulator")
 public class SimulatorApi extends BaseApi {
@@ -51,45 +54,33 @@ public class SimulatorApi extends BaseApi {
     @PUT
     @Path("/workloads")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Object> setWorkloads(@Context HttpServletRequest req, Map<String, String> formParams) {
-        Map<String, Object> respData = new HashMap<String, Object>();
-        List<Message> messages = new ArrayList<Message>();
-        ISimulatorService simulator = getSimulator(req);
-        int updatedWorkloadCount = 0;
-        int alertCount = 0;
+    public Response setWorkloads(@Context HttpServletRequest req, Map<String, String> formParams) {
+        Map<String, String> workloadSettings = new HashMap<>();
         for (Map.Entry<String, String> param : formParams.entrySet()) {
             if (param.getKey().startsWith("workload-")) {
                 String workloadName = param.getKey().substring(9);
                 int quantity = Integer.parseInt(param.getValue());
-                Workload workload = simulator.getWorkload(workloadName);
-                if (workload != null) {
-                    if (workload.getMaxWorkers() > 0 && quantity > workload.getMaxWorkers()) {
-                        messages.add(new Message(MessageSeverity.WARNING, workload.getName() + " is limited to " + workload.getMaxWorkers()
-                                + " users; number of users set accordingly."));
-                        quantity = workload.getMaxWorkers();
-                        alertCount++;
-                    }
-                    try {
-                        simulator.adjustWorkers(workload, quantity, quantity);
-
-                        if (workloadStatHeap.containsKey(NUODB_MAP_KEY) && workloadStatHeap.get(NUODB_MAP_KEY).containsKey(workloadName)) {
-                            workloadStatHeap.get(NUODB_MAP_KEY).get(workloadName).setActiveWorkerCount(quantity);
-                            workloadStatHeap.get(NUODB_MAP_KEY).get(workloadName).setActiveWorkerLimit(quantity);
-                        }
-                    } catch (Exception e) {
-                        messages.add(new Message(e));
-                    }
-                    updatedWorkloadCount++;
+                if (workloadStatHeap.containsKey(NUODB_MAP_KEY) && workloadStatHeap.get(NUODB_MAP_KEY).containsKey(workloadName)) {
+                    workloadStatHeap.get(NUODB_MAP_KEY).get(workloadName).setActiveWorkerCount(quantity);
+                    workloadStatHeap.get(NUODB_MAP_KEY).get(workloadName).setActiveWorkerLimit(quantity);
                 }
+                workloadSettings.put(workloadName, param.getValue());
             }
         }
-        if (updatedWorkloadCount > 0 && alertCount == 0) {
-            messages.add(new Message(MessageSeverity.INFO, "Workloads updated successfully."));
-        }
-
-        respData.put("messages", messages);
-        respData.put("workloadStats", getSimulator(req).getWorkloadStats());
-        return respData;
+        UserLauncher containerLauncher = new LocalLauncher();
+        Map<String, String> appSettings = new HashMap<>();
+        String httpProtocol = req.isSecure() ? "https://" : "http://";
+        appSettings.put("app.host", httpProtocol + req.getHeader("HOST") + req.getContextPath());
+        Map<String, String> dbSettings = new HashMap<>();
+        dbSettings.put("db.name", StorefrontApp.DB_NAME);
+        dbSettings.put("db.user", StorefrontApp.DB_USER);
+        dbSettings.put("db.password", StorefrontApp.DB_PASSWORD);
+        try {
+			containerLauncher.launchUser(dbSettings, workloadSettings, appSettings);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+        return Response.ok().build();
     }
 
     @POST
