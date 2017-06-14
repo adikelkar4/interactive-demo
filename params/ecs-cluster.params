@@ -1,24 +1,24 @@
 #deployment buckets
-Buckets: nuodb-oa-cloud-deployment-us-east-2,nuodb-data
+Buckets: nuodb-oa-cloud-deployment,nuodb-data
 
 #amzn-ami-2016.09.g-amazon-ecs-optimized with ecs agent installed
-#us-east-1 EcsAmiId: ami-275ffe31
-EcsAmiId: ami-62745007
+EcsAmiId: ami-275ffe31
+#us-east-2 EcsAmiId: ami-62745007
 
-EcsInstanceType: m4.large
+EcsInstanceType: m4.4xlarge
 
 KeyName: ben-higgins-pem
 
-EcsClusterName: interactive-demo-22
+EcsClusterName: interactive-demo-elb-2
 
 
 #docker container images
 
-storeFrontWebDocker: docker.io/nuodb/storefrontweb-demo:latest
-storeFrontUserDocker: docker.io/nuodb/storefrontuser-demo:latest
-nuodbDocker: docker.io/nuodb/nuodb-ce-2.6.1:1.0
+storeFrontWebDocker: docker.io/nuodb/storefrontweb-demo:master
+storeFrontUserDocker: docker.io/nuodb/storefrontuser-demo:master
+nuodbDocker: docker.io/nuodb/nuodb-ce-2.6.1:1.1
 
 
-dbuser: bird
-dbpassword: bird
+dbuser: dba
+dbpassword: dba
 dbname: demo
