@@ -3,10 +3,13 @@
 package com.nuodb.storefront.api;
 
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.nuodb.storefront.model.dto.WorkloadStats;
 import com.nuodb.storefront.model.entity.Customer;
 import com.nuodb.storefront.service.IDbApi;
 import com.nuodb.storefront.service.ISimulatorService;
@@ -15,6 +18,11 @@ import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.servlet.BaseServlet;
 
 public abstract class BaseApi {
+    protected static final String NUODB_MAP_KEY = "nuodb";
+
+    protected static Map<String, Map<String, WorkloadStats>> workloadStatHeap = new HashMap<>();
+    protected final Object heapLock = new Object();
+
     protected BaseApi() {
     }
     
