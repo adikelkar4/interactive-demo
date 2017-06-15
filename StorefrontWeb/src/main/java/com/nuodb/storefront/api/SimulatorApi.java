@@ -68,15 +68,8 @@ public class SimulatorApi extends BaseApi {
             }
         }
         UserLauncher containerLauncher = new LocalLauncher();
-        Map<String, String> appSettings = new HashMap<>();
-        String httpProtocol = req.isSecure() ? "https://" : "http://";
-        appSettings.put("app.host", httpProtocol + req.getHeader("HOST") + req.getContextPath());
-        Map<String, String> dbSettings = new HashMap<>();
-        dbSettings.put("db.name", StorefrontApp.DB_NAME);
-        dbSettings.put("db.user", StorefrontApp.DB_USER);
-        dbSettings.put("db.password", StorefrontApp.DB_PASSWORD);
         try {
-			containerLauncher.launchUser(dbSettings, workloadSettings, appSettings);
+			containerLauncher.launchUser(workloadSettings, 1);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
