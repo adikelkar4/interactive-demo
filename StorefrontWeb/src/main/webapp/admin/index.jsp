@@ -15,10 +15,6 @@
     <link rel="stylesheet" type="text/css" href="css/app.css" />
     <script type="text/javascript" src="lib-js/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="lib-js/jquery.sparkline.min.js"></script>
-    <script>
-    <% String port = new java.util.Properties(System.getProperties()).getProperty("storefront.dbapi.port", "8888"); %>
-    document.write('\x3Cscript type="text/javascript" src="//' + window.location.hostname + ':<%=port%>/header">\x3C/script>');
-    </script>
     <script type="text/javascript" src="ext-js/ext-all-dev.js"></script>
     <script type="text/javascript" src="app.js"></script>
 </head>
