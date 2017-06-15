@@ -1,4 +1,4 @@
-FROM java
+FROM lwieske/java-8
 
 COPY target/StorefrontUser-1.0-SNAPSHOT.jar /usr/bin/storefrontuser.jar
 
