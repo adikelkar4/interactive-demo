@@ -1252,7 +1252,7 @@
     },
     "StorefrontElbURL" : {
       "Description" : "Load Balancer for ECS Service",
-      "Value" : { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, "/admin" ]]}
+      "Value" : { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, "/StorefrontWeb/" ]]}
     }
   }
 }
