@@ -138,31 +138,31 @@
     "EcsPort" : {
       "Type" : "String",
       "Description" : "Optional - Security Group port to open on ECS instances - defaults to port 80",
-      "Default" : "48004"
+      "Default" : "8080"
     },
 
     "ElbPort" : {
       "Type" : "String",
       "Description" : "Optional - Security Group port to open on ELB - port 80 will be open by default",
-      "Default" : "48004"
+      "Default" : "80"
     },
 
     "ElbProtocol" : {
       "Type" : "String",
       "Description" : "Optional - ELB Protocol - defaults to HTTP",
-      "Default" : "TCP"
+      "Default" : "HTTP"
     },
 
     "ElbHealthCheckTarget" : {
       "Type" : "String",
       "Description" : "Optional - Health Check Target for ELB - defaults to TCP:48004",
-      "Default" : "TCP:48004"
+      "Default" : "HTTP:8080/StorefrontWeb/keep_alive.html"
     },
 
     "SourceCidr" : {
       "Type" : "String",
       "Description" : "Optional - CIDR/IP range for EcsPort and ElbPort - defaults to 0.0.0.0/0",
-      "Default" : "0.0.0.0/0"
+      "Default" : "10.0.0.0/0"
     },
 
     "EcsEndpoint" : {
@@ -292,27 +292,34 @@
       }
     },
 
+    "BrokerElbSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "ELB Allowed Ports",
+        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004",
+            "CidrIp" : { "Ref" : "SourceCidr" } }
+        ]
+      }
+    },
+
     "EcsSecurityGroup" : {
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
         "GroupDescription" : "ECS Allowed Ports",
         "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
-        "SecurityGroupIngress" : { "Fn::If" : [ "CreateELB",
+        "SecurityGroupIngress" :
           [
             { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "EcsPort" }, "ToPort" : { "Ref" : "EcsPort" },
               "CidrIp" : { "Ref" : "SourceCidr" } },
-            { "IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "SourceSecurityGroupId" :  { "Ref" : "ElbSecurityGroup" } }
-          ],
-          [
-            { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "EcsPort" }, "ToPort" : { "Ref" : "EcsPort" },
-              "CidrIp" : { "Ref" : "SourceCidr" } }
+            { "IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "SourceSecurityGroupId" :  { "Ref" : "ElbSecurityGroup" } },
+            { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } }
           ]
-        ] }
       }
     },
 
-    "EcsElasticLoadBalancer" : {
-      "Condition" : "CreateELBForNewVpc",
+    "StorefrontELB" : {
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
         "SecurityGroups" : [ { "Ref" : "ElbSecurityGroup" } ],
@@ -333,23 +340,23 @@
       }
     },
 
-    "EcsElasticLoadBalancerExistingVpc" : {
-      "Condition" : "CreateELBForExistingVpc",
+    "brokerELB" : {
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
-        "SecurityGroups" : [ { "Ref" : "ElbSecurityGroup" } ],
-        "Subnets" : { "Ref" : "SubnetIds" },
+        "SecurityGroups" : [ { "Ref" : "BrokerElbSecurityGroup" } ],
+        "Subnets" : [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ],
         "CrossZone" : "true",
+        "Scheme" : "internal",
         "Listeners" : [ {
-          "LoadBalancerPort" : { "Ref" : "ElbPort" },
-          "InstancePort" : { "Ref" : "EcsPort" },
-          "Protocol" : { "Ref" : "ElbProtocol" }
+          "LoadBalancerPort" : "48004",
+          "InstancePort" : "48004",
+          "Protocol" : "TCP"
         } ],
         "HealthCheck" : {
-          "Target" : { "Ref" : "ElbHealthCheckTarget" },
+          "Target" : "TCP:48004",
           "HealthyThreshold" : "2",
           "UnhealthyThreshold" : "10",
-          "Interval" : "30",
+          "Interval" : "10",
           "Timeout" : "5"
         }
       }
@@ -507,9 +514,7 @@
           "Ref": "EcsInstanceType"
         },
         "AssociatePublicIpAddress": true,
-        "IamInstanceProfile": {
-          "Ref": "ECSInstanceProfile"
-        },
+        "IamInstanceProfile": {"Ref": "ECSInstanceProfile" },
         "KeyName": {
           "Ref": "KeyName"
         },
@@ -533,36 +538,13 @@
       }
     },
 
-    "EcsInstanceLcWithoutKeyPair" : {
-      "Condition" : "CreateEC2LCWithoutKeyPair",
-      "Type" : "AWS::AutoScaling::LaunchConfiguration",
-      "Properties" : {
-        "ImageId" : { "Ref" : "EcsAmiId" },
-        "InstanceType" : { "Ref" : "EcsInstanceType" },
-        "AssociatePublicIpAddress" : true,
-        "IamInstanceProfile": { "Ref": "ECSInstanceProfile" },
-        "SecurityGroups" : [ { "Ref" : "EcsSecurityGroup" } ],
-        "UserData" : { "Fn::If" : [
-          "SetEndpointToECSAgent" ,
-          { "Fn::Base64" : { "Fn::Join" : ["", [
-            "#!/bin/bash\n",
-            "echo ECS_CLUSTER=", { "Ref" : "EcsClusterName" }, " >> /etc/ecs/ecs.config",
-            "\necho ECS_BACKEND_HOST=", { "Ref" : "EcsEndpoint" }, " >> /etc/ecs/ecs.config"
-          ] ] } },
-          { "Fn::Base64" : { "Fn::Join" : ["", [
-            "#!/bin/bash\n",
-            "echo ECS_CLUSTER=", { "Ref" : "EcsClusterName" }, " >> /etc/ecs/ecs.config"
-          ] ] } }
-        ] }
-      }
-    },
-
     "EcsInstanceAsg" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
         "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }, { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
         "VPCZoneIdentifier" : { "Fn::If" : [ "CreateVpcResources", [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ], { "Ref" : "SubnetIds" } ] },
-        "LaunchConfigurationName" : { "Fn::If" : [ "CreateEC2LCWithKeyPair", { "Ref" : "EcsInstanceLc" }, { "Ref" : "EcsInstanceLcWithoutKeyPair" } ] },
+        "LaunchConfigurationName" : { "Ref" : "EcsInstanceLc" },
+        "LoadBalancerNames" : [{ "Ref" : "StorefrontELB" }, { "Ref" : "brokerELB" }],
         "MinSize" : "1",
         "MaxSize" : { "Ref" : "AsgMaxSize" },
         "DesiredCapacity" : { "Ref" : "AsgMaxSize" },
@@ -612,6 +594,182 @@
       }
     },
 
+    "GetEC2PrivateIp": {
+      "DependsOn": [
+        "EcsInstanceAsg"
+      ],
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaInstanceRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile" : { "Fn::Join" : ["\n", [
+            "import boto3",
+            "import cfnresponse",
+
+            "client = boto3.client('ecs')",
+            "client2 = boto3.client('ec2')",
+
+            "def handler(event, context):",
+            "    print(event)",
+            "    clusterArn = event['ResourceProperties']['cluster']",
+
+            "    response = client.list_container_instances(",
+            "      cluster=clusterArn",
+            "    )",
+            "    print(response)",
+            "    instanceArn = response['containerInstanceArns'][0]",
+
+            "    response = client.describe_container_instances(",
+            "      cluster=clusterArn,",
+            "      containerInstances=[instanceArn]",
+            "    )",
+            "    print(response)",
+            "    id = response['containerInstances'][0]['ec2InstanceId']",
+
+            "    try:",
+            "        response = client2.describe_instances(",
+            "            InstanceIds=[ id ],",
+            "        )",
+            "        print(response)",
+            "        responseData = {}",
+            "        responseData['Data'] = response['Reservations'][0]['Instances'][0]['PrivateIpAddress']",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "    except Exception as e:",
+            "        print(e.args)",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Failed to get Private IP'",
+            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
+          ]]}
+        },
+        "Runtime": "python2.7",
+        "Timeout": "300"
+      }
+    },
+
+    "NuodbBrokerContainer": {
+      "DependsOn": [
+        "EcsInstanceAsg"
+      ],
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaInstanceRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile" : { "Fn::Join" : ["\n", [
+            "import boto3",
+            "import cfnresponse",
+
+            "client = boto3.client('ecs')",
+
+            "def handler(event, context):",
+            "    print(event)",
+            "    dockerImage = event['ResourceProperties']['dockerImage']",
+            "    region = event['ResourceProperties']['region']",
+            "    peer_address = event['ResourceProperties']['peer_address']",
+            "    cluster = event['ResourceProperties']['cluster']",
+            "    role = event['ResourceProperties']['role']",
+            "    containerType = 'BROKER'",
+            "    elbName = event['ResourceProperties']['elbName']",
+
+            "    try:",
+            "        response = client.register_task_definition(",
+            "            family=containerType + '-family',",
+            "            taskRoleArn=role,",
+            "            containerDefinitions=[",
+            "             {",
+            "               'name': containerType + '-definition',",
+            "               'image': dockerImage,",
+            "               'cpu': 10,",
+            "               'memoryReservation': 4096,",
+            "               'readonlyRootFilesystem': False,",
+            "               'privileged': True,",
+            "               'environment': [",
+            "                 {",
+            "                   'name': 'NODE_REGION',",
+            "                   'value': region",
+            "                 },",
+            "                 {",
+            "                   'name': 'ENV_TYPE',",
+            "                   'value': 'AWSECS'",
+            "                 },",
+            "                 {",
+            "                   'name': 'AGENT_PORT',",
+            "                   'value': '48004'",
+            "                 },",
+            "                 {",
+            "                   'name': 'BROKER_PORT',",
+            "                   'value': '48004'",
+            "                 },",
+            "                 {",
+            "                   'name': 'NODE_PORT',",
+            "                   'value': '48010'",
+            "                 },",
+            "                 {",
+            "                   'name': 'NODE_TYPE',",
+            "                   'value': containerType",
+            "                 },",
+            "                 {",
+            "                    'name': 'PEER_ADDRESS',",
+            "                    'value': elbName + ':48004'",
+            "                  }",
+            "               ],",
+            "               'portMappings': [",
+            "                 {",
+            "                   'containerPort': 48004,",
+            "                   'hostPort': 48004,",
+            "                   'protocol': 'tcp'",
+            "                 }",
+            "               ]",
+            "             }",
+            "           ]",
+            "        )",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Successful task registration: ' + containerType + '-definition'",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "    except Exception as e:",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Failed to createe definition: ' + containerType + '-definition'",
+            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')",
+            "    try:",
+
+            "        response = client.create_service(",
+            "            cluster=cluster,",
+            "            serviceName=containerType + '-service',",
+            "            taskDefinition=containerType + '-family',",
+            "            desiredCount=1,",
+            "            placementStrategy=[",
+            "              {",
+            "                'type': 'random'",
+            "              }",
+            "            ]",
+            "        )",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Successful task registration: ' + containerType + '-service'",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "    except Exception as e:",
+            "        print(e.args)",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Failed to create broker service: ' + containerType + '-service'",
+            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
+
+          ]]}
+        },
+        "Runtime": "python2.7",
+        "Timeout": "300"
+      }
+    },
+
     "deployNuodbContainers": {
       "DependsOn": [
         "EcsInstanceAsg"
@@ -639,10 +797,10 @@
             "    peer_address = event['ResourceProperties']['peer_address']",
             "    cluster = event['ResourceProperties']['cluster']",
             "    role = event['ResourceProperties']['role']",
-            "    containerType = [['BROKER', 'SM', 'TE'], ['48004', '48010', '48011']]",
+            "    containerType = [['SM', 'TE'], ['48010', '48011']]",
             "    elbName = event['ResourceProperties']['elbName']",
 
-            "    for x in range(0,3):",
+            "    for x in range(2):",
             "        try:",
             "            response = client.register_task_definition(",
             "                family=containerType[0][x] + '-family',",
@@ -666,7 +824,7 @@
             "                     },",
             "                     {",
             "                       'name': 'AGENT_PORT',",
-            "                       'value': '48011'",
+            "                       'value': '48004'",
             "                     },",
             "                     {",
             "                       'name': 'BROKER_PORT',",
@@ -684,14 +842,7 @@
             "                       'name': 'PEER_ADDRESS',",
             "                       'value': peer_address + ':48004'",
             "                     }",
-            "                   ],",
-            "                   'portMappings': [",
-            "                     {",
-            "                       'containerPort': 48004,",
-            "                       'hostPort': 48004,",
-            "                       'protocol': 'tcp'",
-            "                     }",
-            "                   ],",
+            "                   ]",
             "                 }",
             "               ]",
             "            )",
@@ -703,11 +854,6 @@
             "            responseData['Data'] = 'Failed to create broker task definition'",
             "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')",
             "        try:",
-            "            if containerType[0][x] == 'BROKER':",
-            "                lbdata=[{'loadBalancerName': elbName,'containerName': 'BROKER-definition', 'containerPort': 48004 }]",
-            "            else:",
-            "                lbdata=[]",
-
             "            response = client.create_service(",
             "                cluster=cluster,",
             "                serviceName=containerType[0][x] + '-service',",
@@ -717,15 +863,15 @@
             "                  {",
             "                    'type': 'random'",
             "                  }",
-            "                ],",
-            "                loadBalancers=lbdata",
+            "                ]",
             "            )",
             "            responseData = {}",
             "            responseData['Data'] = 'Successful task registration: ' + containerType[0][x] + '-service'",
             "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
             "        except Exception as e:",
+            "            print(e.args)",
             "            responseData = {}",
-            "            responseData['Data'] = 'Failed to create broker service'",
+            "            responseData['Data'] = 'Failed to create service: ' + containerType[0][x] + '-service'",
             "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
 
           ]]}
@@ -765,7 +911,8 @@
             "    dbuser = event['ResourceProperties']['dbuser']",
             "    dbpassword = event['ResourceProperties']['dbpassword']",
             "    dbname = event['ResourceProperties']['dbname']",
-
+            "    userLoadLambdaArn = event['ResourceProperties']['userLoadLambdaArn']",
+            "    storefronturl = event['ResourceProperties']['storefronturl']",
             "    try:",
             "        response = client.register_task_definition(",
             "            family='storefront-family',",
@@ -788,8 +935,32 @@
             "                     'value': jdbc_url",
             "                   },",
             "                   {",
-            "                     'name': 'BROKER_PORT',",
-            "                     'value': '48004'",
+            "                      'name': 'userLoadLambdaArn',",
+            "                      'value': userLoadLambdaArn",
+            "                   },",
+            "                   {",
+            "                     'name': 'ecsClusterName',",
+            "                     'value': cluster",
+            "                   },",
+            "                   {",
+            "                     'name': 'awsRegion',",
+            "                     'value': region",
+            "                   },",
+            "                   {",
+            "                     'name': 'dbuser',",
+            "                     'value': dbuser",
+            "                   },",
+            "                   {",
+            "                     'name': 'dbpassword',",
+            "                     'value': dbpassword",
+            "                   },",
+            "                   {",
+            "                     'name': 'dbname',",
+            "                     'value': dbname",
+            "                   },",
+            "                   {",
+            "                     'name': 'storefronturl',",
+            "                     'value': storefronturl",
             "                   }",
             "                ],",
             "                'portMappings': [",
@@ -822,14 +993,14 @@
             "                  }",
             "                ]",
             "        )",
-            "            responseData = {}",
-            "            responseData['Data'] = 'Successful task registration: storefront-service'",
-            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Successful task registration: storefront-service'",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
             "    except Exception as e:",
-            "            print(e.args)",
-            "            responseData = {}",
-            "            responseData['Data'] = 'Failed to create storefront service'",
-            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
+            "        print(e.args)",
+            "        responseData = {}",
+            "        responseData['Data'] = 'Failed to create storefront service'",
+            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
 
           ]]}
         },
@@ -882,18 +1053,18 @@
             "               'readonlyRootFilesystem': False,",
             "               'privileged': True,",
             "               'environment': [",
-            "                         {",
-            "                           'name': 'ENV_TYPE',",
-            "                           'value': 'AWSECS'",
-            "                         },",
-            "                         {",
-            "                           'name': 'JDBC_URL',",
-            "                           'value': jdbc_url",
-            "                         },",
-            "                         {",
-            "                           'name': 'BROKER_PORT',",
-            "                           'value': '48004'",
-            "                         }",
+            "                 {",
+            "                   'name': 'ENV_TYPE',",
+            "                   'value': 'AWSECS'",
+            "                 },",
+            "                 {",
+            "                   'name': 'JDBC_URL',",
+            "                   'value': jdbc_url",
+            "                 },",
+            "                 {",
+            "                   'name': 'BROKER_PORT',",
+            "                   'value': '48004'",
+            "                 }",
             "               ],",
             "               'portMappings': [",
             "                 {",
@@ -989,18 +1160,28 @@
       }
     },
 
+    "getInstanceIp" : {
+      "DependsOn" : ["GetEC2PrivateIp"],
+      "Type": "Custom::lambdaGetIP",
+      "Version" : "1.0",
+      "Properties" : {
+        "ServiceToken": {"Fn::GetAtt" : [ "GetEC2PrivateIp", "Arn"] },
+        "cluster": { "Ref" : "EcsClusterName" }
+      }
+    },
+
     "DeployUserContainer" : {
-      "DependsOn" : ["deployUserContainer"],
-      "Type": "Custom::LaunchWebContainer",
+      "DependsOn" : ["getInstanceIp"],
+      "Type": "Custom::LaunchUserContainer",
       "Version" : "1.0",
       "Properties" : {
         "ServiceToken": {"Fn::GetAtt" : [ "deployUserContainer", "Arn"] },
         "dockerImage": { "Ref" : "storeFrontUserDocker" },
-        "peer_address" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "peer_address" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] },
         "role" : { "Ref" : "ECSInstanceRole" },
         "region": { "Ref" : "AWS::Region" },
         "cluster" : { "Ref" : "EcsClusterName" },
-        "jdbc_url" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "jdbc_url" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] },
         "dbuser" : { "Ref" : "dbuser" },
         "dbpassword": { "Ref" : "dbpassword" },
         "dbname" : { "Ref": "dbname" }
@@ -1008,37 +1189,56 @@
     },
 
     "DeployNuoDBContainer" : {
-      "DependsOn" : ["deployDemoWebContainer"],
-      "Type": "Custom::LaunchWebContainer",
+      "DependsOn" : ["getInstanceIp"],
+      "Type": "Custom::LaunchNuodbContainer",
       "Version" : "1.0",
       "Properties" : {
         "ServiceToken": {"Fn::GetAtt" : [ "deployNuodbContainers", "Arn"] },
         "dockerImage": { "Ref" : "nuodbDocker" },
-        "peer_address" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "peer_address" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] },
         "role" : { "Ref" : "ECSInstanceRole" },
         "region": { "Ref" : "AWS::Region" },
         "cluster" : { "Ref" : "EcsClusterName" },
-        "elbName" : { "Ref" : "EcsElasticLoadBalancer" },
+        "elbName" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] },
         "dbuser" : { "Ref" : "dbuser" },
         "dbpassword": { "Ref" : "dbpassword" },
         "dbname" : { "Ref": "dbname" }
       }
     },
 
+    "DeployNuoDBBroker" : {
+      "DependsOn" : ["getInstanceIp"],
+      "Type": "Custom::LaunchBrokerContainer",
+      "Version" : "1.0",
+      "Properties" : {
+        "ServiceToken": {"Fn::GetAtt" : [ "NuodbBrokerContainer", "Arn"] },
+        "dockerImage": { "Ref" : "nuodbDocker" },
+        "peer_address" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] },
+        "role" : { "Ref" : "ECSInstanceRole" },
+        "region": { "Ref" : "AWS::Region" },
+        "cluster" : { "Ref" : "EcsClusterName" },
+        "elbName" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] },
+        "dbuser" : { "Ref" : "dbuser" },
+        "dbpassword": { "Ref" : "dbpassword" },
+        "dbname" : { "Ref": "dbname" }
+      }
+    },
     "DeployWebContainer" : {
-      "DependsOn" : ["DeployNuoDBContainer"],
-      "Type": "Custom::LaunchWebContainer",
+      "DependsOn" : ["getInstanceIp"],
+      "Type": "Custom::LaunchStorefrontContainer",
       "Version" : "1.0",
       "Properties" : {
         "ServiceToken": {"Fn::GetAtt" : [ "deployDemoWebContainer", "Arn"] },
         "dockerImage": { "Ref" : "storeFrontWebDocker" },
-        "jdbc_url" : { "Fn::GetAtt" : ["EcsElasticLoadBalancer", "DNSName"] },
+        "jdbc_url" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] },
         "role" : { "Ref" : "ECSInstanceRole" },
         "region": { "Ref" : "AWS::Region" },
         "cluster" : { "Ref" : "EcsClusterName" },
         "dbuser" : { "Ref" : "dbuser" },
         "dbpassword": { "Ref" : "dbpassword" },
-        "dbname" : { "Ref": "dbname" }
+        "dbname" : { "Ref": "dbname" },
+        "userLoadLambdaArn" : { "Fn::GetAtt" : [ "UpdateUserLoad", "Arn"] },
+        "storefronturl" : { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/" ]]}
       }
     }
 
@@ -1050,14 +1250,9 @@
       "Description" : "Auto Scaling Group Name for ECS Instances",
       "Value" : { "Ref" : "EcsInstanceAsg" }
     },
-    "EcsElbName" : {
+    "StorefrontElbURL" : {
       "Description" : "Load Balancer for ECS Service",
-      "Value" : { "Fn::If" : [ "CreateELB",
-        { "Fn::If" : [ "CreateELBForNewVpc", { "Ref" : "EcsElasticLoadBalancer" }, { "Ref" : "EcsElasticLoadBalancerExistingVpc" } ] },
-        ""
-      ] }
+      "Value" : { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, "/StorefrontWeb/" ]]}
     }
-
   }
-
 }
