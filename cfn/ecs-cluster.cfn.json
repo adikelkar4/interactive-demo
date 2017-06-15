@@ -292,22 +292,30 @@
       }
     },
 
+    "BrokerElbSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "ELB Allowed Ports",
+        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004",
+            "CidrIp" : { "Ref" : "SourceCidr" } }
+        ]
+      }
+    },
+
     "EcsSecurityGroup" : {
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
         "GroupDescription" : "ECS Allowed Ports",
         "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
-        "SecurityGroupIngress" : { "Fn::If" : [ "CreateELB",
+        "SecurityGroupIngress" :
           [
             { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "EcsPort" }, "ToPort" : { "Ref" : "EcsPort" },
               "CidrIp" : { "Ref" : "SourceCidr" } },
-            { "IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "SourceSecurityGroupId" :  { "Ref" : "ElbSecurityGroup" } }
-          ],
-          [
-            { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "EcsPort" }, "ToPort" : { "Ref" : "EcsPort" },
-              "CidrIp" : { "Ref" : "SourceCidr" } }
+            { "IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "SourceSecurityGroupId" :  { "Ref" : "ElbSecurityGroup" } },
+            { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } }
           ]
-        ] }
       }
     },
 
@@ -335,7 +343,7 @@
     "brokerELB" : {
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
-        "SecurityGroups" : [ { "Ref" : "ElbSecurityGroup" } ],
+        "SecurityGroups" : [ { "Ref" : "BrokerElbSecurityGroup" } ],
         "Subnets" : [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ],
         "CrossZone" : "true",
         "Scheme" : "internal",
@@ -348,7 +356,7 @@
           "Target" : "TCP:48004",
           "HealthyThreshold" : "2",
           "UnhealthyThreshold" : "10",
-          "Interval" : "30",
+          "Interval" : "10",
           "Timeout" : "5"
         }
       }
@@ -536,7 +544,7 @@
         "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }, { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
         "VPCZoneIdentifier" : { "Fn::If" : [ "CreateVpcResources", [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ], { "Ref" : "SubnetIds" } ] },
         "LaunchConfigurationName" : { "Ref" : "EcsInstanceLc" },
-        "LoadBalancerNames" : [{ "Ref" : "StorefrontELB" }],
+        "LoadBalancerNames" : [{ "Ref" : "StorefrontELB" }, { "Ref" : "brokerELB" }],
         "MinSize" : "1",
         "MaxSize" : { "Ref" : "AsgMaxSize" },
         "DesiredCapacity" : { "Ref" : "AsgMaxSize" },
@@ -712,9 +720,9 @@
             "                   'value': containerType",
             "                 },",
             "                 {",
-            "                   'name': 'PEER_ADDRESS',",
-            "                   'value': elbName",
-            "                 }",
+            "                    'name': 'PEER_ADDRESS',",
+            "                    'value': elbName + ':48004'",
+            "                  }",
             "               ],",
             "               'portMappings': [",
             "                 {",
@@ -904,7 +912,7 @@
             "    dbpassword = event['ResourceProperties']['dbpassword']",
             "    dbname = event['ResourceProperties']['dbname']",
             "    userLoadLambdaArn = event['ResourceProperties']['userLoadLambdaArn']",
-            "    storefront.url = event['ResourceProperties']['storefront.url']",
+            "    storefronturl = event['ResourceProperties']['storefronturl']",
             "    try:",
             "        response = client.register_task_definition(",
             "            family='storefront-family',",
@@ -951,8 +959,8 @@
             "                     'value': dbname",
             "                   },",
             "                   {",
-            "                     'name': 'storefront.url',",
-            "                     'value': storefront.url",
+            "                     'name': 'storefronturl',",
+            "                     'value': storefronturl",
             "                   }",
             "                ],",
             "                'portMappings': [",
@@ -1230,7 +1238,7 @@
         "dbpassword": { "Ref" : "dbpassword" },
         "dbname" : { "Ref": "dbname" },
         "userLoadLambdaArn" : { "Fn::GetAtt" : [ "UpdateUserLoad", "Arn"] },
-        "storefront.url" : { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/" ]]}
+        "storefronturl" : { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/" ]]}
       }
     }
 
