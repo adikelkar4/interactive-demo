@@ -800,7 +800,7 @@
             "    containerType = [['SM', 'TE'], ['48010', '48011']]",
             "    elbName = event['ResourceProperties']['elbName']",
 
-            "    for x in range(0,2):",
+            "    for x in range(2):",
             "        try:",
             "            response = client.register_task_definition(",
             "                family=containerType[0][x] + '-family',",
