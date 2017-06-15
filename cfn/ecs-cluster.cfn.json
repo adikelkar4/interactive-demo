@@ -156,7 +156,7 @@
     "ElbHealthCheckTarget" : {
       "Type" : "String",
       "Description" : "Optional - Health Check Target for ELB - defaults to TCP:48004",
-      "Default" : "HTTP:8080/keep_alive.html"
+      "Default" : "HTTP:8080/StorefrontWeb/keep_alive.html"
     },
 
     "SourceCidr" : {
