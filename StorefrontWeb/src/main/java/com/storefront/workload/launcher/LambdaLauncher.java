@@ -90,7 +90,7 @@ public class LambdaLauncher implements UserLauncher {
 	}
 	
 	interface LambdaService {
-		@LambdaFunction(functionName="test-cluster-elb-buld-4-UpdateUserLoad-T7S5RO5RI355")
+		@LambdaFunction(functionName="test-cluster-elb-buld-6-deployUserContainer-3DF4J0H6S14M")
 		LambdaOutput launchContainer(LambdaInput input);
 	}
 }
