@@ -298,8 +298,8 @@
         "GroupDescription" : "ELB Allowed Ports",
         "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
         "SecurityGroupIngress" : [
-          { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004",
-            "CidrIp" : { "Ref" : "SourceCidr" } }
+          { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "CidrIp" : { "Ref" : "SourceCidr" } },
+          { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "CidrIp" : { "Ref" : "SourceCidr" } }
         ]
       }
     },
@@ -314,7 +314,8 @@
             { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "EcsPort" }, "ToPort" : { "Ref" : "EcsPort" },
               "CidrIp" : { "Ref" : "SourceCidr" } },
             { "IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "SourceSecurityGroupId" :  { "Ref" : "ElbSecurityGroup" } },
-            { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } }
+            { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
+            { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } }
           ]
       }
     },
@@ -347,11 +348,18 @@
         "Subnets" : [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ],
         "CrossZone" : "true",
         "Scheme" : "internal",
-        "Listeners" : [ {
-          "LoadBalancerPort" : "48004",
-          "InstancePort" : "48004",
-          "Protocol" : "TCP"
-        } ],
+        "Listeners" : [
+          {
+            "LoadBalancerPort" : "48004",
+            "InstancePort" : "48004",
+            "Protocol" : "TCP"
+          },
+          {
+            "LoadBalancerPort" : "8888",
+            "InstancePort" : "8888",
+            "Protocol" : "HTTP"
+          }
+        ],
         "HealthCheck" : {
           "Target" : "TCP:48004",
           "HealthyThreshold" : "2",
@@ -594,63 +602,6 @@
       }
     },
 
-    "GetEC2PrivateIp": {
-      "DependsOn": [
-        "EcsInstanceAsg"
-      ],
-      "Type": "AWS::Lambda::Function",
-      "Properties": {
-        "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "LambdaInstanceRole",
-            "Arn"
-          ]
-        },
-        "Code": {
-          "ZipFile" : { "Fn::Join" : ["\n", [
-            "import boto3",
-            "import cfnresponse",
-
-            "client = boto3.client('ecs')",
-            "client2 = boto3.client('ec2')",
-
-            "def handler(event, context):",
-            "    print(event)",
-            "    clusterArn = event['ResourceProperties']['cluster']",
-
-            "    response = client.list_container_instances(",
-            "      cluster=clusterArn",
-            "    )",
-            "    print(response)",
-            "    instanceArn = response['containerInstanceArns'][0]",
-
-            "    response = client.describe_container_instances(",
-            "      cluster=clusterArn,",
-            "      containerInstances=[instanceArn]",
-            "    )",
-            "    print(response)",
-            "    id = response['containerInstances'][0]['ec2InstanceId']",
-
-            "    try:",
-            "        response = client2.describe_instances(",
-            "            InstanceIds=[ id ],",
-            "        )",
-            "        print(response)",
-            "        responseData = {}",
-            "        responseData['Data'] = response['Reservations'][0]['Instances'][0]['PrivateIpAddress']",
-            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
-            "    except Exception as e:",
-            "        print(e.args)",
-            "        responseData = {}",
-            "        responseData['Data'] = 'Failed to get Private IP'",
-            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
-          ]]}
-        },
-        "Runtime": "python2.7",
-        "Timeout": "300"
-      }
-    },
 
     "NuodbBrokerContainer": {
       "DependsOn": [
@@ -728,6 +679,11 @@
             "                 {",
             "                   'containerPort': 48004,",
             "                   'hostPort': 48004,",
+            "                   'protocol': 'tcp'",
+            "                 },",
+            "                 {",
+            "                   'containerPort': 8888,",
+            "                   'hostPort': 8888,",
             "                   'protocol': 'tcp'",
             "                 }",
             "               ]",
@@ -1160,18 +1116,8 @@
       }
     },
 
-    "getInstanceIp" : {
-      "DependsOn" : ["GetEC2PrivateIp"],
-      "Type": "Custom::lambdaGetIP",
-      "Version" : "1.0",
-      "Properties" : {
-        "ServiceToken": {"Fn::GetAtt" : [ "GetEC2PrivateIp", "Arn"] },
-        "cluster": { "Ref" : "EcsClusterName" }
-      }
-    },
-
     "DeployUserContainer" : {
-      "DependsOn" : ["getInstanceIp"],
+      "DependsOn" : ["DeployNuoDBBroker"],
       "Type": "Custom::LaunchUserContainer",
       "Version" : "1.0",
       "Properties" : {
@@ -1189,7 +1135,7 @@
     },
 
     "DeployNuoDBContainer" : {
-      "DependsOn" : ["getInstanceIp"],
+      "DependsOn" : ["DeployNuoDBBroker"],
       "Type": "Custom::LaunchNuodbContainer",
       "Version" : "1.0",
       "Properties" : {
@@ -1207,7 +1153,7 @@
     },
 
     "DeployNuoDBBroker" : {
-      "DependsOn" : ["getInstanceIp"],
+      "DependsOn" : ["NuodbBrokerContainer"],
       "Type": "Custom::LaunchBrokerContainer",
       "Version" : "1.0",
       "Properties" : {
@@ -1224,7 +1170,7 @@
       }
     },
     "DeployWebContainer" : {
-      "DependsOn" : ["getInstanceIp"],
+      "DependsOn" : ["DeployNuoDBBroker"],
       "Type": "Custom::LaunchStorefrontContainer",
       "Version" : "1.0",
       "Properties" : {
