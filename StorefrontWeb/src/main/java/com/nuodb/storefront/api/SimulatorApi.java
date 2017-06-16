@@ -28,6 +28,7 @@ import com.nuodb.storefront.model.dto.WorkloadStats;
 import com.nuodb.storefront.model.dto.WorkloadStep;
 import com.nuodb.storefront.model.type.MessageSeverity;
 import com.nuodb.storefront.service.ISimulatorService;
+import com.storefront.workload.launcher.LambdaLauncher;
 import com.storefront.workload.launcher.LocalLauncher;
 import com.storefront.workload.launcher.UserLauncher;
 
@@ -67,20 +68,33 @@ public class SimulatorApi extends BaseApi {
                 workloadSettings.put(workloadName, param.getValue());
             }
         }
-        UserLauncher containerLauncher = new LocalLauncher();
-        Map<String, String> appSettings = new HashMap<>();
-        String httpProtocol = req.isSecure() ? "https://" : "http://";
-        appSettings.put("app.host", httpProtocol + req.getHeader("HOST") + req.getContextPath());
-        Map<String, String> dbSettings = new HashMap<>();
-        dbSettings.put("db.name", StorefrontApp.DB_NAME);
-        dbSettings.put("db.user", StorefrontApp.DB_USER);
-        dbSettings.put("db.password", StorefrontApp.DB_PASSWORD);
+        UserLauncher containerLauncher = this.buildUserLauncher(req);
         try {
-			containerLauncher.launchUser(dbSettings, workloadSettings, appSettings);
+			containerLauncher.launchUser(workloadSettings, 1);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
         return Response.ok().build();
+    }
+    
+    private UserLauncher buildUserLauncher(HttpServletRequest req) {
+    	UserLauncher launcher = null;
+    	String host = req.getHeader("HOST");
+    	if (host.contains("localhost")) {
+			Map<String, String> dbSettings = new HashMap<>();
+			dbSettings.put("db.name", StorefrontApp.DB_NAME);
+			dbSettings.put("db.user", StorefrontApp.DB_USER);
+			dbSettings.put("db.password", StorefrontApp.DB_PASSWORD);
+			LocalLauncher local = new LocalLauncher();
+			local.setDbOptions(dbSettings);
+			Map<String, String> appSettings = new HashMap<>();
+			appSettings.put("app.host", host);
+			local.setAppOptions(appSettings);
+			launcher = local;
+    	} else {
+    		launcher = new LambdaLauncher();
+    	}
+    	return launcher;
     }
 
     @POST
