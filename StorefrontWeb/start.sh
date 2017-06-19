@@ -16,12 +16,11 @@
 PROPFILE=/usr/local/tomcat/conf/catalina.properties
 
 for var in $(env | cut -d= -f 1 | egrep "^ARG_"); do
-    name=$(echo $var | cut -c 5- )
     value=$(eval echo \$$var)
-    if egrep -q "^$name=" $PROPFILE ; then
-	sed -i "s/^$name=.*/$name=$value/" $PROPFILE
+    if egrep -q "^$var=" $PROPFILE ; then
+	    sed -i "s/^$var=.*/$name=$value/" $PROPFILE
     else
-	echo "$name=$value"  >> $PROPFILE
+	    echo "$var=$value"  >> $PROPFILE
     fi
 done
 
