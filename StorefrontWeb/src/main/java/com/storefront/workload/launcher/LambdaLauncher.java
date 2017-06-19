@@ -1,17 +1,44 @@
 package com.storefront.workload.launcher;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
+import java.util.Properties;
 
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
 import com.amazonaws.services.lambda.invoke.LambdaFunction;
 import com.amazonaws.services.lambda.invoke.LambdaInvokerFactory;
 
 public class LambdaLauncher implements UserLauncher {
-
+	
+	static {
+		File propertiesFile = new File(System.getProperty("catalina.base") + "/conf", "catalina.properties");
+		InputStream propertiesStream;
+		Properties catalinaProperties = null;
+		try {
+			propertiesStream = new FileInputStream(propertiesFile);
+			catalinaProperties = new Properties();
+			catalinaProperties.load(propertiesStream);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		if (catalinaProperties != null) {
+			ecsClusterName = catalinaProperties.getProperty("ARG_ecsClusterName", "localhost");
+		} else {
+			ecsClusterName = "localhost";
+		}
+	}
+	
+	private static String ecsClusterName;
+	
 	@Override
 	public void launchUser(Map<String, String> workloadOptions, int count) throws Exception {
 		LambdaInput input = new LambdaInput();
 		input.setCount(count);
+		input.setARG_ecsClusterName(getEcsClusterName());
 		for (String option : workloadOptions.keySet()) {
 			switch(option.toLowerCase()) {
 			case "multi_browse":
@@ -35,12 +62,21 @@ public class LambdaLauncher implements UserLauncher {
 		System.out.println(output);
 	}
 	
+	public String getEcsClusterName() {
+		return ecsClusterName;
+	}
+
+	public void setEcsClusterName(String newValue) {
+		ecsClusterName = newValue;
+	}
+
 	class LambdaInput {
 		private int count;
 		private String multi_browse;
 		private String multi_browse_and_review;
 		private String shopper;
 		private String analyst;
+		private String ARG_ecsClusterName;
 		
 		public int getCount() {
 			return count;
@@ -69,11 +105,19 @@ public class LambdaLauncher implements UserLauncher {
 		public void setShopper(String shopper) {
 			this.shopper = shopper;
 		}
+		
 		public String getAnalyst() {
 			return analyst;
 		}
 		public void setAnalyst(String analyst) {
 			this.analyst = analyst;
+		}
+		
+		public String getARG_ecsClusterName() {
+			return ARG_ecsClusterName;
+		}
+		public void setARG_ecsClusterName(String aRG_ecsClusterName) {
+			ARG_ecsClusterName = aRG_ecsClusterName;
 		}
 	}
 	
@@ -90,7 +134,7 @@ public class LambdaLauncher implements UserLauncher {
 	}
 	
 	interface LambdaService {
-		@LambdaFunction(functionName="test-cluster-elb-buld-9-deployUserContainer-1SZBLZZJCYDND")
+		@LambdaFunction(functionName="interactive-demo-elb-build-17-deployUserContainer-U4U37UAAT23B")
 		LambdaOutput launchContainer(LambdaInput input);
 	}
 }
