@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.nuodb.storefront.model.dto.WorkloadStats;
+import com.nuodb.storefront.model.dto.WorkloadStep;
 import com.nuodb.storefront.model.entity.Customer;
 import com.nuodb.storefront.service.IDbApi;
 import com.nuodb.storefront.service.ISimulatorService;
@@ -22,6 +23,17 @@ public abstract class BaseApi {
 
     protected static Map<String, Map<String, WorkloadStats>> workloadStatHeap = new HashMap<>();
     protected final Object heapLock = new Object();
+
+    protected static final Map<String, String> workloadDistribution;
+    protected static int userContainerCount = 0;
+
+    static {
+        workloadDistribution = new HashMap<>();
+        workloadDistribution.put(WorkloadStep.MULTI_BROWSE.name(), "25");
+        workloadDistribution.put(WorkloadStep.MULTI_BROWSE_AND_REVIEW.name(), "25");
+        workloadDistribution.put(WorkloadStep.MULTI_SHOP.name(), "25");
+        workloadDistribution.put(WorkloadStep.ADMIN_RUN_REPORT.name(), "25");
+    }
 
     protected BaseApi() {
     }
