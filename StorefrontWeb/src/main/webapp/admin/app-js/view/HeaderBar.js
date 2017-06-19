@@ -141,27 +141,14 @@ Ext.define('App.view.HeaderBar', {
 
     adjustUserLoad: function(value) {
         try {
-            var frame = Ext.ComponentQuery.query('[itemId=userView]')[0];
-            if (new Date() - frame.lastLoadTime > App.app.simulatedUserPageExpiryMs) {
-                return false;
-            }
+            var url = (value == 0) ? 'zeroUserCount' : ((value > 0) ? 'increaseUserCount' : 'decreaseUserCount');
 
-            var doc = frame.getDoc();
-            if ($('#table-regions', doc).length == 0) {
-                return false;
-            }
-
-            $('input[type=number]:not([readonly])', doc).each(function() {
-                var currentVal = Math.max(0, parseInt($(this).val()));
-                
-                // Unless we're stopping all, adjust non-analyst workloads only
-                if (value == 0 || !/analyst/.test($(this).attr('name'))) {
-                    $(this).val((value > 0) ? currentVal + 25 : (value < 0) ? Math.max(0, currentVal - 25) : 0);
-                }
+            Ext.Ajax.request({
+                url: App.app.apiBaseUrl + "/api/simulator/" + url,
+                method: 'POST',
+                scope: this
             });
 
-            $('.btn-update', doc).click();
-            frame.lastLoadTime = new Date();
             return true;
         } catch (e) {
             return false;
