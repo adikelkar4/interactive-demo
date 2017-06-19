@@ -1040,14 +1040,10 @@
             "             }\n",
             "           ]\n",
             "        )\n",
-            "        responseData = {}\n",
-            "        responseData['Data'] = 'Successful task registration: storefrontuser-definition'\n",
-            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)\n",
+            "        print(response)\n",
             "    except Exception as e:\n",
             "        print(e.args)\n",
-            "        responseData = {}\n",
-            "        responseData['Data'] = 'Failed to create storefrontuser task definition'\n",
-            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')\n",
+
             "    try:\n",
             "        response = client.create_service(\n",
             "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
@@ -1060,14 +1056,9 @@
             "              }\n",
             "            ]\n",
             "        )\n",
-            "        responseData = {}\n",
-            "        responseData['Data'] = 'Successful task registration: storefrontuser-service'\n",
-            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)\n",
+            "        print(response)\n",
             "    except Exception as e:\n",
-            "        print(e.args)\n",
-            "        responseData = {}\n",
-            "        responseData['Data'] = 'Failed to create storefrontuser service'\n",
-            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')\n"
+            "        print(e.args)\n"
 
           ]]}
         },
