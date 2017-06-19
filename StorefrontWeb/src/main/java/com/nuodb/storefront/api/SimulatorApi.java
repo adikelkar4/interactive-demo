@@ -51,37 +51,6 @@ public class SimulatorApi extends BaseApi {
         getSimulator(req).removeAll();
         return Response.ok().build();
     }
-
-    @PUT
-    @Path("/workloads")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response setWorkloads(@Context HttpServletRequest req, Map<String, String> formParams) {
-        Map<String, String> workloadSettings = new HashMap<>();
-
-        for (Map.Entry<String, String> param : formParams.entrySet()) {
-            if (param.getKey().startsWith("workload-")) {
-                String workloadName = param.getKey().substring(9);
-                int quantity = Integer.parseInt(param.getValue());
-
-                if (workloadStatHeap.containsKey(NUODB_MAP_KEY) && workloadStatHeap.get(NUODB_MAP_KEY).containsKey(workloadName)) {
-                    workloadStatHeap.get(NUODB_MAP_KEY).get(workloadName).setActiveWorkerCount(quantity);
-                    workloadStatHeap.get(NUODB_MAP_KEY).get(workloadName).setActiveWorkerLimit(quantity);
-                }
-
-                workloadSettings.put(workloadName, param.getValue());
-            }
-        }
-
-        UserLauncher containerLauncher = this.buildUserLauncher(req);
-
-        try {
-			containerLauncher.launchUser(workloadSettings, 1);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-        return Response.ok().build();
-    }
     
     private UserLauncher buildUserLauncher(HttpServletRequest req) {
     	UserLauncher launcher = null;
