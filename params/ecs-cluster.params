@@ -9,7 +9,7 @@ EcsInstanceType: m4.4xlarge
 
 KeyName: ben-higgins-pem
 
-EcsClusterName: interactive-demo-elb-build-5
+EcsClusterName: interactive-demo-elb-build-9
 
 
 #docker container images
