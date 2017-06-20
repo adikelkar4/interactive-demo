@@ -53,10 +53,10 @@ public class LambdaLauncher implements UserLauncher {
 				input.setMulti_browse_and_review(workloadOptions.get(option));
 				break;
 			case "multi_shop":
-				input.setShopper(workloadOptions.get(option));
+				input.setMulti_shop(workloadOptions.get(option));
 				break;
 			case "admin_run_report":
-				input.setAnalyst(workloadOptions.get(option));
+				input.setAdmin_run_report(workloadOptions.get(option));
 				break;
 			}
 		}
@@ -84,8 +84,8 @@ public class LambdaLauncher implements UserLauncher {
 		private int count;
 		private String multi_browse;
 		private String multi_browse_and_review;
-		private String shopper;
-		private String analyst;
+		private String multi_shop;
+		private String admin_run_report;
 		private String ARG_ecsClusterName;
 		
 		public int getCount() {
@@ -109,18 +109,18 @@ public class LambdaLauncher implements UserLauncher {
 			this.multi_browse_and_review = multi_browse_and_review;
 		}
 		
-		public String getShopper() {
-			return shopper;
+		public String getMulti_shop() {
+			return multi_shop;
 		}
-		public void setShopper(String shopper) {
-			this.shopper = shopper;
+		public void setMulti_shop(String shopper) {
+			this.multi_shop = shopper;
 		}
 		
-		public String getAnalyst() {
-			return analyst;
+		public String getAdmin_run_report() {
+			return admin_run_report;
 		}
-		public void setAnalyst(String analyst) {
-			this.analyst = analyst;
+		public void setAdmin_run_report(String analyst) {
+			this.admin_run_report = analyst;
 		}
 		
 		public String getARG_ecsClusterName() {
