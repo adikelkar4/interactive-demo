@@ -52,10 +52,10 @@ public class LambdaLauncher implements UserLauncher {
 			case "multi_browse_and_review":
 				input.setMulti_browse_and_review(workloadOptions.get(option));
 				break;
-			case "shopper":
+			case "multi_shop":
 				input.setShopper(workloadOptions.get(option));
 				break;
-			case "analyst":
+			case "admin_run_report":
 				input.setAnalyst(workloadOptions.get(option));
 				break;
 			}
