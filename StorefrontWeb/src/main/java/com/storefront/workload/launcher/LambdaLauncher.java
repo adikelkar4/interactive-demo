@@ -4,15 +4,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Properties;
 
+import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
-import com.amazonaws.services.lambda.invoke.LambdaFunction;
-import com.amazonaws.services.lambda.invoke.LambdaInvokerFactory;
+import com.amazonaws.services.lambda.model.InvokeRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class LambdaLauncher implements UserLauncher {
-	
 	static {
 		File propertiesFile = new File(System.getProperty("catalina.base") + "/conf", "catalina.properties");
 		InputStream propertiesStream;
@@ -27,18 +28,22 @@ public class LambdaLauncher implements UserLauncher {
 		} 
 		if (catalinaProperties != null) {
 			ecsClusterName = catalinaProperties.getProperty("ARG_ecsClusterName", "localhost");
+			userLoadLambdaArn = catalinaProperties.getProperty("ARG_userLoadLambdaArn", "");
 		} else {
 			ecsClusterName = "localhost";
+			userLoadLambdaArn = "";
 		}
 	}
 	
 	private static String ecsClusterName;
+	private static String userLoadLambdaArn;
 	
 	@Override
 	public void launchUser(Map<String, String> workloadOptions, int count) throws Exception {
 		LambdaInput input = new LambdaInput();
 		input.setCount(count);
 		input.setARG_ecsClusterName(getEcsClusterName());
+
 		for (String option : workloadOptions.keySet()) {
 			switch(option.toLowerCase()) {
 			case "multi_browse":
@@ -55,11 +60,16 @@ public class LambdaLauncher implements UserLauncher {
 				break;
 			}
 		}
-		LambdaService service = LambdaInvokerFactory.builder()
-		 .lambdaClient(AWSLambdaClientBuilder.defaultClient())
-		 .build(LambdaService.class);
-		LambdaOutput output = service.launchContainer(input);
-		System.out.println(output);
+
+		AWSLambda client = AWSLambdaClientBuilder.defaultClient();
+		ObjectMapper mapper = new ObjectMapper();
+		InvokeRequest req = new InvokeRequest();
+
+		req.setFunctionName(userLoadLambdaArn);
+		req.setPayload(mapper.writeValueAsString(input));
+		System.out.println(client.invoke(req).getPayload());
+
+		return;
 	}
 	
 	public String getEcsClusterName() {
@@ -131,10 +141,5 @@ public class LambdaLauncher implements UserLauncher {
 		public void setData(String data) {
 			Data = data;
 		}
-	}
-	
-	interface LambdaService {
-		@LambdaFunction(functionName="interactive-demo-elb-build-17-deployUserContainer-U4U37UAAT23B")
-		LambdaOutput launchContainer(LambdaInput input);
 	}
 }
