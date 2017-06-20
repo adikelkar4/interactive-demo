@@ -9,7 +9,7 @@ EcsInstanceType: m4.4xlarge
 
 KeyName: ben-higgins-pem
 
-EcsClusterName: interactive-demo-elb-build-17
+EcsClusterName: tues-demo-build-9
 
 
 #docker container images
@@ -21,4 +21,4 @@ nuodbDocker: docker.io/nuodb/nuodb-ce-2.6.1:1.1
 
 dbuser: StorefrontUser
 dbpassword: StorefrontUser
-dbname: Storefront
+dbname: Storefront1

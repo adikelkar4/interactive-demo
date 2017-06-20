@@ -16,7 +16,7 @@
 jar=$(basename $0)
 
 for var in $(env | cut -d= -f 1 | egrep "^ARG_"); do
-    name=$(echo $var | cut -c 5- | sed 's/_/./g')
+    name=$(echo $var | cut -c 5- | sed 's/ARG_//g')
     value=$(eval echo \$$var)
     args=" '$name=$value' $args"
 done
