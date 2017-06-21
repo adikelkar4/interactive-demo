@@ -121,14 +121,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
     }
 
     public Map<String, WorkloadStats> getWorkloadStats() {
-        Map<String, WorkloadStats> mapCopy = new TreeMap<String, WorkloadStats>();
-        synchronized (workloadStatsMap) {
-            // Do a deep copy
-            for (Map.Entry<String, WorkloadStats> entry : workloadStatsMap.entrySet()) {
-                mapCopy.put(entry.getKey(), new WorkloadStats(entry.getValue()));
-            }
-        }
-        return mapCopy;
+        return workloadStatsMap;
     }
 
     public int getActiveWorkerLimit() {
@@ -226,7 +219,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
     		aggregateWorkloadStats.put(workload.getName(), new WorkloadStats(workload));
     	}
     	WorkloadStats workloadStats = aggregateWorkloadStats.get(workload.getName());
-		workloadStats.setCompletedWorkerCount(workloadStats.getCompletedWorkerCount() + stats.getCompletedWorkerCount());
+    	workloadStats.applyDeltas(stats);
     }
 
 	protected class RunnableWorker implements Runnable {

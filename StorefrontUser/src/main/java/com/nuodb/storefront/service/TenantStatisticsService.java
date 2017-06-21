@@ -52,6 +52,7 @@ public class TenantStatisticsService implements Runnable {
 		Map<String, Map> payload = new HashMap<>();
 		payload.put("transactionStats", transactionStats);
 		payload.put("workloadStats", workloadStats);
+		System.out.println(workloadStats.toString());
 		allStats.setDatabaseType("nuodb");
 		allStats.setPayload(payload);
 		try {
