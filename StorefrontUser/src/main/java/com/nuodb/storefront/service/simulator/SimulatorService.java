@@ -301,9 +301,14 @@ public class SimulatorService implements ISimulator, ISimulatorService {
                             stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
                         }
                     }
-                }
-                if (workerFailed) {
-                    stats.setFailedWorkerCount(stats.getFailedWorkerCount() + 1);
+                } else {
+                	if (!workerFailed) {
+                        stats.setWorkCompletionCount(stats.getWorkCompletionCount() + 1);
+                        stats.setTotalWorkCompletionTimeMs(completionWorkTimeMs);
+                        completionWorkTimeMs = 0;
+                	} else {                		
+                		stats.setFailedWorkerCount(stats.getFailedWorkerCount() + 1);
+                	}
                 }
                 aggregateCompletedWorkerStats(workload, stats);
             }
