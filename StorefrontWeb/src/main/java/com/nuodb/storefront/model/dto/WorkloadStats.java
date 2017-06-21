@@ -46,8 +46,8 @@ public class WorkloadStats {
     }
 
     public void applyDeltas(Map<String, Integer> stats) {
-        this.activeWorkerLimit += stats.get("activeWorkerLimit");
-        this.activeWorkerCount += stats.get("activeWorkerCount");
+        this.activeWorkerLimit = 25;
+        this.activeWorkerCount = 25;
         this.failedWorkerCount += stats.get("failedWorkerCount");
         this.killedWorkerCount += stats.get("killedWorkerCount");
         this.completedWorkerCount += stats.get("completedWorkerCount");
