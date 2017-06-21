@@ -22,10 +22,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.nuodb.storefront.StorefrontApp;
-import com.nuodb.storefront.model.dto.Message;
-import com.nuodb.storefront.model.dto.Workload;
-import com.nuodb.storefront.model.dto.WorkloadStats;
-import com.nuodb.storefront.model.dto.WorkloadStep;
+import com.nuodb.storefront.model.dto.*;
 import com.nuodb.storefront.model.type.MessageSeverity;
 import com.nuodb.storefront.service.ISimulatorService;
 import com.storefront.workload.launcher.LambdaLauncher;
@@ -102,14 +99,7 @@ public class SimulatorApi extends BaseApi {
     @Path("/increaseUserCount")
     @Produces(MediaType.APPLICATION_JSON)
     public Response increaseUserCount(@Context HttpServletRequest req) {
-        userContainerCount++;
-        UserLauncher containerLauncher = this.buildUserLauncher(req);
-
-        try {
-            containerLauncher.launchUser(workloadDistribution, 1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        moveUserCount(req, ++userContainerCount);
 
         return Response.ok().build();
     }
@@ -118,14 +108,8 @@ public class SimulatorApi extends BaseApi {
     @Path("/decreaseUserCount")
     @Produces(MediaType.APPLICATION_JSON)
     public Response decreaseUserCount(@Context HttpServletRequest req) {
-        userContainerCount--;
-        UserLauncher containerLauncher = this.buildUserLauncher(req);
-
-        try {
-            containerLauncher.launchUser(workloadDistribution, -1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        moveUserCount(req, --userContainerCount);
+        decreaseWorkloadUserCounts(-1);
 
         return Response.ok().build();
     }
@@ -135,15 +119,56 @@ public class SimulatorApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public Response zeroUserCount(@Context HttpServletRequest req) {
         userContainerCount = 0;
+        moveUserCount(req, userContainerCount);
+        clearWorkloadUserCounts();
+
+        return Response.ok().build();
+    }
+
+    protected void moveUserCount(HttpServletRequest req, int count) {
         UserLauncher containerLauncher = this.buildUserLauncher(req);
 
         try {
-            containerLauncher.launchUser(workloadDistribution, 0);
+            containerLauncher.launchUser(workloadDistribution, count);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return Response.ok().build();
+        return;
+    }
+
+    protected void decreaseWorkloadUserCounts(int containerChange) {
+        synchronized (this.heapLock) { // Always synchronize on the heapLock so both maps are protected simultaneously
+            if (!workloadStatHeap.containsKey(NUODB_MAP_KEY)) {
+                workloadStatHeap.put(NUODB_MAP_KEY, new HashMap<>());
+            }
+
+            Map<String, WorkloadStats> wTmp = workloadStatHeap.get(NUODB_MAP_KEY);
+
+            for (Map.Entry<String, WorkloadStats> stat : wTmp.entrySet()) {
+                stat.getValue().setActiveWorkerLimit(stat.getValue().getActiveWorkerLimit() + (containerChange * 25));
+                stat.getValue().setActiveWorkerCount(stat.getValue().getActiveWorkerCount() + (containerChange * 25));
+            }
+        }
+
+        return;
+    }
+
+    protected void clearWorkloadUserCounts() {
+        synchronized (this.heapLock) { // Always synchronize on the heapLock so both maps are protected simultaneously
+            if (!workloadStatHeap.containsKey(NUODB_MAP_KEY)) {
+                workloadStatHeap.put(NUODB_MAP_KEY, new HashMap<>());
+            }
+
+            Map<String, WorkloadStats> wTmp = workloadStatHeap.get(NUODB_MAP_KEY);
+
+            for (Map.Entry<String, WorkloadStats> stat : wTmp.entrySet()) {
+                stat.getValue().setActiveWorkerLimit(0);
+                stat.getValue().setActiveWorkerCount(0);
+            }
+        }
+
+        return;
     }
 
     protected Workload lookupWorkloadByName(@Context HttpServletRequest req, String name) {
