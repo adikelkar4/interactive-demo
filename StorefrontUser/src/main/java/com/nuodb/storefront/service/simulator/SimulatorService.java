@@ -296,7 +296,6 @@ public class SimulatorService implements ISimulator, ISimulatorService {
                         delay = workload.calcNextThinkTimeMs();
                     }
                     if (delay < 0) {
-                        stats.setActiveWorkerCount(stats.getActiveWorkerCount() - 1);
                         if (!workerFailed) {
                             stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
                         }
@@ -310,6 +309,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
                 		stats.setFailedWorkerCount(stats.getFailedWorkerCount() + 1);
                 	}
                 }
+                stats.setActiveWorkerCount(stats.getActiveWorkerCount() - 1);
                 aggregateCompletedWorkerStats(workload, stats);
             }
 
