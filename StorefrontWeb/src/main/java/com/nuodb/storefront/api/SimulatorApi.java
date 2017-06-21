@@ -102,14 +102,7 @@ public class SimulatorApi extends BaseApi {
     @Path("/increaseUserCount")
     @Produces(MediaType.APPLICATION_JSON)
     public Response increaseUserCount(@Context HttpServletRequest req) {
-        userContainerCount++;
-        UserLauncher containerLauncher = this.buildUserLauncher(req);
-
-        try {
-            containerLauncher.launchUser(workloadDistribution, 1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        moveUserCount(req, ++userContainerCount);
 
         return Response.ok().build();
     }
@@ -118,14 +111,7 @@ public class SimulatorApi extends BaseApi {
     @Path("/decreaseUserCount")
     @Produces(MediaType.APPLICATION_JSON)
     public Response decreaseUserCount(@Context HttpServletRequest req) {
-        userContainerCount--;
-        UserLauncher containerLauncher = this.buildUserLauncher(req);
-
-        try {
-            containerLauncher.launchUser(workloadDistribution, -1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        moveUserCount(req, --userContainerCount);
 
         return Response.ok().build();
     }
@@ -135,15 +121,21 @@ public class SimulatorApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public Response zeroUserCount(@Context HttpServletRequest req) {
         userContainerCount = 0;
+        moveUserCount(req, userContainerCount);
+
+        return Response.ok().build();
+    }
+
+    protected void moveUserCount(HttpServletRequest req, int count) {
         UserLauncher containerLauncher = this.buildUserLauncher(req);
 
         try {
-            containerLauncher.launchUser(workloadDistribution, 0);
+            containerLauncher.launchUser(workloadDistribution, count);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return Response.ok().build();
+        return;
     }
 
     protected Workload lookupWorkloadByName(@Context HttpServletRequest req, String name) {
