@@ -278,25 +278,23 @@ public class SimulatorService implements ISimulator, ISimulatorService {
                 stats.setWorkInvocationCount(stats.getWorkInvocationCount() + 1);
                 stats.setTotalWorkTimeMs(stats.getTotalWorkTimeMs() + endTimeMs - startTimeMs);
                 if (delay < 0) {
-                    if (!workerFailed) {
+                	if (!workerFailed) {
                         stats.setWorkCompletionCount(stats.getWorkCompletionCount() + 1);
                         stats.setTotalWorkCompletionTimeMs(completionWorkTimeMs);
+                        stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
                         completionWorkTimeMs = 0;
-                    }
-
+                	} else {                		
+                		stats.setFailedWorkerCount(stats.getFailedWorkerCount() + 1);
+                	}
                     // Determine whether this worker should run again
                     if (delay != IWorker.COMPLETE_NO_REPEAT && workload.isAutoRepeat()) {
                         delay = workload.calcNextThinkTimeMs();
-                    }
-                    if (delay < 0) {
-                        if (!workerFailed) {
-                            stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
-                        }
                     }
                 } else {
                 	if (!workerFailed) {
                         stats.setWorkCompletionCount(stats.getWorkCompletionCount() + 1);
                         stats.setTotalWorkCompletionTimeMs(completionWorkTimeMs);
+                        stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
                         completionWorkTimeMs = 0;
                 	} else {                		
                 		stats.setFailedWorkerCount(stats.getFailedWorkerCount() + 1);

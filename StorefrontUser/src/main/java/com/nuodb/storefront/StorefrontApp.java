@@ -115,17 +115,10 @@ public class StorefrontApp {
 		tenant.setAppSettings(appSettings);
 		ISimulatorService simulator = tenant.getSimulatorService();
 		executeTasks(simulator, workloadSettings);
-		while(tenantActive(simulator, workloadSettings)) {
-			Thread.sleep(HEARTBEAT_INTERVAL_SEC);
+		while(true) {
+			Thread.sleep(HEARTBEAT_INTERVAL_SEC * 1000);
+			printSimulatorStats(simulator, System.out);
 		}
-		printSimulatorStats(simulator, System.out);
-		StorefrontTenantManager.destroyTenant(dbSettings.get("db.name").split("@")[0]);
-	}
-
-	private static boolean tenantActive(ISimulatorService simulator, Map<String, String> workloadSettings) {
-		int requestedThreads = workloadSettings.values().stream().mapToInt(value -> Integer.parseInt(value)).sum();
-		int completedThreads = simulator.getAggregateWorkloadStats().values().stream().mapToInt(value -> value.getCompletedWorkerCount()).sum();
-		return requestedThreads > completedThreads;
 	}
 
 	public static void executeTasks(ISimulatorService simulator, Map<String, String> workloadSettings)
