@@ -2,6 +2,8 @@
 
 package com.nuodb.storefront.model.dto;
 
+import java.util.Map;
+
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
 import com.nuodb.storefront.service.simulator.IWorker;
@@ -39,6 +41,20 @@ public class WorkloadStats {
         this.totalWorkCompletionTimeMs = stats.totalWorkCompletionTimeMs;
     }
 
+    public void applyDeltas(WorkloadStats stats) {
+    	this.activeWorkerCount += stats.activeWorkerCount;
+        this.failedWorkerCount += stats.failedWorkerCount;
+        this.killedWorkerCount += stats.killedWorkerCount;
+        this.completedWorkerCount += stats.completedWorkerCount;
+        this.workInvocationCount += stats.workInvocationCount;
+        this.workCompletionCount += stats.workCompletionCount;
+        this.totalWorkTimeMs += stats.totalWorkTimeMs;
+        this.totalWorkCompletionTimeMs += stats.totalWorkCompletionTimeMs;
+
+        return;
+    }
+
+    
     public Workload getWorkload() {
         return workload;
     }

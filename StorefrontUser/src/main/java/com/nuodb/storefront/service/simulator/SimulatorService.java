@@ -121,14 +121,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
     }
 
     public Map<String, WorkloadStats> getWorkloadStats() {
-        Map<String, WorkloadStats> mapCopy = new TreeMap<String, WorkloadStats>();
-        synchronized (workloadStatsMap) {
-            // Do a deep copy
-            for (Map.Entry<String, WorkloadStats> entry : workloadStatsMap.entrySet()) {
-                mapCopy.put(entry.getKey(), new WorkloadStats(entry.getValue()));
-            }
-        }
-        return mapCopy;
+        return workloadStatsMap;
     }
 
     public int getActiveWorkerLimit() {
@@ -226,7 +219,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
     		aggregateWorkloadStats.put(workload.getName(), new WorkloadStats(workload));
     	}
     	WorkloadStats workloadStats = aggregateWorkloadStats.get(workload.getName());
-		workloadStats.setCompletedWorkerCount(workloadStats.getCompletedWorkerCount() + stats.getCompletedWorkerCount());
+    	workloadStats.applyDeltas(stats);
     }
 
 	protected class RunnableWorker implements Runnable {
@@ -285,26 +278,29 @@ public class SimulatorService implements ISimulator, ISimulatorService {
                 stats.setWorkInvocationCount(stats.getWorkInvocationCount() + 1);
                 stats.setTotalWorkTimeMs(stats.getTotalWorkTimeMs() + endTimeMs - startTimeMs);
                 if (delay < 0) {
-                    if (!workerFailed) {
+                	if (!workerFailed) {
                         stats.setWorkCompletionCount(stats.getWorkCompletionCount() + 1);
                         stats.setTotalWorkCompletionTimeMs(completionWorkTimeMs);
+                        stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
                         completionWorkTimeMs = 0;
-                    }
-
+                	} else {                		
+                		stats.setFailedWorkerCount(stats.getFailedWorkerCount() + 1);
+                	}
                     // Determine whether this worker should run again
                     if (delay != IWorker.COMPLETE_NO_REPEAT && workload.isAutoRepeat()) {
                         delay = workload.calcNextThinkTimeMs();
                     }
-                    if (delay < 0) {
-                        stats.setActiveWorkerCount(stats.getActiveWorkerCount() - 1);
-                        if (!workerFailed) {
-                            stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
-                        }
-                    }
+                } else {
+                	if (!workerFailed) {
+                        stats.setWorkCompletionCount(stats.getWorkCompletionCount() + 1);
+                        stats.setTotalWorkCompletionTimeMs(completionWorkTimeMs);
+                        stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
+                        completionWorkTimeMs = 0;
+                	} else {                		
+                		stats.setFailedWorkerCount(stats.getFailedWorkerCount() + 1);
+                	}
                 }
-                if (workerFailed) {
-                    stats.setFailedWorkerCount(stats.getFailedWorkerCount() + 1);
-                }
+                stats.setActiveWorkerCount(stats.getActiveWorkerCount() - 1);
                 aggregateCompletedWorkerStats(workload, stats);
             }
 

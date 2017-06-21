@@ -10,12 +10,12 @@ import com.nuodb.storefront.util.Randoms;
 public class Workload {
     public static final int DEFAULT_MAX_WORKERS = 50000;
 
-    public static final Workload BROWSER = new Workload(WorkloadStep.MULTI_BROWSE.name(), "Customer:  Browsing only", false, 2000, 1000, DEFAULT_MAX_WORKERS,
+    public static final Workload BROWSER = new Workload(WorkloadStep.MULTI_BROWSE.name(), "Customer:  Browsing only", true, 2000, 1000, DEFAULT_MAX_WORKERS,
             WorkloadStep.MULTI_BROWSE);
-    public static final Workload REVIEWER = new Workload(WorkloadStep.MULTI_BROWSE_AND_REVIEW.name(), "Customer:  Browsing & reviews", false, 2000, 1000, DEFAULT_MAX_WORKERS,
+    public static final Workload REVIEWER = new Workload(WorkloadStep.MULTI_BROWSE_AND_REVIEW.name(), "Customer:  Browsing & reviews", true, 2000, 1000, DEFAULT_MAX_WORKERS,
             WorkloadStep.MULTI_BROWSE_AND_REVIEW);
-    public static final Workload SHOPPER = new Workload(WorkloadStep.MULTI_SHOP.name(), "Customer:  Slow purchaser", false, 2000, 1000, DEFAULT_MAX_WORKERS, WorkloadStep.MULTI_SHOP);
-    public static final Workload ANALYST = new Workload(WorkloadStep.ADMIN_RUN_REPORT.name(), "Back office analyst", false, 2000, 1000, DEFAULT_MAX_WORKERS, WorkloadStep.ADMIN_RUN_REPORT);
+    public static final Workload SHOPPER = new Workload(WorkloadStep.MULTI_SHOP.name(), "Customer:  Slow purchaser", true, 2000, 1000, DEFAULT_MAX_WORKERS, WorkloadStep.MULTI_SHOP);
+    public static final Workload ANALYST = new Workload(WorkloadStep.ADMIN_RUN_REPORT.name(), "Back office analyst", true, 2000, 1000, DEFAULT_MAX_WORKERS, WorkloadStep.ADMIN_RUN_REPORT);
 
     private final String name;
     private final String description;
