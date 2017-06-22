@@ -16,7 +16,7 @@ EcsClusterName: weds-demo-build-2
 
 storeFrontWebDocker: docker.io/nuodb/storefrontweb-demo:master
 storeFrontUserDocker: docker.io/nuodb/storefrontuser-demo:master
-nuodbDocker: docker.io/nuodb/nuodb-ce-2.6.1:1.1
+nuodbDocker: 248317454512.dkr.ecr.us-east-1.amazonaws.com/nuodb:latest
 
 
 dbuser: StorefrontUser
