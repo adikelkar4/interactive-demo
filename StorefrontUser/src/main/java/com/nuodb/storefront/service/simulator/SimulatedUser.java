@@ -82,6 +82,9 @@ public class SimulatedUser implements IWorker {
                 recoverFromException(e);
 
                 long retryDelay = getRetryDelay();
+                Logger logger = simulator.getService().getLogger(getClass());
+                logger.info("Encountered recoverable exception with simulated user \"" 
+                + getWorkload().getName() + "\". " + "Will retry in " + retryDelay + " ms.", e);
 
                 throw new RetryWorkException(retryDelay);
             }
