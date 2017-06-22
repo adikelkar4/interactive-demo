@@ -19,6 +19,8 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 
 import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.exception.ApiException;
@@ -118,27 +120,15 @@ public class DbApiProxy implements IDbApi {
     @Override
     public List<Process> getDbProcesses() {
         try {
-            List<Process> processes = new ArrayList<Process>();
             String dbName = dbConnInfo.getDbName();
-
-            for (Region region : getRegions()) {
-                for (int hostIdx = 0; hostIdx < region.hosts.length; hostIdx++) {
-                    Host host = region.hosts[hostIdx];
-                    for (int processIdx = 0; processIdx < host.processes.length; processIdx++) {
-                        Process process = host.processes[processIdx];
-                        if (process.dbname.equals(dbName)) {
-                            process.region = region.region;
-                            processes.add(process);
-                        }
-                    }
-                }
-            }
-
+            String result = buildClient("/processes?filterBy=database&database=" + dbName).accept(MediaType.APPLICATION_JSON_TYPE).get(String.class);
+    		List<Process> processes = new ObjectMapper().readValue(result, new TypeReference<List<Process>>(){});
             return processes;
         } catch (Exception e) {
             throw ApiException.toApiException(e);
         }
     }
+  
 
     @Override
     public void shutdownProcess(String uid) {
@@ -175,7 +165,9 @@ public class DbApiProxy implements IDbApi {
         List<Region> regions = getRegions();
         List<RegionStats> stats = new ArrayList<RegionStats>(regions.size());
         for (Region region : regions) {
-            stats.add(new RegionStats(region));
+        	RegionStats rStats = new RegionStats(region);
+        	rStats.usedHostCount = getDbProcesses().size();
+            stats.add(rStats);
         }
         return stats;
     }
@@ -530,8 +522,8 @@ public class DbApiProxy implements IDbApi {
         dbStats.regionCount = regions.size();
 
         for (Region region : regions) {
-            dbStats.hostCount = Math.max(region.hostCount, dbStats.hostCount);
-            dbStats.usedHostCount = Math.max(region.usedHostCount, dbStats.usedHostCount);
+            dbStats.hostCount = getDbProcesses().size();
+            dbStats.usedHostCount = getDbProcesses().size();
             if (region.usedHostCount > 0) {
                 dbStats.usedRegions.add(region.region);
                 dbStats.usedRegionCount++;

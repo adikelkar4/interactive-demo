@@ -62,6 +62,10 @@
         <servlet-class>com.nuodb.storefront.servlet.ControlPanelUsersServlet</servlet-class>
     </servlet>
     <servlet>
+        <servlet-name>storefront-controlpanel-processes</servlet-name>
+        <servlet-class>com.nuodb.storefront.servlet.ControlPanelProcessesServlet</servlet-class>
+    </servlet>
+    <servlet>
         <servlet-name>storefront-tour-scaleout</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.TourScaleOutServlet</servlet-class>
     </servlet>
@@ -78,6 +82,10 @@
     <servlet-mapping>
         <servlet-name>storefront-controlpanel-users</servlet-name>
         <url-pattern>/control-panel-users</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>storefront-controlpanel-processes</servlet-name>
+        <url-pattern>/control-panel-processes</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>storefront-tour-scaleout</servlet-name>

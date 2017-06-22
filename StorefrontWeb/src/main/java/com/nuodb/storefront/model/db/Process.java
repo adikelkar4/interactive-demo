@@ -31,4 +31,5 @@ public class Process {
     public String type;
     public String uid;
     public String region;
+    public String version;
 }
