@@ -162,9 +162,13 @@ public class SimulatorService implements ISimulator, ISimulatorService {
                 return false;
             }
             info.setActiveWorkerCount(info.getActiveWorkerCount() + 1);
-            addWorker(new RunnableWorker(worker), startDelayMs);
-            return true;
         }
+        RunnableWorker runnableWorker = new RunnableWorker(worker);
+        if (runnableWorker.expectedDequeueTimeMs == 0) {
+        	runnableWorker.expectedDequeueTimeMs = System.currentTimeMillis() + startDelayMs;
+        }
+        threadPool.schedule(runnableWorker, startDelayMs, TimeUnit.MILLISECONDS);
+        return true;
     }
 
     public IStorefrontService getService() {
@@ -187,13 +191,6 @@ public class SimulatorService implements ISimulator, ISimulatorService {
         report.setWorkloadStepStats(getWorkloadStepStats());
         
         return report;
-    }
-
-    protected void addWorker(RunnableWorker worker, long startDelayMs) {
-        if (worker.expectedDequeueTimeMs == 0) {
-            worker.expectedDequeueTimeMs = System.currentTimeMillis() + startDelayMs;
-        }
-        threadPool.schedule(worker, startDelayMs, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -276,11 +273,11 @@ public class SimulatorService implements ISimulator, ISimulatorService {
                 }
                 WorkloadStats stats = getOrCreateWorkloadStats(workload);
                 stats.setWorkInvocationCount(stats.getWorkInvocationCount() + 1);
-                stats.setTotalWorkTimeMs(stats.getTotalWorkTimeMs() + endTimeMs - startTimeMs);
+                stats.setTotalWorkTimeMs(stats.getTotalWorkTimeMs() + completionWorkTimeMs);
                 if (delay < 0) {
                 	if (!workerFailed) {
                         stats.setWorkCompletionCount(stats.getWorkCompletionCount() + 1);
-                        stats.setTotalWorkCompletionTimeMs(completionWorkTimeMs);
+                        stats.setTotalWorkCompletionTimeMs(stats.getTotalWorkCompletionTimeMs() + completionWorkTimeMs);
                         stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
                         completionWorkTimeMs = 0;
                 	} else {                		
@@ -293,7 +290,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
                 } else {
                 	if (!workerFailed) {
                         stats.setWorkCompletionCount(stats.getWorkCompletionCount() + 1);
-                        stats.setTotalWorkCompletionTimeMs(completionWorkTimeMs);
+                        stats.setTotalWorkCompletionTimeMs(stats.getTotalWorkCompletionTimeMs() + completionWorkTimeMs);
                         stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
                         completionWorkTimeMs = 0;
                 	} else {                		
@@ -306,7 +303,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 
             // Queue up next run
             if (delay >= 0) {
-                addWorker(this, delay);
+                addWorker(this.worker, delay);
             }
         }
     }

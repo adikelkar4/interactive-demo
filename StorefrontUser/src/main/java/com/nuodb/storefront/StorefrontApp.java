@@ -124,9 +124,16 @@ public class StorefrontApp {
 	public static void executeTasks(ISimulatorService simulator, Map<String, String> workloadSettings)
 			throws InterruptedException {
 		for (String setting : workloadSettings.keySet()) {
-			WorkloadStep step = WorkloadStep.valueOf(setting.split("\\.")[1].toUpperCase());
-			simulator.adjustWorkers(simulator.getWorkloadStats().get(step.name()).getWorkload(),
-					Integer.parseInt(workloadSettings.get(setting)), Integer.parseInt(workloadSettings.get(setting)));
+			Thread taskThread = new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					WorkloadStep step = WorkloadStep.valueOf(setting.split("\\.")[1].toUpperCase());
+					simulator.adjustWorkers(simulator.getWorkloadStats().get(step.name()).getWorkload(),
+							Integer.parseInt(workloadSettings.get(setting)), Integer.parseInt(workloadSettings.get(setting)));
+				}
+			});
+			taskThread.start();
 		}
 	}
 	

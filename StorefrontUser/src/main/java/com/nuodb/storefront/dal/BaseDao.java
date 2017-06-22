@@ -27,8 +27,7 @@ public class BaseDao extends GeneralDAOImpl implements IBaseDao {
     }
 
     public <T> T runTransaction(TransactionType transactionType, String name, Callable<T> c) {
-        Long startTimeObj = transactionStartTime.get();
-        long startTime = (startTimeObj != null) ? startTimeObj.longValue() : System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
 
         Session session = null;
         Transaction t = null;
