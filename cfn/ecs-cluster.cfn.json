@@ -126,7 +126,7 @@
     "AsgMaxSize" : {
       "Type" : "Number",
       "Description" : "Maximum size and initial Desired Capacity of ECS Auto Scaling Group",
-      "Default" : "1"
+      "Default" : "4"
     },
 
     "EcsClusterName" : {
@@ -555,8 +555,36 @@
         "LoadBalancerNames" : [{ "Ref" : "StorefrontELB" }, { "Ref" : "brokerELB" }],
         "MinSize" : "1",
         "MaxSize" : { "Ref" : "AsgMaxSize" },
-        "DesiredCapacity" : { "Ref" : "AsgMaxSize" },
+        "DesiredCapacity" : "1",
         "Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : ["", [ "ECS Instance - ", { "Ref" : "AWS::StackName" } ] ] }, "PropagateAtLaunch" : "true" } ]
+      }
+    },
+
+    "ScaleUpPolicy" : {
+      "Type" : "AWS::AutoScaling::ScalingPolicy",
+      "Properties" : {
+        "AdjustmentType" : "ChangeInCapacity",
+        "AutoScalingGroupName" : { "Ref" : "EcsInstanceAsg" },
+        "Cooldown" : "1",
+        "ScalingAdjustment" : "1"
+      }
+    },
+    "CPUAlarmHigh": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Statistic": "Average",
+        "Threshold": "50",
+        "AlarmDescription": "Alarm if CPU too high or metric disappears indicating instance is down",
+        "Period": "60",
+        "AlarmActions": [ { "Ref": "ScaleUpPolicy" } ],
+        "Namespace": "AWS/EC2",
+        "Dimensions": [ {
+          "Name": "AutoScalingGroupName",
+          "Value": { "Ref": "EcsInstanceAsg" }
+        } ],
+        "ComparisonOperator": "GreaterThanThreshold",
+        "MetricName": "CPUUtilization"
       }
     },
 
