@@ -5,11 +5,11 @@ Buckets: nuodb-oa-cloud-deployment,nuodb-data
 EcsAmiId: ami-275ffe31
 #us-east-2 EcsAmiId: ami-62745007
 
-EcsInstanceType: m4.4xlarge
+EcsInstanceType: m4.large
 
 KeyName: ben-higgins-pem
 
-EcsClusterName: weds-demo-build-2
+EcsClusterName: ec2-auto-scaling-1
 
 
 #docker container images
