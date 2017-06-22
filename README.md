@@ -146,3 +146,26 @@ Client-side libraries:
 Admin client-side libraries:
 - **Sencha Ext JS** -- look & feel
 - **jQuery Sparkline plug-in** -- sparklines in the header
+
+
+
+Interactive Demo
+================
+
+1. clone interactive-demo repo
+2. run in terminal: 
+   ```aws configure```
+3. cd into root of project
+4. edit params/ecs-cluster.params
+     - replace SSH key with your own
+     - replace ecscluster name with something unique
+5. run from terminal:
+   ```./bin/create ecs-cluster <give-it-a-unique-stack-name>```
+
+NOTES:
+
+* When creating a new cluster, you must create a unique
+  ecs-cluster-name in your params file each time.
+
+* When deleting stacks, you must delete the stack, then manually
+  delete the ECS cluster, then delete the stack again.
