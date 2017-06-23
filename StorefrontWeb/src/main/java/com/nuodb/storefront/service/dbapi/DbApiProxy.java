@@ -48,12 +48,13 @@ import com.sun.jersey.api.uri.UriComponent.Type;
 import com.sun.jersey.core.util.Base64;
 
 public class DbApiProxy implements IDbApi {
-    private static final String DBVAR_TAG_CONSTRAINT_GROUP_TE = "TEs";
-    private static final String DBVAR_TAG_CONSTRAINT_GROUP_SM = "SMs";
+    private static final String DBVAR_TAG_CONSTRAINT_GROUP_TE = "TE_OK";
+    private static final String DBVAR_TAG_CONSTRAINT_GROUP_SM = "SM_OK";
     private static final String DBVAR_TAG_EXISTS_CONSTRAINT = "ex:";
     private static final String DBVAR_SM_MIN = "SM_MIN";
     private static final String DBVAR_SM_MAX = "SM_MAX";
     private static final String DBVAR_TE_MIN = "TE_MIN";
+    private static final String DBVAR_TE_MAX = "TE_MAX";
     private static final String DBVAR_HOST = "HOST";
     private static final String DBVAR_REGION = "REGION";
 
@@ -556,28 +557,14 @@ public class DbApiProxy implements IDbApi {
         // Determine which template to use, and add template-specific variables
         Map<String, String> vars = new HashMap<String, String>();
         String templateName;
-        if (targetRegions > 1) {
-            templateName = TEMPLATE_GEO_DISTRIBUTED;
-            vars.put(DBVAR_REGION, null);
-            vars.put(DBVAR_HOST, null);
-            vars.put(DBVAR_SM_MIN, "1");
-            vars.put(DBVAR_SM_MAX, "2");
-            vars.put(DBVAR_TE_MIN, "1");
-        } else if (targetHosts > 1) {
-            templateName = TEMPLATE_MULTI_HOST;
-            vars.put(DBVAR_REGION, homeHostInfo.region.region);
-            vars.put(DBVAR_HOST, null);
-            vars.put(DBVAR_SM_MIN, "1");
-            vars.put(DBVAR_SM_MAX, "2");
-            vars.put(DBVAR_TE_MIN, "1");
-        } else {
-            templateName = TEMPLATE_SINGLE_HOST;
-            vars.put(DBVAR_REGION, null);
-            vars.put(DBVAR_HOST, homeHostInfo.host.id);
-            vars.put(DBVAR_SM_MIN, null);
-            vars.put(DBVAR_SM_MAX, null);
-            vars.put(DBVAR_TE_MIN, null);
-        }
+
+        templateName = TEMPLATE_MULTI_HOST;
+        vars.put(DBVAR_REGION, homeHostInfo.region.region);
+        vars.put(DBVAR_HOST, null);
+        vars.put(DBVAR_SM_MIN, "1");
+        vars.put(DBVAR_SM_MAX, "1");
+        vars.put(DBVAR_TE_MIN, "5");
+        vars.put(DBVAR_TE_MAX, "5");
 
         // Apply template name
         int changeCount = 0;
