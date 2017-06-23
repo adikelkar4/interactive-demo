@@ -33,6 +33,15 @@ check_for_jq () {
   fi
 }
 
+path_of() {
+    local NAME="$1"
+    if [ $(uname -o) == "Cygwin" ] ; then
+	cygpath -w "$NAME"
+    else
+	echo "$NAME"
+    fi
+}
+
 get_cfn_url () {
 
   local NAME=$1
@@ -46,11 +55,14 @@ get_cfn_url () {
 
   # if we can compress the CF json file
   if [ $( check_for_jq ) ]; then
-    tmpfile=$( maketemp )
-    cat ${CFN_FILE} | jq -c -M '.' > ${tmpfile}
-    CFN_FILE=${tmpfile}
+      tmpfile=$( maketemp )
+      cat ${CFN_FILE} | jq -c -M '.' > ${tmpfile}
+      CFN_FILE=${tmpfile}
+    else
+      echo "Cannot continue without JQ"
+      exit 1
   fi
-  CFN_URL="file://./${CFN_FILE}"
+  CFN_URL="file://$(path_of ${CFN_FILE})"
   echo ${CFN_URL}
 }
 

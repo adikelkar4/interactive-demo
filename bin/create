@@ -174,7 +174,7 @@ do_create () {
         create-stack \
         --stack-name    ${STACK_NAME} \
         --template-body ${CFN_URL} \
-        --parameters    file://${PARAMS_JSON_FILE} \
+        --parameters    file://$(path_of ${PARAMS_JSON_FILE}) \
         --tags Key=Owner,Value="$(whoami)" \
         ${CAPABILITIES} ${ROLLBACK}"
     echo ${cmd}
