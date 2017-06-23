@@ -2,14 +2,14 @@
 Buckets: nuodb-oa-cloud-deployment,nuodb-data
 
 #amzn-ami-2016.09.g-amazon-ecs-optimized with ecs agent installed
-EcsAmiId: ami-275ffe31
-#us-east-2 EcsAmiId: ami-62745007
+#us-east-1EcsAmiId: ami-275ffe31
+EcsAmiId: ami-62745007
 
-EcsInstanceType: m4.large
+EcsInstanceType: r4.8xlarge
 
 KeyName: ben-higgins-pem
 
-EcsClusterName: ec2-auto-scaling-1
+EcsClusterName: interactive-demo-8
 
 
 #docker container images
