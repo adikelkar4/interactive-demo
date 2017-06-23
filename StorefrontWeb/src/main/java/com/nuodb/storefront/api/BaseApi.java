@@ -29,10 +29,10 @@ public abstract class BaseApi {
 
     static {
         workloadDistribution = new HashMap<>();
-        workloadDistribution.put(WorkloadStep.MULTI_BROWSE.name(), "25");
-        workloadDistribution.put(WorkloadStep.MULTI_BROWSE_AND_REVIEW.name(), "25");
-        workloadDistribution.put(WorkloadStep.MULTI_SHOP.name(), "25");
-        workloadDistribution.put(WorkloadStep.ADMIN_RUN_REPORT.name(), "25");
+        workloadDistribution.put(WorkloadStep.MULTI_BROWSE.name(), "525");
+        workloadDistribution.put(WorkloadStep.MULTI_BROWSE_AND_REVIEW.name(), "525");
+        workloadDistribution.put(WorkloadStep.MULTI_SHOP.name(), "525");
+        workloadDistribution.put(WorkloadStep.ADMIN_RUN_REPORT.name(), "525");
     }
 
     protected BaseApi() {
