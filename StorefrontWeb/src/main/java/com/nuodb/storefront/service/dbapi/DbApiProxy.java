@@ -585,7 +585,7 @@ public class DbApiProxy implements IDbApi {
         if (database.variables == null) {
             database.variables = new HashMap<String, String>();
         }
-        if (database.tagConstraints == null) {<
+        if (database.tagConstraints == null) {
             database.tagConstraints = new HashMap<String, Map<String, String>>();
         }
         changeCount += applyVariables(database.variables, vars);
