@@ -2,6 +2,22 @@
 
 . bin/functions.sh
 
+declare -a ARGS
+AWS_ARGS=""
+
+while [ -n "$*" ] ; do
+    case $1 in
+	--profile) AWS_ARGS="--profile $2"; shift;;
+	*) ARGS+=($1);;
+    esac
+    shift
+done
+
+function aws() {
+    command aws $AWS_ARGS "$@"
+}
+
+set -- "${ARGS[@]}"
 
 # Set to .params if not set in environment already
 : ${PARAMS_DIR=./params}
@@ -237,6 +253,7 @@ do_parameters() {
 #  MAIN: Let's do this thing!
 #
 #-------------------------------
+
 
 #
 # push syntax
