@@ -48,8 +48,10 @@ import com.sun.jersey.api.uri.UriComponent.Type;
 import com.sun.jersey.core.util.Base64;
 
 public class DbApiProxy implements IDbApi {
-    private static final String DBVAR_TAG_CONSTRAINT_GROUP_TE = "TE_OK";
-    private static final String DBVAR_TAG_CONSTRAINT_GROUP_SM = "SM_OK";
+    private static final String DBVAR_TAG_CONSTRAINT_GROUP_TE = "TEs";
+    private static final String DBVAR_TAG_CONSTRAINT_GROUP_SM = "SMs";
+    private static final String DBVAR_TAG_CONSTRAINT_TE = "TE_OK";
+    private static final String DBVAR_TAG_CONSTRAINT_SM = "SM_OK";
     private static final String DBVAR_TAG_EXISTS_CONSTRAINT = "ex:";
     private static final String DBVAR_SM_MIN = "SM_MIN";
     private static final String DBVAR_SM_MAX = "SM_MAX";
@@ -551,8 +553,8 @@ public class DbApiProxy implements IDbApi {
         // Initialize DB tag constraint map (to specify host tags for SMs and TEs)
         Map<String, Map<String, String>> tagConstraints = new HashMap<String, Map<String, String>>();
         String dbProcessTag = dbConnInfo.getDbProcessTag();
-        tagConstraints.put(DBVAR_TAG_CONSTRAINT_GROUP_SM, buildTagMustExistConstraint(dbProcessTag));
-        tagConstraints.put(DBVAR_TAG_CONSTRAINT_GROUP_TE, buildTagMustExistConstraint(dbProcessTag));
+        tagConstraints.put(DBVAR_TAG_CONSTRAINT_GROUP_SM, buildTagMustExistConstraint(DBVAR_TAG_CONSTRAINT_SM));
+        tagConstraints.put(DBVAR_TAG_CONSTRAINT_GROUP_TE, buildTagMustExistConstraint(DBVAR_TAG_CONSTRAINT_TE));
 
         // Determine which template to use, and add template-specific variables
         Map<String, String> vars = new HashMap<String, String>();
