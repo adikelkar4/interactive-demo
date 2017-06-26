@@ -99,19 +99,27 @@ public class SimulatorApi extends BaseApi {
     @Path("/increaseUserCount")
     @Produces(MediaType.APPLICATION_JSON)
     public Response increaseUserCount(@Context HttpServletRequest req) {
-        moveUserCount(req, ++userContainerCount);
+        if (userContainerCount < 5) {
+            moveUserCount(req, ++userContainerCount);
 
-        return Response.ok().build();
+            return Response.ok().build();
+        }
+
+        return Response.status(Response.Status.FORBIDDEN).build();
     }
 
     @POST
     @Path("/decreaseUserCount")
     @Produces(MediaType.APPLICATION_JSON)
     public Response decreaseUserCount(@Context HttpServletRequest req) {
-        moveUserCount(req, --userContainerCount);
-        decreaseWorkloadUserCounts(-1);
+        if (userContainerCount > 0) {
+            moveUserCount(req, --userContainerCount);
+            decreaseWorkloadUserCounts(-1);
 
-        return Response.ok().build();
+            return Response.ok().build();
+        }
+
+        return Response.status(Response.Status.FORBIDDEN).build();
     }
 
     @POST
