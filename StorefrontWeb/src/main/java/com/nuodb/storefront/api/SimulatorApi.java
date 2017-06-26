@@ -146,8 +146,16 @@ public class SimulatorApi extends BaseApi {
             Map<String, WorkloadStats> wTmp = workloadStatHeap.get(NUODB_MAP_KEY);
 
             for (Map.Entry<String, WorkloadStats> stat : wTmp.entrySet()) {
-                stat.getValue().setActiveWorkerLimit(stat.getValue().getActiveWorkerLimit() + (containerChange * 25));
-                stat.getValue().setActiveWorkerCount(stat.getValue().getActiveWorkerCount() + (containerChange * 25));
+                int distributionCount;
+
+                try {
+                    distributionCount = Integer.parseInt(workloadDistribution.get(stat.getKey()));
+                } catch (NumberFormatException e) {
+                    continue;
+                }
+
+                stat.getValue().setActiveWorkerLimit(stat.getValue().getActiveWorkerLimit() + (containerChange * distributionCount));
+                stat.getValue().setActiveWorkerCount(stat.getValue().getActiveWorkerCount() + (containerChange * distributionCount));
             }
         }
 
