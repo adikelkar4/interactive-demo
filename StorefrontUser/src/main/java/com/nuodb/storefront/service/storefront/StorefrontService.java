@@ -416,17 +416,6 @@ public class StorefrontService implements IStorefrontService {
         });
     }
 
-    
-    public Map<String, StorefrontStats> getStorefrontStatsByRegion(final int maxCustomerIdleTimeSec) {
-        return dao.runTransaction(TransactionType.READ_ONLY, "getStorefrontStats", new Callable<Map<String, StorefrontStats>>() {
-            
-            public Map<String, StorefrontStats> call() {
-                return dao.getStorefrontStatsByRegion(maxCustomerIdleTimeSec);
-            }
-        });
-    }
-
-    
     public List<AppInstance> getAppInstances(final boolean activeOnly) {
         return dao.runTransaction(TransactionType.READ_ONLY, "getAppInstances", new Callable<List<AppInstance>>() {
             @SuppressWarnings("unchecked")

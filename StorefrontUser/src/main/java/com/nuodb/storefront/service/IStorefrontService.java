@@ -203,14 +203,5 @@ public interface IStorefrontService {
      */
     public StorefrontStats getStorefrontStats(int maxCustomerIdleTimeSec, Integer maxAgeSec);
 
-    /**
-     * Fetches stats for the storefront by region. Metrics that are not region-specific (like productCategoryCount) are placed in a region with an
-     * empty string name, with 0 set in the other regions.
-     * 
-     * @param maxCustomerIdleTimeSec
-     *            Max seconds a customer can be idle before being considered inactive.
-     */
-    public Map<String, StorefrontStats> getStorefrontStatsByRegion(int maxCustomerIdleTimeSec);
-
     public List<AppInstance> getAppInstances(boolean activeOnly);
 }

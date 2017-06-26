@@ -45,15 +45,6 @@ public interface IStorefrontDao extends IBaseDao {
     public StorefrontStats getStorefrontStats(int maxCustomerIdleTimeSec, Integer maxAgeSec);
 
     /**
-     * Fetches stats for the storefront by region. Metrics that are not region-specific (like productCategoryCount) are placed in a region with an
-     * empty string name, with 0 set in the other regions.
-     * 
-     * @param maxCustomerIdleTimeSec
-     *            Max seconds a customer can be idle before being considered inactive.
-     */
-    public Map<String, StorefrontStats> getStorefrontStatsByRegion(int maxCustomerIdleTimeSec);
-
-    /**
      * Removes instances from the AppInstances table who have not sent a heartbeat since the specified time.
      */
     public int deleteDeadAppInstances(Calendar maxLastHeartbeat);
