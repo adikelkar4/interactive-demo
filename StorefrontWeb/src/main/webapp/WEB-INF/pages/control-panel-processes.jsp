@@ -17,7 +17,7 @@
 						<th>Process Type</th>
 						<th>Status</th>
 						<th>Region</th>
-						<th>Actions</th>
+						<!--<th>Actions</th>-->
 					</tr>
 				</thead>
 				<tbody>
@@ -34,7 +34,7 @@
 							<td><i class="{{icon}}"></i> {{typeName}}</td>
 							<td>{{status}}</td>
 							<td>{{region}}</td>
-							<td><button class="btn btn-danger" {{#unless uid}}title="Feature unavailable without a connection to the AutoConsole API" disabled="disabled"{{/unless}}><i class="icon-off icon-white"></i> Shutdown</button></td>
+							<!--<td><button class="btn btn-danger" {{#unless uid}}title="Feature unavailable without a connection to the AutoConsole API" disabled="disabled"{{/unless}}><i class="icon-off icon-white"></i> Shutdown</button></td>-->
 						</tr>
 					{{/result}}
 					{{#unless result}}
