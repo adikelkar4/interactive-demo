@@ -3,7 +3,7 @@ package com.nuodb.storefront.dal;
 public enum DriverNameEnum {
 	NUODB("com.nuodb"),
 	MYSQL("mysql"),
-	POSTGRES("pg"),
+	POSTGRES("postgresql"),
 	AURORA("com.amazon.aurora");
 	
 	private String driverName;
