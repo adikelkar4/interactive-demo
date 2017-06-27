@@ -64,8 +64,7 @@ public class StorefrontTenantManager {
 			tenantApp.setUrl(s_defaultAppInstance.getUrl());
 
 			// Build and start tenant
-			StorefrontTenant tenant = new StorefrontTenant(tenantApp, dbSettings.get("db.name"),
-					dbSettings.get("db.user"), dbSettings.get("db.password"), dbSettings.get("db.options"));
+			StorefrontTenant tenant = new StorefrontTenant(tenantApp, dbSettings);
 
 			s_tenantMap.put(tenantName, tenant);
 			tenant.startUp();
