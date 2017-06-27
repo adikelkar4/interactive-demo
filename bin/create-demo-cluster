@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# Purpose:  Create the demo cluster without caring about the parameters
+
+set -e
+set -u
+set -o pipefail
+
+dir=$(dirname $0)
+user=$USER
+now=$(date +%Y%m%d-%H%M)
+KEY="interactive-demo"
+
+WAIT=true
+PROFILEARG=""
+
+usage() {
+    cat <<EOF
+usage: $0 [--profile PROFILE] [--number UNIQUE-NUMBER] [--user USER] [--key KEY] [--wait|--no-wait] [--help|-h]
+
+UNIQUE-NUMBER defaults to a current date/time stamp
+USER, of course, defaults to the current user
+KEY is the name of the SSH key to use.  The default is 'interactive-demo'
+PROFILE should be the name of an AWS credentials profile and will use the default if omitted
+
+--wait is used to wait for cluster completion before the commaned terminates.  --wait is the default.
+
+use --no-wait if you want to "fire and forget" cluster creation
+
+EOF
+}
+
+aws() {
+    command aws ${PROFILEARG} "$@"
+}
+
+error() {
+    echo "$@" 1>&2
+}
+
+while [ -n "$*" ] ; do
+    case $1 in
+	--profile) PROFILEARG="--profile $2"; shift;;
+	--number) now="$2"; shift;;
+	--user) user="$2"; shift;;
+	--key) KEY="$2"; shift;;
+	--no-wait) WAIT=false;;
+	--wait) WAIT=true;;
+	--help|-h) usage; exit 0 ;;
+	-*) error "Invalid command line" ; usage; exit 1;;
+    esac
+    shift
+done
+
+token="interactive-demo-${user}-${now}"
+
+sed -i.bak \
+    "s/^EcsClusterName.*/EcsClusterName: ${token}/" \
+    params/ecs-cluster.params
+
+sed -i.bak \
+    "s/^KeyName.*/KeyName: ${KEY}/" \
+    params/ecs-cluster.params
+
+echo -n "Creating ${token} cluster..."
+if ${dir}/create ${PROFILEARG} ecs-cluster "${token}"  > ${token}.output 2>&1 ; then
+    echo "SUCCESS"
+    rm -f ${token}.output
+else
+    echo "FAILED"
+    cat ${token}.output
+    exit 1
+fi
+
+if ! $WAIT; then
+    exit 0
+fi
+
+echo -n "Waiting for cluster to complete build..."
+
+if aws cloudformation wait stack-create-complete --stack-name ${token}; then
+    echo "DONE"
+else
+    echo "FAILED"
+    exit 2
+fi
+
+echo -n "URL for demo end point: "
+aws cloudformation describe-stacks --stack-name "${token}" |  jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="StorefrontElbURL").OutputValue'
