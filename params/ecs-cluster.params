@@ -7,7 +7,7 @@ EcsAmiId: ami-62745007
 
 EcsInstanceType: r4.8xlarge
 
-KeyName: ben-higgins-pem
+KeyName: interactive-demo
 
 EcsClusterName: interactive-demo-8
 

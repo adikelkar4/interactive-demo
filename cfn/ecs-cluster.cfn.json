@@ -126,7 +126,7 @@
     "AsgMaxSize" : {
       "Type" : "Number",
       "Description" : "Maximum size and initial Desired Capacity of ECS Auto Scaling Group",
-      "Default" : "4"
+      "Default" : "1"
     },
 
     "EcsClusterName" : {
