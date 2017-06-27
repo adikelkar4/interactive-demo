@@ -17,7 +17,7 @@ while [ -n "$*" ] ; do
 done
 
 function aws() {
-    command aws $AWS_ARGS "$@"
+    command aws --output json $AWS_ARGS "$@"
 }
 
 set -- "${ARGS[@]}"
