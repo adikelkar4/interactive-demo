@@ -35,7 +35,7 @@ check_for_jq () {
 
 path_of() {
     local NAME="$1"
-    if [ $(uname -o) == "Cygwin" ] ; then
+    if [ -x /usr/bin/cygpath ] ; then
 	cygpath -w "$NAME"
     else
 	echo "$NAME"
