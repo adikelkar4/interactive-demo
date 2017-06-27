@@ -27,6 +27,7 @@ import org.hibernate.service.ServiceRegistry;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 
 import com.nuodb.storefront.StorefrontApp;
+import com.nuodb.storefront.dal.DriverNameEnum;
 import com.nuodb.storefront.dal.IStorefrontDao;
 import com.nuodb.storefront.dal.StorefrontDao;
 import com.nuodb.storefront.dal.UpperCaseNamingStrategy;
@@ -83,46 +84,50 @@ public class StorefrontTenant implements IStorefrontTenant {
 		s_apiCfg.getSingletons().add(new JacksonJaxbJsonProvider()
 				.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false));
 	}
-
-	// Initialize Hibernate
-	public StorefrontTenant(AppInstance appInstance) {
-		this(appInstance, StorefrontApp.DB_NAME, StorefrontApp.DB_USER, StorefrontApp.DB_PASSWORD,
-				StorefrontApp.DB_OPTIONS);
+	
+	public StorefrontTenant(AppInstance appInstance, Map<String, String> dbSettings) {
+		this.appInstance = appInstance;
+		this.hibernateCfg = buildHibernateConfiguration(dbSettings);
+		
+		for (String transactionName : TRANSACTION_NAMES) {
+			transactionStatsMap.put(transactionName, new TransactionStats());
+		}
 	}
 
-	public StorefrontTenant(AppInstance appInstance, String dbName, String dbUser, String dbPassword,
-			String dbOptions) {
-		this.appInstance = appInstance;
-		hibernateCfg = new Configuration();
-		hibernateCfg.setNamingStrategy(new UpperCaseNamingStrategy());
-		hibernateCfg.configure();
-
+	private Configuration buildHibernateConfiguration(Map<String, String> dbSettings) {
+		String dbName = dbSettings.get("db.name");
+		String dbOptions = dbSettings.get("db.options");
+		String dbUser = dbSettings.get("db.user");
+		String dbPassword = dbSettings.get("db.password");
+		String dbType = dbSettings.containsKey("db.type") ? dbSettings.get("db.type").toUpperCase() : "NUODB";
+		Configuration config = new Configuration();
+		config.setNamingStrategy(new UpperCaseNamingStrategy());
+		DriverNameEnum driverType = DriverNameEnum.valueOf(dbType);
+		config = config.configure("hibernate_" + driverType + ".cfg.xml");
 		if (dbName != null) {
 			dbName = dbName.replace("{domain.broker}", StorefrontApp.DB_DOMAIN_BROKER);
-
+			
 			Matcher dbNameMatcher = Pattern.compile("([^@]*)@([^@:]*(?::\\d+|$))").matcher(dbName);
 			if (!dbNameMatcher.matches()) {
 				throw new IllegalArgumentException("Database name must be of the format name@host[:port]");
 			}
 			String name = dbNameMatcher.group(1);
 			String host = dbNameMatcher.group(2);
-
-			String url = "jdbc:com.nuodb://" + host + "/" + name;
+			
+			String url = "jdbc:" + driverType + "://" + host + "/" + name;
 			if (dbOptions != null) {
 				url = url + "?" + dbOptions;
 			}
-			hibernateCfg.setProperty(Environment.URL, url);
+			config.setProperty(Environment.URL, url);
 		}
 		if (dbUser != null) {
-			hibernateCfg.setProperty(Environment.USER, dbUser);
+			config.setProperty(Environment.USER, dbUser);
 		}
 		if (dbPassword != null) {
-			hibernateCfg.setProperty(Environment.PASS, dbPassword);
+			config.setProperty(Environment.PASS, dbPassword);
 		}
 
-		for (String transactionName : TRANSACTION_NAMES) {
-			transactionStatsMap.put(transactionName, new TransactionStats());
-		}
+		return config;
 	}
 
 	public AppInstance getAppInstance() {
