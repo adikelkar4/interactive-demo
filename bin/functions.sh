@@ -100,12 +100,12 @@ check_git_working_directory () {
 #
 
 parse_yaml() {
-   local prefix=$2
+   local prefix=${2:-}
    local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
    sed -ne "s|^\($s\):|\1|" \
         -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
         -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  \
-        -e 's/[ \t]*$//' $1 | sed -E "s/[[:space:]]$//" |
+        -e 's/[ \t]*$//' ${1:-} | sed -E "s/[[:space:]]$//" |
    awk -F$fs '{
       indent = length($1)/2;
       vname[indent] = $2;

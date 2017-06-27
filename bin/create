@@ -1,5 +1,8 @@
 #!/bin/bash 
 
+set -e
+set -u
+
 . bin/functions.sh
 
 declare -a ARGS
@@ -133,7 +136,7 @@ generate_params_json() {
     parameter_keys=$( find_cf_params $cf_file )
     echo "["
     for k in ${parameter_keys}; do
-        val=$( eval echo \$$k )
+        val=$( eval echo \${$k:-} )
         if ! [ -z "${val}" ]; then
             echo "  { \"ParameterKey\": \"$k\",  \"ParameterValue\": \"${val}\" },"
         fi
