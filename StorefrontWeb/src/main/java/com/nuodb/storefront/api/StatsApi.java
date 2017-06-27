@@ -53,10 +53,6 @@ public class StatsApi extends BaseApi {
         rpt.setTransactionStats(transactionStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
         clearWorkloadProperty(rpt.getWorkloadStats());
 
-        if (footprint.usedRegionCount > 1) {
-            getTenant(req).getStorefrontPeerService().asyncWakeStorefrontsInOtherRegions();
-        }
-
         return rpt;
     }
 
@@ -101,10 +97,6 @@ public class StatsApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public DbFootprint setDbStats(@Context HttpServletRequest req, @QueryParam("numRegions") Integer numRegions, @QueryParam("numHosts") Integer numHosts) {
         DbFootprint footprint = getDbApi(req).setDbFootprint(numRegions.intValue(), numHosts.intValue());
-
-        if (footprint.usedRegionCount > 1) {
-            getTenant(req).getStorefrontPeerService().asyncWakeStorefrontsInOtherRegions();
-        }
 
         return footprint;
     }
