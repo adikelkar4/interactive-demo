@@ -74,6 +74,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 	private final StringWriter logWriter = new StringWriter();
 	private final Map<String, TransactionStats> transactionStatsMap = new HashMap<String, TransactionStats>();
 	private TenantStatisticsService statsSvc;
+	private String dbType;
 
 	// Initialize API client config
 	static {
@@ -361,12 +362,17 @@ public class StorefrontTenant implements IStorefrontTenant {
 
 	public TenantStatisticsService getStatsSvc() {
 		if (statsSvc == null) {
-			statsSvc = new TenantStatisticsService(this);
+			statsSvc = new TenantStatisticsService(this, this.dbType);
 		}
 		return statsSvc;
 	}
 	public void setStatsSvc(TenantStatisticsService statsSvc) {
 		this.statsSvc = statsSvc;
+	}
+
+	public void setDbType(String dbVendor) {
+		// TODO Auto-generated method stub
+		this.dbType = dbVendor;
 	}
 
 }

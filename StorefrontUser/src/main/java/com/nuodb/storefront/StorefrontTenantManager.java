@@ -65,7 +65,7 @@ public class StorefrontTenantManager {
 
 			// Build and start tenant
 			StorefrontTenant tenant = new StorefrontTenant(tenantApp, dbSettings);
-
+			tenant.setDbType(dbSettings.containsKey("db.type") ? dbSettings.get("db.type") : "nuodb");
 			s_tenantMap.put(tenantName, tenant);
 			tenant.startUp();
 			return tenant;
