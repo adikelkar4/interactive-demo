@@ -20,16 +20,15 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.MetricDatum;
 import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
-import com.amazonaws.services.cloudwatch.model.PutMetricDataResult;
 import com.amazonaws.services.cloudwatch.model.StandardUnit;
 
 import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.model.dto.*;
+import com.storefront.workload.launcher.LambdaLauncher;
 
 @Path("/stats")
 public class StatsApi extends BaseApi {
@@ -174,8 +173,8 @@ public class StatsApi extends BaseApi {
                 try {
                     AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
                     Dimension dimension = new Dimension()
-                            .withName("AVG_LATENCY")
-                            .withValue("MS");
+                            .withName("ClusterName")
+                            .withValue(LambdaLauncher.getEcsClusterName());
                     MetricDatum datum = new MetricDatum()
                             .withMetricName("MS")
                             .withUnit(StandardUnit.Milliseconds)
