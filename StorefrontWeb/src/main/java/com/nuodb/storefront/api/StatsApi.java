@@ -27,9 +27,8 @@ import com.amazonaws.services.cloudwatch.model.MetricDatum;
 import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
 import com.amazonaws.services.cloudwatch.model.PutMetricDataResult;
 import com.amazonaws.services.cloudwatch.model.StandardUnit;
-
-import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.model.dto.*;
+import com.nuodb.storefront.servlet.StorefrontWebApp;
 
 @Path("/stats")
 public class StatsApi extends BaseApi {
@@ -60,7 +59,7 @@ public class StatsApi extends BaseApi {
     @Path("/storefront")
     @Produces(MediaType.APPLICATION_JSON)
     public StorefrontStats getStorefrontStats(@Context HttpServletRequest req, @QueryParam("sessionTimeoutSec") Integer sessionTimeoutSec, @QueryParam("maxAgeSec") Integer maxAgeSec) {
-        int maxCustomerIdleTimeSec = (sessionTimeoutSec == null) ? StorefrontApp.DEFAULT_SESSION_TIMEOUT_SEC : sessionTimeoutSec;
+        int maxCustomerIdleTimeSec = (sessionTimeoutSec == null) ? StorefrontWebApp.DEFAULT_SESSION_TIMEOUT_SEC : sessionTimeoutSec;
         return getService(req).getStorefrontStats(maxCustomerIdleTimeSec, maxAgeSec);
     }
 

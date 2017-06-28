@@ -21,13 +21,13 @@ import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.service.storefront.StorefrontTenant;
 
 public class StorefrontTenantManager {
-	private static final AppInstance s_defaultAppInstance = new AppInstance(StorefrontApp.DEFAULT_REGION_NAME,
-			StorefrontApp.DEFAULT_TENANT_NAME, true);
+	private static final AppInstance s_defaultAppInstance = new AppInstance(StorefrontTenant.DEFAULT_REGION_NAME,
+			StorefrontTenant.DEFAULT_TENANT_NAME, true);
 	private static final Map<String, IStorefrontTenant> s_tenantMap = new TreeMap<String, IStorefrontTenant>(
 			String.CASE_INSENSITIVE_ORDER);
 
 	public static IStorefrontTenant getTenant(HttpServletRequest request) {
-		return getTenant(request.getParameter(StorefrontApp.TENANT_PARAM_NAME));
+		return getTenant(request.getParameter(StorefrontTenantManager.TENANT_PARAM_NAME));
 	}
 
 	public static IStorefrontTenant getTenant(String tenantName) {
@@ -85,4 +85,6 @@ public class StorefrontTenantManager {
 
 		tenant.shutDown();
 	}
+
+	public static final String TENANT_PARAM_NAME = "tenant";
 }

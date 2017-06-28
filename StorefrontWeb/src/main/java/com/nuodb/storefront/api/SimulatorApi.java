@@ -21,10 +21,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.model.dto.*;
 import com.nuodb.storefront.model.type.MessageSeverity;
 import com.nuodb.storefront.service.ISimulatorService;
+import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.storefront.workload.launcher.LambdaLauncher;
 import com.storefront.workload.launcher.LocalLauncher;
 import com.storefront.workload.launcher.UserLauncher;
@@ -55,9 +55,9 @@ public class SimulatorApi extends BaseApi {
 
     	if (host.contains("localhost")) {
 			Map<String, String> dbSettings = new HashMap<>();
-			dbSettings.put("db.name", StorefrontApp.DB_NAME);
-			dbSettings.put("db.user", StorefrontApp.DB_USER);
-			dbSettings.put("db.password", StorefrontApp.DB_PASSWORD);
+			dbSettings.put("db.name", StorefrontWebApp.DB_NAME);
+			dbSettings.put("db.user", StorefrontWebApp.DB_USER);
+			dbSettings.put("db.password", StorefrontWebApp.DB_PASSWORD);
 			LocalLauncher local = new LocalLauncher();
 			local.setDbOptions(dbSettings);
 			Map<String, String> appSettings = new HashMap<>();

@@ -14,7 +14,6 @@ import org.apache.log4j.Logger;
 import org.hibernate.ObjectNotFoundException;
 import org.hibernate.exception.SQLGrammarException;
 
-import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.exception.CartEmptyException;
 import com.nuodb.storefront.exception.CustomerNotFoundException;
 import com.nuodb.storefront.exception.ProductNotFoundException;
@@ -52,6 +51,8 @@ public class SimulatedUser implements IWorker {
     // Fibonacci backoff retry tracking
     private long priorBackoffDelay = 0;
     private long nextBackoffDelay = MIN_BACKOFF_DELAY;
+	public static final int DEFAULT_ANALYTIC_MAX_AGE = 60 * 30;// 30 min
+	public static final int DEFAULT_SESSION_TIMEOUT_SEC = 60 * 20;// 20 min
 
     public SimulatedUser(ISimulator simulator, Workload workloadType) {
         if (workloadType == null) {
@@ -304,7 +305,7 @@ public class SimulatedUser implements IWorker {
     }
 
     protected void doRunReport() {
-        simulator.getService().getStorefrontStats(StorefrontApp.DEFAULT_SESSION_TIMEOUT_SEC, StorefrontApp.DEFAULT_ANALYTIC_MAX_AGE);
+        simulator.getService().getStorefrontStats(SimulatedUser.DEFAULT_SESSION_TIMEOUT_SEC, SimulatedUser.DEFAULT_ANALYTIC_MAX_AGE);
     }
 
     protected boolean getOrFetchCategories() {

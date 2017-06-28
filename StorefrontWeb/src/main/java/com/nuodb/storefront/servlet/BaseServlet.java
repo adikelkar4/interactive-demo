@@ -17,7 +17,6 @@ import org.apache.log4j.Logger;
 import org.hibernate.exception.GenericJDBCException;
 import org.hibernate.exception.SQLGrammarException;
 
-import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.StorefrontTenantManager;
 import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.dto.Message;
@@ -157,7 +156,7 @@ public abstract class BaseServlet extends HttpServlet {
         AppInstance appInstance = tenant.getAppInstance();
 
         // Build full page title
-        String storeName = appInstance.getName() + " - " + StorefrontApp.APP_NAME;
+        String storeName = appInstance.getName() + " - " + StorefrontWebApp.APP_NAME;
         if (pageTitle == null || pageTitle.isEmpty()) {
             pageTitle = storeName;
         } else {

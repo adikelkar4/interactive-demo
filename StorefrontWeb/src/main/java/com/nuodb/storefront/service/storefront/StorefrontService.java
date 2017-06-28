@@ -17,7 +17,6 @@ import org.apache.log4j.Logger;
 import com.googlecode.genericdao.search.Filter;
 import com.googlecode.genericdao.search.Search;
 import com.googlecode.genericdao.search.SearchResult;
-import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.StorefrontTenantManager;
 import com.nuodb.storefront.dal.IStorefrontDao;
 import com.nuodb.storefront.dal.TransactionType;
@@ -39,6 +38,7 @@ import com.nuodb.storefront.model.entity.ProductReview;
 import com.nuodb.storefront.model.entity.Purchase;
 import com.nuodb.storefront.model.entity.PurchaseSelection;
 import com.nuodb.storefront.service.IStorefrontService;
+import com.nuodb.storefront.servlet.StorefrontWebApp;
 
 /**
  * Basic implementation of the storefront service interface. Each service method invocation runs in its own transaction.
@@ -439,7 +439,7 @@ public class StorefrontService implements IStorefrontService {
                 Search search = new Search(AppInstance.class);
                 if (activeOnly) {
                     Calendar minLastHeartbeat = Calendar.getInstance();
-                    minLastHeartbeat.add(Calendar.SECOND, -StorefrontApp.MAX_HEARTBEAT_AGE_SEC);
+                    minLastHeartbeat.add(Calendar.SECOND, -StorefrontWebApp.MAX_HEARTBEAT_AGE_SEC);
                     search.addFilter(Filter.greaterOrEqual("lastHeartbeat", minLastHeartbeat));
                 }
                 search.addSort("region", false);

@@ -23,7 +23,6 @@ import org.hibernate.type.BigDecimalType;
 import org.hibernate.type.StringType;
 
 import com.googlecode.genericdao.search.SearchResult;
-import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.model.dto.Category;
 import com.nuodb.storefront.model.dto.DbRegionInfo;
 import com.nuodb.storefront.model.dto.ProductFilter;

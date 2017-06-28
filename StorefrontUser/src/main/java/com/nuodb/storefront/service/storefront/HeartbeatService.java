@@ -5,36 +5,29 @@ package com.nuodb.storefront.service.storefront;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import javax.ws.rs.core.MediaType;
 
 import org.apache.log4j.Logger;
 
 import com.nuodb.storefront.StorefrontApp;
-import com.nuodb.storefront.StorefrontTenantManager;
 import com.nuodb.storefront.dal.IStorefrontDao;
 import com.nuodb.storefront.dal.TransactionType;
 import com.nuodb.storefront.exception.ApiException;
 import com.nuodb.storefront.model.dto.ConnInfo;
 import com.nuodb.storefront.model.dto.DbRegionInfo;
-import com.nuodb.storefront.model.dto.RegionStats;
 import com.nuodb.storefront.model.entity.AppInstance;
-import com.nuodb.storefront.service.IHeartbeatService;
-import com.nuodb.storefront.service.IStorefrontPeerService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.util.PerformanceUtil;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.uri.UriComponent;
 import com.sun.jersey.api.uri.UriComponent.Type;
 
-public class HeartbeatService implements IHeartbeatService, IStorefrontPeerService {
+public class HeartbeatService implements Runnable {
     private final Logger logger;
     private final IStorefrontTenant tenant;
     private int secondsUntilNextPurge = 0;
@@ -43,6 +36,10 @@ public class HeartbeatService implements IHeartbeatService, IStorefrontPeerServi
     private Map<String, Set<URI>> wakeList = new HashMap<String, Set<URI>>();
     private Set<URI> warnList = new HashSet<URI>();
     private long cumGcTime = 0;
+	public static final int GC_CUMULATIVE_TIME_LOG_MS = 500; // every 0.5 sec of cumulative GC time logged
+	public static final int MIN_INSTANCE_PURGE_AGE_SEC = 60 * 60; // 1 hour
+	public static final int STOP_USERS_AFTER_IDLE_UI_SEC = 60 * 10; // 10 min
+	public static final int PURGE_FREQUENCY_SEC = 60 * 30; // 30 min
 
     public HeartbeatService(IStorefrontTenant tenant) {
         this.tenant = tenant;
@@ -74,14 +71,14 @@ public class HeartbeatService implements IHeartbeatService, IStorefrontPeerServi
                     // If enough time has elapsed, also delete rows of instances that are no longer sending heartbeats
                     if (secondsUntilNextPurge <= 0) {
                         Calendar maxLastHeartbeat = Calendar.getInstance();
-                        maxLastHeartbeat.add(Calendar.SECOND, -StorefrontApp.MIN_INSTANCE_PURGE_AGE_SEC);
+                        maxLastHeartbeat.add(Calendar.SECOND, -HeartbeatService.MIN_INSTANCE_PURGE_AGE_SEC);
                         dao.deleteDeadAppInstances(maxLastHeartbeat);
-                        secondsUntilNextPurge = StorefrontApp.PURGE_FREQUENCY_SEC;
+                        secondsUntilNextPurge = HeartbeatService.PURGE_FREQUENCY_SEC;
                     }
 
                     // If interactive user has left the app, shut down any active workloads
                     Calendar idleThreshold = Calendar.getInstance();
-                    idleThreshold.add(Calendar.SECOND, -StorefrontApp.STOP_USERS_AFTER_IDLE_UI_SEC);
+                    idleThreshold.add(Calendar.SECOND, -HeartbeatService.STOP_USERS_AFTER_IDLE_UI_SEC);
                     if (appInstance.getStopUsersWhenIdle() && appInstance.getLastApiActivity().before(idleThreshold)) {
                         // Don't do any heavy lifting if there are no simulated workloads in progress
                         int activeWorkerCount = tenant.getSimulatorService().getActiveWorkerLimit();
@@ -104,48 +101,13 @@ public class HeartbeatService implements IHeartbeatService, IStorefrontPeerServi
             });
             
             long gcTime = PerformanceUtil.getGarbageCollectionTime();
-            if (gcTime > cumGcTime + StorefrontApp.GC_CUMULATIVE_TIME_LOG_MS) {
+            if (gcTime > cumGcTime + HeartbeatService.GC_CUMULATIVE_TIME_LOG_MS) {
                 logger.info("Cumulative GC time of " + gcTime + " ms");
                 cumGcTime = gcTime;
             }
         } catch (Exception e) {
             if (successCount > 0 && ++consecutiveFailureCount == 1) {
                 logger.error(tenant.getAppInstance().getTenantName() + ": Unable to send heartbeat", e);
-            }
-        }
-    }
-
-    public void asyncWakeStorefrontsInOtherRegions() {
-
-        // Assume no regions are covered
-        Collection<RegionStats> regions = tenant.getDbApi().getRegionStats();
-        Map<String, RegionStats> missingRegions = new HashMap<String, RegionStats>();
-        for (RegionStats region : regions) {
-            if (region.usedHostCount > 0) {
-                missingRegions.put(region.region, region);
-            }
-        }
-
-        if (regions.size() <= 1) {
-            // When there's only 1 region, we're in it -- so there's no work to do
-            return;
-        }
-
-        // Eliminate regions that are covered by existing active instances
-        List<AppInstance> instances = tenant.createStorefrontService().getAppInstances(true);
-        for (AppInstance instance : instances) {
-            missingRegions.remove(instance.getRegion());
-        }
-
-        // Queue up candidate URLs of storefronts in regions that are not covered
-        synchronized (wakeList) {
-            // Discard prior data. We've now got the latest across all regions.
-            wakeList.clear();
-
-            for (RegionStats region : missingRegions.values()) {
-                // Put the URIs in a *sorted* set so all active Storefronts hit these in a deterministic order.
-                // Otherwise they may wake multiple Storefronts in a region, which isn't bad but unnecessary.
-                wakeList.put(region.region, new TreeSet<URI>(region.usedHostUrls));
             }
         }
     }

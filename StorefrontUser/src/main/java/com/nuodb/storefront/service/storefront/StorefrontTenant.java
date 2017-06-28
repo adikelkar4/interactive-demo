@@ -3,8 +3,6 @@
 package com.nuodb.storefront.service.storefront;
 
 import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -18,11 +16,9 @@ import org.apache.log4j.Logger;
 import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.hibernate.SessionFactory;
-import org.hibernate.StatelessSession;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
-import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 
@@ -35,16 +31,10 @@ import com.nuodb.storefront.model.dto.ConnInfo;
 import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.entity.AppInstance;
-import com.nuodb.storefront.service.IDataGeneratorService;
-import com.nuodb.storefront.service.IDbApi;
-import com.nuodb.storefront.service.IHeartbeatService;
 import com.nuodb.storefront.service.ISimulatorService;
-import com.nuodb.storefront.service.IStorefrontPeerService;
 import com.nuodb.storefront.service.IStorefrontService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.service.TenantStatisticsService;
-import com.nuodb.storefront.service.datagen.DataGeneratorService;
-import com.nuodb.storefront.service.dbapi.DbApiProxy;
 import com.nuodb.storefront.service.simulator.SimulatorService;
 import com.nuodb.storefront.util.PerformanceUtil;
 import com.sun.jersey.api.client.Client;
@@ -67,19 +57,37 @@ public class StorefrontTenant implements IStorefrontTenant {
 	private Map<String, String> appSettings;
 	private SessionFactory sessionFactory;
 	private ISimulatorService simulatorSvc;
-	private IHeartbeatService heartbeatSvc;
-	private IDbApi dbApi;
+	private HeartbeatService heartbeatSvc;
 	private ConnInfo apiConnInfo;
 	private ScheduledExecutorService executor;
 	private final StringWriter logWriter = new StringWriter();
 	private final Map<String, TransactionStats> transactionStatsMap = new HashMap<String, TransactionStats>();
 	private TenantStatisticsService statsSvc;
+	public static final String DB_PROCESS_TAG = System.getProperty("storefront.db.processTag", "demo_${db.name}");
+	public static final String DB_DOMAIN_BROKER = System.getProperty("domain.broker", "localhost");
+	public static final int CPU_SAMPLING_INTERVAL_SEC = 1;
+	public static final String DEFAULT_TENANT_NAME = "Default";
+	public static final String DEFAULT_REGION_NAME = "Unknown region";
+	public static final String DEFAULT_DB_HOST = "localhost";
+	// Default names
+	public static final String DEFAULT_DB_NAME = "Storefront";
+	public static final String DBAPI_PASSWORD = System.getProperty("storefront.dbapi.password", "bird");
+	public static final String DBAPI_USERNAME = System.getProperty("storefront.dbapi.user", "domain");
+	public static final int DBAPI_PORT = Integer.valueOf(System.getProperty("storefront.dbapi.port", "8888"));
+	public static final String DBAPI_HOST = System.getProperty("storefront.dbapi.host");
+	public static final int DBAPI_MAX_UNAVAILABLE_RETRY_TIME_SEC = Integer
+	.valueOf(System.getProperty("storefront.dbapi.unavailableRetryTimeSec", "3"));
+	public static final int DBAPI_CONNECT_TIMEOUT_SEC = Integer
+	.valueOf(System.getProperty("storefront.dbapi.connectTimeoutSec", "10"));
+	// Database API properties
+	public static final int DBAPI_READ_TIMEOUT_SEC = Integer
+			.valueOf(System.getProperty("storefront.dbapi.readTimeoutSec", "10"));
 
 	// Initialize API client config
 	static {
 		Map<String, Object> props = s_apiCfg.getProperties();
-		props.put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, StorefrontApp.DBAPI_CONNECT_TIMEOUT_SEC * 1000);
-		props.put(ClientConfig.PROPERTY_READ_TIMEOUT, StorefrontApp.DBAPI_READ_TIMEOUT_SEC * 1000);
+		props.put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, StorefrontTenant.DBAPI_CONNECT_TIMEOUT_SEC * 1000);
+		props.put(ClientConfig.PROPERTY_READ_TIMEOUT, StorefrontTenant.DBAPI_READ_TIMEOUT_SEC * 1000);
 
 		s_apiCfg.getSingletons().add(new JacksonJaxbJsonProvider()
 				.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false));
@@ -105,7 +113,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 		DriverNameEnum driverType = DriverNameEnum.valueOf(dbType);
 		config = config.configure("hibernate_" + driverType + ".cfg.xml");
 		if (dbName != null) {
-			dbName = dbName.replace("{domain.broker}", StorefrontApp.DB_DOMAIN_BROKER);
+			dbName = dbName.replace("{domain.broker}", StorefrontTenant.DB_DOMAIN_BROKER);
 			
 			Matcher dbNameMatcher = Pattern.compile("([^@]*)@([^@:]*(?::\\d+|$))").matcher(dbName);
 			if (!dbNameMatcher.matches()) {
@@ -143,7 +151,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 
 				Runnable sampler = PerformanceUtil.createSampler();
 				if (sampler != null) {
-					executor.scheduleAtFixedRate(sampler, 0, StorefrontApp.CPU_SAMPLING_INTERVAL_SEC, TimeUnit.SECONDS);
+					executor.scheduleAtFixedRate(sampler, 0, StorefrontTenant.CPU_SAMPLING_INTERVAL_SEC, TimeUnit.SECONDS);
 				}
 				
 				executor.scheduleAtFixedRate(getStatsSvc(), 0, 500, TimeUnit.MILLISECONDS);
@@ -177,12 +185,12 @@ public class StorefrontTenant implements IStorefrontTenant {
 			info.setHost(dbNameMatcher.group(1));
 			info.setDbName(dbNameMatcher.group(3));
 		} else {
-			info.setHost(StorefrontApp.DEFAULT_DB_HOST);
-			info.setDbName(StorefrontApp.DEFAULT_DB_NAME);
+			info.setHost(StorefrontTenant.DEFAULT_DB_HOST);
+			info.setDbName(StorefrontTenant.DEFAULT_DB_NAME);
 		}
 		info.setUsername(hibernateCfg.getProperty(Environment.USER));
 		info.setPassword(hibernateCfg.getProperty(Environment.PASS));
-		info.setDbProcessTag(StorefrontApp.DB_PROCESS_TAG.replace("${db.name}", info.getDbName()));
+		info.setDbProcessTag(StorefrontTenant.DB_PROCESS_TAG.replace("${db.name}", info.getDbName()));
 		return info;
 	}
 
@@ -192,7 +200,6 @@ public class StorefrontTenant implements IStorefrontTenant {
 		hibernateCfg.setProperty(Environment.URL, dbConnInfo.getUrl());
 
 		synchronized (lock) {
-			dbApi = null;
 			if (sessionFactory != null) {
 				sessionFactory.close();
 				sessionFactory = null;
@@ -204,10 +211,10 @@ public class StorefrontTenant implements IStorefrontTenant {
 		synchronized (lock) {
 			if (apiConnInfo == null) {
 				String host = getDbApiHost();
-				int port = StorefrontApp.DBAPI_PORT;
+				int port = StorefrontTenant.DBAPI_PORT;
 				ConnInfo info = new ConnInfo();
-				info.setUsername(StorefrontApp.DBAPI_USERNAME);
-				info.setPassword(StorefrontApp.DBAPI_PASSWORD);
+				info.setUsername(StorefrontTenant.DBAPI_USERNAME);
+				info.setPassword(StorefrontTenant.DBAPI_PASSWORD);
 				info.setUrl("http://" + host + ":" + port + "/api/1");
 				apiConnInfo = info;
 			}
@@ -218,20 +225,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 	public void setApiConnInfo(ConnInfo info) {
 		synchronized (lock) {
 			apiConnInfo = new ConnInfo(info);
-			dbApi = null;
 		}
-	}
-
-	public String getAdminConsoleUrl() {
-		String host = getDbApiHost();
-		int port = StorefrontApp.DBAPI_PORT;
-		return "http://" + host + ":" + port + "/console";
-	}
-
-	public String getSqlExplorerUrl() {
-		String host = getDbApiHost();
-		int port = StorefrontApp.SQLEXPLORER_PORT;
-		return "http://" + host + ":" + port + "/explorer.jsp";
 	}
 
 	public SchemaExport createSchemaExport() {
@@ -248,19 +242,6 @@ public class StorefrontTenant implements IStorefrontTenant {
 		return new StorefrontService(appInstance, createStorefrontDao());
 	}
 
-	public IDataGeneratorService createDataGeneratorService() {
-		SessionFactory factory = getOrCreateSessionFactory();
-		try {
-			Connection connection = factory.getSessionFactoryOptions().getServiceRegistry()
-					.getService(ConnectionProvider.class).getConnection();
-			StatelessSession session = factory.openStatelessSession(connection);
-			connection.setAutoCommit(true);
-			return new DataGeneratorService(session, connection, appInstance.getRegion());
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	public ISimulatorService getSimulatorService() {
 		if (simulatorSvc == null) {
 			synchronized (lock) {
@@ -272,23 +253,8 @@ public class StorefrontTenant implements IStorefrontTenant {
 		return simulatorSvc;
 	}
 
-	public IDbApi getDbApi() {
-		if (dbApi == null) {
-			synchronized (lock) {
-				if (dbApi == null) {
-					dbApi = createDbApi();
-				}
-			}
-		}
-		return dbApi;
-	}
-
 	public IStorefrontDao createStorefrontDao() {
 		return createStorefrontDao(getOrCreateSessionFactory());
-	}
-
-	public IStorefrontPeerService getStorefrontPeerService() {
-		return (IStorefrontPeerService) getHeartbeatService();
 	}
 
 	public Client createApiClient() {
@@ -307,11 +273,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 		return transactionStatsMap;
 	}
 
-	protected IDbApi createDbApi() {
-		return new DbApiProxy(this);
-	}
-
-	protected IHeartbeatService getHeartbeatService() {
+	protected HeartbeatService getHeartbeatService() {
 		if (heartbeatSvc == null) {
 			synchronized (lock) {
 				heartbeatSvc = new HeartbeatService(this);
@@ -348,7 +310,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 	}
 
 	protected String getDbApiHost() {
-		String apiHost = StorefrontApp.DBAPI_HOST;
+		String apiHost = StorefrontTenant.DBAPI_HOST;
 		return (!StringUtils.isEmpty(apiHost)) ? apiHost : getDbConnInfo().getHost();
 	}
 

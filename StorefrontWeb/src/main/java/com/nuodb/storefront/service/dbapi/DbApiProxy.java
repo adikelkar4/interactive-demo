@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
-import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.exception.ApiException;
 import com.nuodb.storefront.exception.DataValidationException;
 import com.nuodb.storefront.exception.DatabaseNotFoundException;
@@ -38,6 +37,7 @@ import com.nuodb.storefront.model.dto.DbFootprint;
 import com.nuodb.storefront.model.dto.RegionStats;
 import com.nuodb.storefront.service.IDbApi;
 import com.nuodb.storefront.service.IStorefrontTenant;
+import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.nuodb.storefront.util.NetworkUtil;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientHandlerException;
@@ -594,8 +594,8 @@ public class DbApiProxy implements IDbApi {
             database.options = new HashMap<String, String>();
         }
         Map<String, String> targetOptions = new HashMap<String, String>();
-        if (StorefrontApp.DB_PING_TIMEOUT_SEC > 0) {
-            targetOptions.put(OPTIONS_PING_TIMEOUT, Integer.toString(StorefrontApp.DB_PING_TIMEOUT_SEC));
+        if (StorefrontWebApp.DB_PING_TIMEOUT_SEC > 0) {
+            targetOptions.put(OPTIONS_PING_TIMEOUT, Integer.toString(StorefrontWebApp.DB_PING_TIMEOUT_SEC));
         }
         changeCount += applyVariables(database.options, targetOptions);
 
