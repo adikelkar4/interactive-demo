@@ -152,6 +152,28 @@ Admin client-side libraries:
 Interactive Demo
 ================
 
+Quick Start
+-----------
+
+```./bin/create-demo-cluster```
+
+or
+
+```./bin/create-demo-cluster --profile AWS-PROFILE-NAME```
+
+This will create a demo cluster with a unique name based on the
+current user name and date.
+
+When the stack has completed creation, it will print the URL for the
+demo control panel.  Note that the NuoDB application may not, yet, be
+running when that hapens.
+
+use ```./bin/create-demo-cluster --help``` for more options.
+
+
+The long (manual) way
+---------------------
+
 1. clone interactive-demo repo
 2. run in terminal: 
    ```aws configure```

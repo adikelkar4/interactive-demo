@@ -1,5 +1,8 @@
 #!/bin/bash 
 
+set -e
+set -u
+
 . bin/functions.sh
 
 declare -a ARGS
@@ -14,7 +17,7 @@ while [ -n "$*" ] ; do
 done
 
 function aws() {
-    command aws $AWS_ARGS "$@"
+    command aws --output json $AWS_ARGS "$@"
 }
 
 set -- "${ARGS[@]}"
@@ -78,7 +81,6 @@ echo $PARAMS_URL
 # fi
 
 # Static arguments to the aws CLI
-#AWS_PROFILE="--profile corporate"
 ROLLBACK=--disable-rollback
 CAPABILITIES="--capabilities CAPABILITY_IAM"
 
@@ -133,7 +135,7 @@ generate_params_json() {
     parameter_keys=$( find_cf_params $cf_file )
     echo "["
     for k in ${parameter_keys}; do
-        val=$( eval echo \$$k )
+        val=$( eval echo \${$k:-} )
         if ! [ -z "${val}" ]; then
             echo "  { \"ParameterKey\": \"$k\",  \"ParameterValue\": \"${val}\" },"
         fi
@@ -160,7 +162,7 @@ generate_params_file() {
 query_status() {
     local stack_name=$1
     local result=$( aws cloudformation \
-                     ${AWS_PROFILE} describe-stacks \
+                     describe-stacks \
                      --stack-name ${stack_name} \
                      --query 'Stacks[0].StackStatus' )
     echo ${result}
@@ -170,7 +172,6 @@ do_create () {
     PARAMS_JSON_FILE=$( generate_params_file ${CFN_URL} ${PARAMS_FILE} )
     
     cmd="aws cloudformation \
-        ${AWS_PROFILE} \
         create-stack \
         --stack-name    ${STACK_NAME} \
         --template-body ${CFN_URL} \
@@ -188,7 +189,6 @@ do_update () {
 
     PARAMS_JSON_FILE=$( generate_params_file ${CFN_URL} ${PARAMS_FILE} )
     cmd="aws cloudformation \
-        ${AWS_PROFILE} \
         update-stack   \
         --stack-name    ${STACK_NAME} \
         --template-body ${CFN_URL} \
@@ -201,7 +201,7 @@ do_update () {
 }
 
 do_delete () { 
-    aws cloudformation ${AWS_PROFILE} delete-stack --stack-name ${STACK_NAME} 
+    aws cloudformation delete-stack --stack-name ${STACK_NAME} 
 }
 
 do_monitor () { 
@@ -215,7 +215,7 @@ do_monitor () {
     done
 
     if [ "CREATE_FAILED" = "$result" ]; then
-        aws cloudformation ${AWS_PROFILE} describe-stacks \
+        aws cloudformation describe-stacks \
            --stack-name ${STACK_NAME} 
         exit 1
     fi
@@ -240,7 +240,7 @@ do_setup_tunnels () {
 }
 
 do_validate () { 
-    aws cloudformation ${AWS_PROFILE} validate-template  --template-body ${CFN_URL} 
+    aws cloudformation validate-template  --template-body ${CFN_URL} 
 }
 
 do_parameters() { 

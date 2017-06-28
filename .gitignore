@@ -6,4 +6,6 @@ target/
 .idea/
 *.iml
 .idea
-
+*~
+output*.txt
+*.bak
