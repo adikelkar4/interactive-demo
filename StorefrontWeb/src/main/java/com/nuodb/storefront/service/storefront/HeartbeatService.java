@@ -2,45 +2,39 @@
 
 package com.nuodb.storefront.service.storefront;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Calendar;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
-import javax.ws.rs.core.MediaType;
-
+import com.nuodb.storefront.api.StatsApi;
 import org.apache.log4j.Logger;
 
 import com.nuodb.storefront.StorefrontApp;
-import com.nuodb.storefront.StorefrontTenantManager;
 import com.nuodb.storefront.dal.IStorefrontDao;
 import com.nuodb.storefront.dal.TransactionType;
-import com.nuodb.storefront.exception.ApiException;
-import com.nuodb.storefront.model.dto.ConnInfo;
 import com.nuodb.storefront.model.dto.DbRegionInfo;
-import com.nuodb.storefront.model.dto.RegionStats;
 import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.service.IHeartbeatService;
-import com.nuodb.storefront.service.IStorefrontPeerService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.util.PerformanceUtil;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.uri.UriComponent;
-import com.sun.jersey.api.uri.UriComponent.Type;
+import com.storefront.workload.launcher.LambdaLauncher;
+import com.nuodb.storefront.model.dto.*;
+
+import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
+import com.amazonaws.services.cloudwatch.model.Dimension;
+import com.amazonaws.services.cloudwatch.model.MetricDatum;
+import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
+import com.amazonaws.services.cloudwatch.model.StandardUnit;
 
 public class HeartbeatService implements IHeartbeatService {
     private final Logger logger;
     private final IStorefrontTenant tenant;
+    private final int statsIncMax = 500;
     private int secondsUntilNextPurge = 0;
     private int consecutiveFailureCount = 0;
     private int successCount = 0;
     private long cumGcTime = 0;
+    private int statsInc = 0;
 
     public HeartbeatService(IStorefrontTenant tenant) {
         this.tenant = tenant;
@@ -102,5 +96,41 @@ public class HeartbeatService implements IHeartbeatService {
                 logger.error(tenant.getAppInstance().getTenantName() + ": Unable to send heartbeat", e);
             }
         }
+
+        if (this.statsInc >= this.statsIncMax) {
+            this.statsInc = 0;
+            int totalCount = 0;
+            long totalDuration = 0;
+            Map<String, Map<String, TransactionStats>> tStats = StatsApi.getTransactionStatHeap();
+
+            if (tStats.containsKey("nuodb")) {
+                for (Map.Entry<String, TransactionStats> ts : tStats.get("nuodb").entrySet()) {
+                    totalCount += ts.getValue().getTotalCount();
+                    totalDuration += ts.getValue().getTotalDurationMs();
+                }
+            }
+
+            try {
+                AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
+                Dimension dimension = new Dimension()
+                        .withName("ClusterName")
+                        .withValue(LambdaLauncher.getEcsClusterName());
+                MetricDatum datum = new MetricDatum()
+                        .withMetricName("MS")
+                        .withUnit(StandardUnit.Milliseconds)
+                        .withValue((double) (totalDuration / totalCount))
+                        .withDimensions(dimension);
+                PutMetricDataRequest pmdr = new PutMetricDataRequest()
+                        .withNamespace("INSTANCE/METRICS")
+                        .withMetricData(datum);
+                cw.putMetricData(pmdr);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            this.statsInc++;
+        }
+
+        return;
     }
 }
