@@ -594,7 +594,7 @@
       "Properties": {
         "EvaluationPeriods": "1",
         "Statistic": "Average",
-        "Threshold": "75",
+        "Threshold": "200",
         "AlarmDescription": "Alarm if transaction latency too high",
         "Period": "60",
         "Namespace": "INSTANCE/METRICS",
@@ -612,7 +612,7 @@
       "Properties": {
         "EvaluationPeriods": "1",
         "Statistic": "Average",
-        "Threshold": "40",
+        "Threshold": "50",
         "AlarmDescription": "Alarm if transaction latency too high",
         "Period": "60",
         "Namespace": "INSTANCE/METRICS",
