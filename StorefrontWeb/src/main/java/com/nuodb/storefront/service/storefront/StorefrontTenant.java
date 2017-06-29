@@ -36,13 +36,11 @@ import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.service.IDataGeneratorService;
 import com.nuodb.storefront.service.IDbApi;
 import com.nuodb.storefront.service.IHeartbeatService;
-import com.nuodb.storefront.service.ISimulatorService;
 import com.nuodb.storefront.service.IStorefrontPeerService;
 import com.nuodb.storefront.service.IStorefrontService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.service.datagen.DataGeneratorService;
 import com.nuodb.storefront.service.dbapi.DbApiProxy;
-import com.nuodb.storefront.service.simulator.SimulatorService;
 import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.nuodb.storefront.util.PerformanceUtil;
 import com.sun.jersey.api.client.Client;
@@ -63,7 +61,6 @@ public class StorefrontTenant implements IStorefrontTenant {
     private final AppInstance appInstance;
     private final Configuration hibernateCfg;
     private SessionFactory sessionFactory;
-    private ISimulatorService simulatorSvc;
     private IHeartbeatService heartbeatSvc;
     private IDbApi dbApi;
     private ConnInfo apiConnInfo;
@@ -146,9 +143,7 @@ public class StorefrontTenant implements IStorefrontTenant {
             if (executor == null) {
                 executor.shutdown();
             }
-            if (simulatorSvc != null) {
-                simulatorSvc.removeAll();
-            }
+
             if (sessionFactory != null) {
                 sessionFactory.close();
             }
@@ -256,18 +251,6 @@ public class StorefrontTenant implements IStorefrontTenant {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public ISimulatorService getSimulatorService() {
-        if (simulatorSvc == null) {
-            synchronized (lock) {
-                if (simulatorSvc == null) {
-                    simulatorSvc = new SimulatorService(createStorefrontService());
-                }
-            }
-        }
-        return simulatorSvc;
     }
 
     @Override

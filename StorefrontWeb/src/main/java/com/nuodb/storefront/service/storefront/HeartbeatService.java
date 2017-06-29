@@ -55,18 +55,6 @@ public class HeartbeatService implements IHeartbeatService {
                     // If interactive user has left the app, shut down any active workloads
                     Calendar idleThreshold = Calendar.getInstance();
                     idleThreshold.add(Calendar.SECOND, -StorefrontWebApp.STOP_USERS_AFTER_IDLE_UI_SEC);
-                    if (appInstance.getStopUsersWhenIdle() && appInstance.getLastApiActivity().before(idleThreshold)) {
-                        // Don't do any heavy lifting if there are no simulated workloads in progress
-                        int activeWorkerCount = tenant.getSimulatorService().getActiveWorkerLimit();
-                        if (activeWorkerCount > 0) {
-                            // Check for idleness across *all* instances
-                            if (dao.getActiveAppInstanceCount(idleThreshold) == 0) {
-                                logger.info(appInstance.getTenantName() + ": Stopping all " + activeWorkerCount
-                                        + " simulated users due to idle app instances.");
-                                //tenant.getSimulatorService().stopAll();
-                            }
-                        }
-                    }
 
                     consecutiveFailureCount = 0;
                     successCount++;

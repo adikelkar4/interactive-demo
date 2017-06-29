@@ -26,7 +26,6 @@ import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.model.entity.Customer;
 import com.nuodb.storefront.model.type.MessageSeverity;
 import com.nuodb.storefront.service.IDbApi;
-import com.nuodb.storefront.service.ISimulatorService;
 import com.nuodb.storefront.service.IStorefrontService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 
@@ -57,10 +56,6 @@ public abstract class BaseServlet extends HttpServlet {
 
     public static IDbApi getDbApi(HttpServletRequest req) {
         return getTenant(req).getDbApi();
-    }
-
-    public static ISimulatorService getSimulator(HttpServletRequest req) {
-        return getTenant(req).getSimulatorService();
     }
 
     public static Customer getOrCreateCustomer(HttpServletRequest req, HttpServletResponse resp) {

@@ -56,8 +56,6 @@ public interface IStorefrontTenant {
 
     // Tenant singletons
     
-    public ISimulatorService getSimulatorService();
-
     public IStorefrontPeerService getStorefrontPeerService();
 
     public IDbApi getDbApi();

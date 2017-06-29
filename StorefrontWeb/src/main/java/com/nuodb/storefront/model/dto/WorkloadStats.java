@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
-import com.nuodb.storefront.service.simulator.IWorker;
 import com.nuodb.storefront.util.LoggerToStringStyle;
 
 /**

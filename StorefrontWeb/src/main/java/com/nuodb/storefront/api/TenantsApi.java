@@ -36,11 +36,4 @@ public class TenantsApi extends BaseApi {
         }
         return dbs;
     }
-
-    @DELETE
-    @Path("/{tenantName}")
-    public Response deleteTenant(@Context HttpServletRequest req, @PathParam("tenantName") String tenantName) {
-        StorefrontTenantManager.destroyTenant(tenantName);
-        return Response.ok().build();
-    }
 }

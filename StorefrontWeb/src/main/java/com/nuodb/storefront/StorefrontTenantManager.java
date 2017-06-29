@@ -101,21 +101,4 @@ public class StorefrontTenantManager {
             return tenant;
         }
     }
-
-    public static void destroyTenant(String tenantName) {
-        IStorefrontTenant tenant;
-
-        synchronized (s_tenantMap) {
-            tenant = s_tenantMap.get(tenantName);
-            if (tenant == null) {
-                throw new DataValidationException("Tenant \"" + tenantName + "\" does not exist");
-            }
-            if (isDefaultTenant(tenant)) {
-                throw new DataValidationException("Cannot remove default tenant");
-            }
-            s_tenantMap.remove(tenantName);
-        }
-
-        tenant.shutDown();
-    }
 }

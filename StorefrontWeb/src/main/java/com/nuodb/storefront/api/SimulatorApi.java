@@ -2,28 +2,21 @@
 
 package com.nuodb.storefront.api;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.nuodb.storefront.model.dto.*;
-import com.nuodb.storefront.model.type.MessageSeverity;
-import com.nuodb.storefront.service.ISimulatorService;
+import com.nuodb.storefront.model.dto.WorkloadStats;
+import com.nuodb.storefront.model.dto.WorkloadStep;
 import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.storefront.workload.launcher.LambdaLauncher;
 import com.storefront.workload.launcher.LocalLauncher;
@@ -38,15 +31,7 @@ public class SimulatorApi extends BaseApi {
     @Path("/workloads")
     @Produces(MediaType.APPLICATION_JSON)
     public Collection<WorkloadStats> getWorkloads(@Context HttpServletRequest req) {
-        return getSimulator(req).getWorkloadStats().values();
-    }
-
-    @DELETE
-    @Path("/workloads")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response removeAll(@Context HttpServletRequest req) {
-        getSimulator(req).removeAll();
-        return Response.ok().build();
+        return BaseApi.getWorkloadStatHeap().getOrDefault(NUODB_MAP_KEY, new HashMap<>()).values();
     }
     
     private UserLauncher buildUserLauncher(HttpServletRequest req) {
@@ -69,30 +54,6 @@ public class SimulatorApi extends BaseApi {
     	}
 
     	return launcher;
-    }
-
-    @POST
-    @Path("/workloads/{workload}/workers")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response addWorkers(@Context HttpServletRequest req, @PathParam("workload") String workload, @FormParam("numWorkers") int numWorkers,
-            @FormParam("entryDelayMs") int entryDelayMs) {
-        getSimulator(req).addWorkers(lookupWorkloadByName(req, workload), numWorkers, entryDelayMs);
-        return Response.ok().build();
-    }
-
-    @PUT
-    @Path("/workloads/{workload}/workers")
-    @Produces(MediaType.APPLICATION_JSON)
-    public WorkloadStats adjustWorkers(@Context HttpServletRequest req, @PathParam("workload") String workload, @FormParam("minWorkers") int minWorkers,
-            @FormParam("limit") Integer limit) {
-        return getSimulator(req).adjustWorkers(lookupWorkloadByName(req, workload), minWorkers, limit);
-    }
-
-    @GET
-    @Path("/steps")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Collection<WorkloadStep> getWorkloadSteps(@Context HttpServletRequest req) {
-        return getSimulator(req).getWorkloadStepStats().keySet();
     }
 
     @POST
@@ -147,11 +108,11 @@ public class SimulatorApi extends BaseApi {
 
     protected void decreaseWorkloadUserCounts(int containerChange) {
         synchronized (this.heapLock) { // Always synchronize on the heapLock so both maps are protected simultaneously
-            if (!workloadStatHeap.containsKey(NUODB_MAP_KEY)) {
-                workloadStatHeap.put(NUODB_MAP_KEY, new HashMap<>());
+            if (!getWorkloadStatHeap().containsKey(NUODB_MAP_KEY)) {
+                getWorkloadStatHeap().put(NUODB_MAP_KEY, new HashMap<>());
             }
 
-            Map<String, WorkloadStats> wTmp = workloadStatHeap.get(NUODB_MAP_KEY);
+            Map<String, WorkloadStats> wTmp = getWorkloadStatHeap().get(NUODB_MAP_KEY);
 
             for (Map.Entry<String, WorkloadStats> stat : wTmp.entrySet()) {
                 int distributionCount;
@@ -172,11 +133,11 @@ public class SimulatorApi extends BaseApi {
 
     protected void clearWorkloadUserCounts() {
         synchronized (this.heapLock) { // Always synchronize on the heapLock so both maps are protected simultaneously
-            if (!workloadStatHeap.containsKey(NUODB_MAP_KEY)) {
-                workloadStatHeap.put(NUODB_MAP_KEY, new HashMap<>());
+            if (!getWorkloadStatHeap().containsKey(NUODB_MAP_KEY)) {
+                getWorkloadStatHeap().put(NUODB_MAP_KEY, new HashMap<>());
             }
 
-            Map<String, WorkloadStats> wTmp = workloadStatHeap.get(NUODB_MAP_KEY);
+            Map<String, WorkloadStats> wTmp = getWorkloadStatHeap().get(NUODB_MAP_KEY);
 
             for (Map.Entry<String, WorkloadStats> stat : wTmp.entrySet()) {
                 stat.getValue().setActiveWorkerLimit(0);
@@ -185,16 +146,5 @@ public class SimulatorApi extends BaseApi {
         }
 
         return;
-    }
-
-    protected Workload lookupWorkloadByName(@Context HttpServletRequest req, String name) {
-        try {
-            Workload workload = getSimulator(req).getWorkload(name);
-            if (workload != null) {
-                return workload;
-            }
-        } catch (Exception e) {
-        }
-        throw new IllegalArgumentException("Unknown workload '" + name + "'");
     }
 }
