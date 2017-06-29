@@ -676,7 +676,7 @@
             "            responseData = {}",
             "            responseData['Data'] = 'Successful task registration: ' + containerType[x] + '-service'",
             "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
-            "            if 'BROKER' == containerType[x]: time.sleep(60)",
+            "            if 'BROKER' == containerType[x]: time.sleep(120)",
             "        except Exception as e:",
             "            print(e)",
             "            responseData = {}",
