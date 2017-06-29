@@ -16,7 +16,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.nuodb.storefront.model.dto.WorkloadStats;
-import com.nuodb.storefront.model.dto.WorkloadStep;
 import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.storefront.workload.launcher.LambdaLauncher;
 import com.storefront.workload.launcher.LocalLauncher;

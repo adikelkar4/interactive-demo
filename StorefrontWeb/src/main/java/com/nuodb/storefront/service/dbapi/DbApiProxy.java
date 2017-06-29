@@ -63,10 +63,7 @@ public class DbApiProxy implements IDbApi {
     private static final String ARCHIVEVAR_ARCHIVE_DIR = "archiveDir";
     private static final String ARCHIVE_DIR_SSM_SUFFIX = "_snapshot";
 
-    private static final String TEMPLATE_GEO_DISTRIBUTED = "Region Distribution";
     private static final String TEMPLATE_MULTI_HOST = "Multi Host";
-    private static final String TEMPLATE_SINGLE_HOST = "Single Host";
-
     private static final String OPTIONS_PING_TIMEOUT = "ping-timeout";
     private static final String OPTIONS_STORAGE_GROUP = "storage-group";
 
@@ -550,7 +547,7 @@ public class DbApiProxy implements IDbApi {
     protected boolean fixDatabaseTemplate(Database database, int targetRegions, int targetHosts, HomeHostInfo homeHostInfo) {
         // Initialize DB tag constraint map (to specify host tags for SMs and TEs)
         Map<String, Map<String, String>> tagConstraints = new HashMap<String, Map<String, String>>();
-        String dbProcessTag = dbConnInfo.getDbProcessTag();
+        dbConnInfo.getDbProcessTag();
         tagConstraints.put(DBVAR_TAG_CONSTRAINT_GROUP_SM, buildTagMustExistConstraint(DBVAR_TAG_CONSTRAINT_SM));
         tagConstraints.put(DBVAR_TAG_CONSTRAINT_GROUP_TE, buildTagMustExistConstraint(DBVAR_TAG_CONSTRAINT_TE));
 

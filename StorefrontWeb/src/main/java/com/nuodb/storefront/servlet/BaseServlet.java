@@ -58,39 +58,6 @@ public abstract class BaseServlet extends HttpServlet {
         return getTenant(req).getDbApi();
     }
 
-    public static Customer getOrCreateCustomer(HttpServletRequest req, HttpServletResponse resp) {
-        // For simplicity in this demo, we're implicitly trusting parameters and cookies rather than authenticating users.
-
-        Customer customer = (Customer)req.getAttribute(ATTR_CUSTOMER);
-        if (customer == null) {
-            Long customerId = (Long)req.getSession().getAttribute(SESSION_CUSTOMER_ID);
-            if (customerId == null && req.getCookies() != null) {
-                for (Cookie cookie : req.getCookies()) {
-                    if (COOKIE_CUSTOMER_ID.equals(cookie.getName())) {
-                        try {
-                            customerId = Long.parseLong(cookie.getValue());
-                            break;
-                        } catch (NumberFormatException e) {
-                        }
-                    }
-                }
-            }
-            if (customerId == null) {
-                customerId = 0L;
-            }
-
-            customer = getStorefrontService(req).getOrCreateCustomer(customerId, null);
-            req.getSession().setAttribute(SESSION_CUSTOMER_ID, customer.getId());
-            req.setAttribute(ATTR_CUSTOMER, customer);
-
-            // Add customer ID cookie
-            Cookie customerCookie = new Cookie(COOKIE_CUSTOMER_ID, String.valueOf(customer.getId()));
-            customerCookie.setMaxAge(COOKIE_MAX_AGE_SEC);
-            resp.addCookie(customerCookie);
-        }
-        return customer;
-    }
-
     public static ProductFilter getOrCreateProductFilter(HttpServletRequest req) {
         HttpSession session = req.getSession();
         ProductFilter filter = (ProductFilter)session.getAttribute(SESSION_PRODUCT_FILTER);
@@ -159,11 +126,6 @@ public abstract class BaseServlet extends HttpServlet {
         }
         if (!StorefrontTenantManager.isDefaultTenant(tenant)) {
             pageTitle += " [" + appInstance.getTenantName() + "]";
-        }
-
-        // Share data with JSP page
-        if (customer == null) {
-            customer = getOrCreateCustomer(req, resp);
         }
 
         // Fetch app instance list for region dropdown menu

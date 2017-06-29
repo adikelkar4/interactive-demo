@@ -7,14 +7,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import com.nuodb.storefront.model.dto.DbFootprint;
 import com.nuodb.storefront.model.dto.StorefrontStatsReport;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.dto.WorkloadStats;
 import com.nuodb.storefront.model.dto.WorkloadStep;
-import com.nuodb.storefront.model.entity.Customer;
 import com.nuodb.storefront.service.IDbApi;
 import com.nuodb.storefront.service.IStorefrontService;
 import com.nuodb.storefront.service.IStorefrontTenant;
@@ -53,10 +51,6 @@ public abstract class BaseApi {
 
     protected static IDbApi getDbApi(HttpServletRequest req) {
         return BaseServlet.getDbApi(req);
-    }
-
-    protected Customer getOrCreateCustomer(HttpServletRequest req, HttpServletResponse resp) {
-        return BaseServlet.getOrCreateCustomer(req, resp);
     }
 
 	protected Map<String, WorkloadStats> clearWorkloadProperty(Map<String, WorkloadStats> statsMap) {
