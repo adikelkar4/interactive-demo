@@ -104,23 +104,29 @@ public class HeartbeatService implements IHeartbeatService {
             cumCwTime = cwTime;
             int totalCount = 0;
             long totalDuration = 0;
+            int tCount = 0;
+            long tDur = 0;
             Map<String, Map<String, TransactionStats>> tStats = StatsApi.getTransactionStatHeap();
 
             if (tStats.containsKey("nuodb")) {
-                int tCount = 0;
-                long tDur = 0;
-
                 synchronized (StatsApi.heapLock) {
                     for (Map.Entry<String, TransactionStats> ts : tStats.get("nuodb").entrySet()) {
                         tCount += ts.getValue().getTotalCount();
                         tDur += ts.getValue().getTotalDurationMs();
                     }
                 }
+            }
 
+            if (tCount > 0) {
                 totalCount = tCount - lastCount;
                 totalDuration = tDur - lastDuration;
                 lastCount = tCount;
                 lastDuration = tDur;
+            } else {
+                totalCount = 0;
+                totalDuration = 0;
+                lastCount = 0;
+                lastDuration = 0;
             }
 
             try {
