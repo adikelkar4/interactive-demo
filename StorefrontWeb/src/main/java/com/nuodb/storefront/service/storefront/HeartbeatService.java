@@ -116,7 +116,7 @@ public class HeartbeatService implements IHeartbeatService {
                         .withName("ClusterName")
                         .withValue(LambdaLauncher.getEcsClusterName());
                 MetricDatum datum = new MetricDatum()
-                        .withMetricName("MS")
+                        .withMetricName("AverageLatency")
                         .withUnit(StandardUnit.Milliseconds)
                         .withValue((double) (totalDuration / totalCount))
                         .withDimensions(dimension);
