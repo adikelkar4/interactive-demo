@@ -29,12 +29,11 @@ import com.amazonaws.services.cloudwatch.model.StandardUnit;
 public class HeartbeatService implements IHeartbeatService {
     private final Logger logger;
     private final IStorefrontTenant tenant;
-    private final int statsIncMax = 500;
     private int secondsUntilNextPurge = 0;
     private int consecutiveFailureCount = 0;
     private int successCount = 0;
     private long cumGcTime = 0;
-    private int statsInc = 0;
+    private long cumCwTime = 0;
 
     public HeartbeatService(IStorefrontTenant tenant) {
         this.tenant = tenant;
@@ -97,8 +96,10 @@ public class HeartbeatService implements IHeartbeatService {
             }
         }
 
-        if (this.statsInc >= this.statsIncMax) {
-            this.statsInc = 0;
+        long cwTime = System.currentTimeMillis();
+
+        if (cwTime > (cumCwTime + StorefrontApp.CW_METRIC_LOG_TIME)) {
+            cumCwTime = cwTime;
             int totalCount = 0;
             long totalDuration = 0;
             Map<String, Map<String, TransactionStats>> tStats = StatsApi.getTransactionStatHeap();
@@ -127,8 +128,6 @@ public class HeartbeatService implements IHeartbeatService {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-        } else {
-            this.statsInc++;
         }
 
         return;
