@@ -22,7 +22,7 @@ public abstract class BaseApi {
     protected static final String NUODB_MAP_KEY = "nuodb";
 
     protected static Map<String, Map<String, WorkloadStats>> workloadStatHeap = new HashMap<>();
-    protected final Object heapLock = new Object();
+    public static final Object heapLock = new Object();
 
     protected static final Map<String, String> workloadDistribution;
     protected static int userContainerCount = 0;
