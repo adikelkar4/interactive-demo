@@ -34,6 +34,8 @@ public class HeartbeatService implements IHeartbeatService {
     private int successCount = 0;
     private long cumGcTime = 0;
     private long cumCwTime = 0;
+    private int lastCount = 0;
+    private long lastDuration = 0;
 
     public HeartbeatService(IStorefrontTenant tenant) {
         this.tenant = tenant;
@@ -105,10 +107,20 @@ public class HeartbeatService implements IHeartbeatService {
             Map<String, Map<String, TransactionStats>> tStats = StatsApi.getTransactionStatHeap();
 
             if (tStats.containsKey("nuodb")) {
-                for (Map.Entry<String, TransactionStats> ts : tStats.get("nuodb").entrySet()) {
-                    totalCount += ts.getValue().getTotalCount();
-                    totalDuration += ts.getValue().getTotalDurationMs();
+                int tCount = 0;
+                long tDur = 0;
+
+                synchronized (StatsApi.heapLock) {
+                    for (Map.Entry<String, TransactionStats> ts : tStats.get("nuodb").entrySet()) {
+                        tCount += ts.getValue().getTotalCount();
+                        tDur += ts.getValue().getTotalDurationMs();
+                    }
                 }
+
+                totalCount = tCount - lastCount;
+                totalDuration = tDur - lastDuration;
+                lastCount = tCount;
+                lastDuration = tDur;
             }
 
             try {
