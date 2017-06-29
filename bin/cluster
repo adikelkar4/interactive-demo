@@ -142,22 +142,35 @@ def delete_cluster(stack, session, args):
         print "FAILED to delete cluster %s" % stack_name
         return False
 
-
+def create_cluster(session, args):
+    pass
 
 
 def main():
     parser = argparse.ArgumentParser(description="Manage Demo Clusters")
 
-    parser.add_argument("--profile", help="The AWS profile to use",
-                        nargs=1)
+    parser.add_argument("--profile", help="The AWS profile to use", nargs=1)
 
-    parser.add_argument("--include", help="The AWS profile to use",
-                        nargs=1)
+    subs = parser.add_subparsers(help='sub-command help')
 
-    parser.add_argument("--exclude", help="The AWS profile to use",
-                        nargs=1)
+    parser.add_argument("--include", help="The AWS profile to use", nargs=1)
+    parser.add_argument("--exclude", help="The AWS profile to use", nargs=1)
 
-    parser.add_argument("function", choices=['list','delete'], help="Action to take")
+    parse_create = subs.add_parser('create', help='Create one or more clusters')
+    parse_create.set_defaults(function=create_cluster)
+
+    parse_list = subs.add_parser('list', help='List clusters')
+    parse_list.set_defaults(function=list_clusters)
+
+    parse_delete = subs.add_parser('delete', help='Delete clusters')
+    parse_delete.set_defaults(function=delete_clusters)
+
+    parse_create.add_argument("--count", help="number of clusters to create", type=int, nargs=1)
+
+    # This shoud, perhaps, be a parent parser
+    for p in [parse_list, parse_delete]:
+        p.add_argument("--include", help="The AWS profile to use", nargs=1)
+        p.add_argument("--exclude", help="The AWS profile to use", nargs=1)
 
     args = parser.parse_args()
 
@@ -166,11 +179,7 @@ def main():
     else:
         session = boto3.Session()
 
-    if args.function == "list":
-        list_clusters(session,args)
-    if args.function == "delete":
-        delete_clusters(session,args)
-
+    args.function(session, args)
 
 if __name__ == "__main__":
     main()
