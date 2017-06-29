@@ -10,12 +10,11 @@ import com.nuodb.storefront.dal.IStorefrontDao;
 import com.nuodb.storefront.dal.TransactionType;
 import com.nuodb.storefront.model.dto.DbRegionInfo;
 import com.nuodb.storefront.model.entity.AppInstance;
-import com.nuodb.storefront.service.IHeartbeatService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.nuodb.storefront.util.PerformanceUtil;
 
-public class HeartbeatService implements IHeartbeatService {
+public class HeartbeatService implements Runnable {
     private final Logger logger;
     private final IStorefrontTenant tenant;
     private int secondsUntilNextPurge = 0;

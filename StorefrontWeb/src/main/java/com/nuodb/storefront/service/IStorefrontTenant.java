@@ -56,8 +56,6 @@ public interface IStorefrontTenant {
 
     // Tenant singletons
     
-    public IStorefrontPeerService getStorefrontPeerService();
-
     public IDbApi getDbApi();
     
     public Logger getLogger(Class<?> clazz);

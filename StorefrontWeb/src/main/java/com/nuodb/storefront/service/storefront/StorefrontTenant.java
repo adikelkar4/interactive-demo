@@ -35,8 +35,6 @@ import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.service.IDataGeneratorService;
 import com.nuodb.storefront.service.IDbApi;
-import com.nuodb.storefront.service.IHeartbeatService;
-import com.nuodb.storefront.service.IStorefrontPeerService;
 import com.nuodb.storefront.service.IStorefrontService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.service.datagen.DataGeneratorService;
@@ -61,7 +59,7 @@ public class StorefrontTenant implements IStorefrontTenant {
     private final AppInstance appInstance;
     private final Configuration hibernateCfg;
     private SessionFactory sessionFactory;
-    private IHeartbeatService heartbeatSvc;
+    private HeartbeatService heartbeatSvc;
     private IDbApi dbApi;
     private ConnInfo apiConnInfo;
     private ScheduledExecutorService executor;
@@ -271,11 +269,6 @@ public class StorefrontTenant implements IStorefrontTenant {
     }
 
     @Override
-    public IStorefrontPeerService getStorefrontPeerService() {
-        return (IStorefrontPeerService) getHeartbeatService();
-    }
-
-    @Override
     public Client createApiClient() {
         return Client.create(s_apiCfg);
     }
@@ -299,7 +292,7 @@ public class StorefrontTenant implements IStorefrontTenant {
         return new DbApiProxy(this);
     }
 
-    protected IHeartbeatService getHeartbeatService() {
+    protected HeartbeatService getHeartbeatService() {
         if (heartbeatSvc == null) {
             synchronized (lock) {
                 heartbeatSvc = new HeartbeatService(this);
