@@ -588,6 +588,42 @@
       }
     },
 
+    "LatencyAlarmHigh": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Statistic": "Average",
+        "Threshold": "75",
+        "AlarmDescription": "Alarm if transaction latency too high",
+        "Period": "60",
+        "Namespace": "INSTANCE/METRICS",
+        "Dimensions": [ {
+          "Name": "ClusterName",
+          "Value": { "Ref": "EcsClusterName" }
+        } ],
+        "ComparisonOperator": "GreaterThanThreshold",
+        "MetricName": "AverageLatency"
+      }
+    },
+
+    "LatencyAlarmLow": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Statistic": "Average",
+        "Threshold": "40",
+        "AlarmDescription": "Alarm if transaction latency too high",
+        "Period": "60",
+        "Namespace": "INSTANCE/METRICS",
+        "Dimensions": [ {
+          "Name": "ClusterName",
+          "Value": { "Ref": "EcsClusterName" }
+        } ],
+        "ComparisonOperator": "LessThanThreshold",
+        "MetricName": "AverageLatency"
+      }
+    },
+
     "EcsCluster" : {
       "Type" : "AWS::ECS::Cluster",
       "Properties" : {
