@@ -33,6 +33,7 @@ import com.nuodb.storefront.model.entity.Product;
 import com.nuodb.storefront.model.entity.PurchaseSelection;
 import com.nuodb.storefront.model.type.Currency;
 import com.nuodb.storefront.model.type.ProductSort;
+import com.nuodb.storefront.servlet.StorefrontWebApp;
 
 /**
  * Data access object designed for storefront operations, built on top of a general-purpose DAO. The caller is responsible for wrapping DAO calls in
@@ -53,39 +54,6 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
     @Override
     public void evict(IEntity entity) {
         getSession().evict(entity);
-    }
-
-    @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public SearchResult<Category> getCategories() {
-        // This query got category usage counts, but was slower, and we currently don't need the counts for anything:
-        // "select c, count(*) from Product p inner join p.categories c group by c order by c"
-
-        List categories = getSession().createSQLQuery("SELECT DISTINCT CATEGORY, 0 FROM PRODUCT_CATEGORY ORDER BY CATEGORY").list();
-        for (int i = categories.size() - 1; i >= 0; i--) {
-            Object[] data = (Object[]) categories.get(i);
-            categories.set(i, new Category((String) data[0], ((Number) data[1]).intValue()));
-        }
-
-        SearchResult result = new SearchResult<Category>();
-        result.setResult(categories);
-        result.setTotalCount(categories.size());
-        return result;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public SearchResult<Product> getProducts(ProductFilter filter) {
-        Session session = getSession();
-
-        SearchResult<Product> result = new SearchResult<Product>();
-        result.setResult(buildProductQuery(filter, false).list());
-        result.setTotalCount(((Number) buildProductQuery(filter, true).uniqueResult()).intValue());
-
-        for (Product p : result.getResult()) {
-            session.evict(p);
-        }
-        return result;
     }
 
     public StorefrontStats getStorefrontStats(int maxCustomerIdleTimeSec, Integer maxAgeSec) {
@@ -133,93 +101,6 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
         return stats;
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Map<String, StorefrontStats> getStorefrontStatsByRegion(int maxCustomerIdleTimeSec) {
-        Map<String, StorefrontStats> regionStatsMap = new TreeMap<String, StorefrontStats>();
-
-        // Run query
-        SQLQuery query = getSession()
-                .createSQLQuery(
-                        " SELECT 'productCount' AS METRIC_NAME, (SELECT COUNT(*) FROM PRODUCT) AS METRIC_VALUE, '' AS REGION FROM DUAL"
-                                + " UNION"
-                                + " SELECT 'categoryCount', (SELECT COUNT(*) FROM (SELECT DISTINCT CATEGORY FROM PRODUCT_CATEGORY AS T1) AS T2), '' FROM DUAL"
-                                + " UNION"
-                                + " SELECT 'dateStarted', MIN(DATE_STARTED), REGION FROM APP_INSTANCE WHERE LAST_HEARTBEAT >= :MIN_HEARTBEAT_TIME GROUP BY REGION"
-                                + " UNION"
-                                + " SELECT 'productReviewCount', COUNT(*), REGION FROM PRODUCT_REVIEW GROUP BY REGION"
-                                + " UNION"
-                                + " SELECT 'customerCount', COUNT(*), REGION FROM CUSTOMER GROUP BY REGION"
-                                + " UNION"
-                                + " SELECT 'activeCustomerCount', COUNT(*), REGION FROM CUSTOMER WHERE DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME GROUP BY REGION"
-                                + " UNION"
-                                + " SELECT 'activeWebCustomerCount', COUNT(*), REGION FROM CUSTOMER WHERE WORKLOAD IS NULL AND DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME GROUP BY REGION"
-                                + " UNION"
-                                + " SELECT 'cartItemCount', SUM(QUANTITY), REGION FROM CART_SELECTION GROUP BY REGION"
-                                + " UNION"
-                                + " SELECT 'cartValue', SUM(CAST(QUANTITY AS DECIMAL(16,2)) * UNIT_PRICE), REGION FROM CART_SELECTION GROUP BY REGION"
-                                + " UNION"
-                                + " SELECT 'purchaseCount', COUNT(*), REGION FROM PURCHASE GROUP BY REGION"
-                                + " UNION"
-                                + " SELECT 'purchaseItemCount', SUM(QUANTITY), REGION FROM PURCHASE_SELECTION GROUP BY REGION"
-                                + " UNION SELECT 'purchaseValue', SUM(CAST(QUANTITY AS DECIMAL(16,2)) * UNIT_PRICE), REGION FROM PURCHASE_SELECTION PS INNER JOIN PURCHASE P ON PS.PURCHASE_ID = P.ID GROUP BY REGION");
-        query.addScalar("METRIC_NAME", StringType.INSTANCE);
-        query.addScalar("METRIC_VALUE", BigDecimalType.INSTANCE);
-        query.addScalar("REGION", StringType.INSTANCE);
-        setStorefrontStatsParameters(query, maxCustomerIdleTimeSec, null);
-
-        // Fill stats
-        for (Object[] row : (List<Object[]>) query.list()) {
-            String metric = (String) row[0];
-            BigDecimal value = (BigDecimal) row[1];
-            String region = (String) row[2];
-
-            if (region == null) {
-                // A NULL region represents data from a previous Storefront
-                // version. Just associate it with the global stats.
-                region = "";
-            }
-
-            StorefrontStats regionStats = regionStatsMap.get(region);
-            if (regionStats == null) {
-                regionStats = new StorefrontStats();
-                regionStatsMap.put(region, regionStats);
-            }
-
-            if (metric.equals("productCount")) {
-                regionStats.setProductCount(value.intValue());
-            } else if (metric.equals("categoryCount")) {
-                regionStats.setCategoryCount(value.intValue());
-            } else if (metric.equals("dateStarted")) {
-                Calendar cal = Calendar.getInstance();
-                cal.setTimeInMillis(value.longValue());
-                regionStats.setDateStarted(cal);
-            } else if (metric.equals("productReviewCount")) {
-                regionStats.setProductReviewCount(value.intValue());
-            } else if (metric.equals("customerCount")) {
-                regionStats.setCustomerCount(value.intValue());
-            } else if (metric.equals("activeCustomerCount")) {
-                regionStats.setActiveCustomerCount(value.intValue());
-            } else if (metric.equals("activeWebCustomerCount")) {
-                regionStats.setActiveWebCustomerCount(value.intValue());
-            } else if (metric.equals("cartItemCount")) {
-                regionStats.setCartItemCount(value.intValue());
-            } else if (metric.equals("cartValue")) {
-                regionStats.setCartValue(value);
-            } else if (metric.equals("purchaseCount")) {
-                regionStats.setPurchaseCount(value.intValue());
-            } else if (metric.equals("purchaseItemCount")) {
-                regionStats.setPurchaseItemCount(value.intValue());
-            } else if (metric.equals("purchaseValue")) {
-                regionStats.setPurchaseValue(value);
-            } else {
-                throw new RuntimeException("Unexpected metric: " + metric);
-            }
-        }
-
-        return regionStatsMap;
-    }
-
     protected static int getIntValue(Object value) {
         if (value == null) {
             return 0;
@@ -249,24 +130,6 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
     }
 
     @Override
-    public int deleteDeadAppInstances(Calendar maxLastHeartbeat) {
-        SQLQuery query = getSession().createSQLQuery("DELETE FROM APP_INSTANCE WHERE LAST_HEARTBEAT <= :MAX_LAST_HEARTBEAT");
-        query.setParameter("MAX_LAST_HEARTBEAT", maxLastHeartbeat);
-        return query.executeUpdate();
-    }
-
-    @Override
-    public int getActiveAppInstanceCount(Calendar idleThreshold) {
-        SQLQuery query = getSession().createSQLQuery(
-                "SELECT COUNT(*) FROM APP_INSTANCE WHERE" +
-                        " (STOP_USERS_WHEN_IDLE = 0 AND LAST_HEARTBEAT >= :MIN_HEARTBEAT_TIME)" +
-                        " OR LAST_API_ACTIVITY > :IDLE_THRESHOLD");
-        setStorefrontStatsParameters(query, null, null);
-        query.setParameter("IDLE_THRESHOLD", idleThreshold);
-        return ((Number) query.uniqueResult()).intValue();
-    }
-
-    @Override
     public DbRegionInfo getCurrentDbNodeRegion() {
         DbRegionInfo info = new DbRegionInfo();
         Object[] result = (Object[]) getSession().createSQLQuery("SELECT GETNODEID(), GEOREGION FROM SYSTEM.NODES WHERE ID=GETNODEID()")
@@ -288,44 +151,6 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
         return Currency.valueOf(currencies.get(0));
     }
 
-    @Override
-    public void incrementPurchaseCounts(final List<PurchaseSelection> selections) {
-        try {
-            ConnectionProvider connProvider = getSessionFactory().getSessionFactoryOptions().getServiceRegistry()
-                    .getService(ConnectionProvider.class);
-            Connection connection = connProvider.getConnection();
-            try {
-                connection.setAutoCommit(true);
-                Statement stmt = connection.createStatement();
-
-                // Batch updates for products with the same quantity increment
-                Set<Integer> seenQuantities = new HashSet<Integer>();
-                int numSelections = selections.size();
-                for (int i = 0; i < numSelections; i++) {
-                    PurchaseSelection selection = selections.get(i);
-                    int quantity = selection.getQuantity();
-                    if (seenQuantities.add(quantity)) {
-                        String productIdList = String.valueOf(selection.getProduct().getId());
-                        for (int j = i + 1; j < numSelections; j++) {
-                            PurchaseSelection selection2 = selections.get(j);
-                            if (selection2.getQuantity() == quantity) {
-                                productIdList += "," + selection2.getProduct().getId();
-                            }
-                        }
-                        
-                        stmt.executeUpdate("UPDATE PRODUCT SET PURCHASE_COUNT = PURCHASE_COUNT + " + quantity + " WHERE ID IN (" + productIdList + ")");
-                    }
-                }
-            } finally {
-                connProvider.closeConnection(connection);
-            }
-        } catch (RuntimeException re) {
-            throw re;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     protected void setStorefrontStatsParameters(SQLQuery query, Integer maxCustomerIdleTimeSec, Integer maxAgeSec) {
         Calendar now = Calendar.getInstance();
 
@@ -344,9 +169,9 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
         }
 
         // MIN_HEARTBEAT_TIME
-//        Calendar minHeartbeatTime = (Calendar) now.clone();
-//        minHeartbeatTime.add(Calendar.SECOND, -StorefrontApp.MAX_HEARTBEAT_AGE_SEC);
-//        query.setParameter("MIN_HEARTBEAT_TIME", minHeartbeatTime);
+        Calendar minHeartbeatTime = (Calendar) now.clone();
+        minHeartbeatTime.add(Calendar.SECOND, -StorefrontWebApp.MAX_HEARTBEAT_AGE_SEC);
+        query.setParameter("MIN_HEARTBEAT_TIME", minHeartbeatTime);
     }
 
     protected static String toNumericString(Object o) {
@@ -357,108 +182,6 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
             }
         }
         return "0";
-    }
-
-    protected SQLQuery buildProductQuery(ProductFilter filter, boolean countOnly) {
-        StringBuilder sql = new StringBuilder();
-        Map<String, Object> params = new HashMap<String, Object>();
-
-        if (countOnly) {
-            sql.append("SELECT COUNT(*) FROM PRODUCT");
-        } else {
-            sql.append("SELECT * FROM PRODUCT");
-        }
-
-        // Set match text
-        String matchText = filter.getMatchText();
-        if (matchText != null && !matchText.isEmpty()) {
-            matchText = "%" + matchText.trim().toLowerCase() + "%";
-            sql.append(" AND (LOWER(NAME) LIKE :MATCH_TEXT OR LOWER(DESCRIPTION) LIKE :MATCH_TEXT)");
-            params.put("MATCH_TEXT", matchText);
-        }
-
-        // Set categories
-        Collection<String> categories = filter.getCategories();
-        if (categories != null && !categories.isEmpty()) {
-            StringBuilder categoryParamList = new StringBuilder();
-            int categoryIdx = 0;
-            for (String category : categories) {
-                if (categoryIdx > 0) {
-                    categoryParamList.append(", ");
-                }
-                String catParamName = "cat" + ++categoryIdx;
-                params.put(catParamName, category);
-                categoryParamList.append(":" + catParamName);
-            }
-            sql.append(" AND ID IN (SELECT PRODUCT_ID FROM PRODUCT_CATEGORY WHERE CATEGORY IN (" + categoryParamList + "))");
-        }
-
-        // Set sort
-        ProductSort sort = filter.getSort();
-        if (sort != null && !countOnly) {
-            switch (sort) {
-                case AVG_CUSTOMER_REVIEW:
-                    sql.append(" ORDER BY COALESCE(RATING, -1) DESC, REVIEW_COUNT DESC");
-                    break;
-
-                case DATE_CREATED:
-                    sql.append(" ORDER BY DATE_ADDED DESC");
-                    break;
-
-                case NEW_AND_POPULAR:
-                    sql.append(" ORDER BY PURCHASE_COUNT DESC, DATE_ADDED DESC");
-                    break;
-
-                case PRICE_HIGH_TO_LOW:
-                    sql.append(" ORDER BY UNIT_PRICE DESC");
-                    break;
-
-                case PRICE_LOW_TO_HIGH:
-                    sql.append(" ORDER BY UNIT_PRICE");
-                    break;
-
-                case RELEVANCE:
-                    if (matchText != null && !matchText.isEmpty()) {
-                        sql.append(" ORDER BY CASE WHEN LOWER(NAME) LIKE :MATCH_TEXT THEN 1 ELSE 0 END DESC, NAME, DATE_ADDED DESC");
-                    } else {
-                        sql.append(" ORDER BY NAME, DATE_ADDED DESC");
-                    }
-                    break;
-
-                default:
-                    sql.append(" ORDER BY ID");
-                    break;
-            }
-        }
-
-        // Replace first "AND" with "WHERE"
-        int andIdx = sql.indexOf("AND");
-        if (andIdx > 0) {
-            sql.replace(andIdx, andIdx + "AND".length(), "WHERE");
-        }
-
-        // Build SQL
-        SQLQuery query = getSession().createSQLQuery(sql.toString());
-        if (!countOnly) {
-            query.addEntity(Product.class);
-        }
-        for (Map.Entry<String, Object> param : params.entrySet()) {
-            query.setParameter(param.getKey(), param.getValue());
-        }
-
-        // Set pagination params (limit and offset)
-        if (!countOnly) {
-            Integer pageSize = filter.getPageSize();
-            if (pageSize != null && pageSize > 0) {
-                Integer page = filter.getPage();
-                if (page != null) {
-                    query.setFirstResult(pageSize * (page - 1));
-                }
-                query.setMaxResults(pageSize);
-            }
-        }
-
-        return query;
     }
 
     @Override

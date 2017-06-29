@@ -2,18 +2,9 @@
 
 package com.nuodb.storefront.dal;
 
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-
-import com.googlecode.genericdao.search.SearchResult;
-import com.nuodb.storefront.model.dto.Category;
 import com.nuodb.storefront.model.dto.DbRegionInfo;
-import com.nuodb.storefront.model.dto.ProductFilter;
 import com.nuodb.storefront.model.dto.StorefrontStats;
 import com.nuodb.storefront.model.entity.IEntity;
-import com.nuodb.storefront.model.entity.Product;
-import com.nuodb.storefront.model.entity.PurchaseSelection;
 import com.nuodb.storefront.model.type.Currency;
 import com.nuodb.storefront.service.IStorefrontService;
 
@@ -30,33 +21,9 @@ public interface IStorefrontDao extends IBaseDao {
     public void evict(IEntity model);
 
     /**
-     * @see IStorefrontService#getCategories()
-     */
-    public SearchResult<Category> getCategories();
-
-    /**
-     * @see IStorefrontService#getProducts(filter)
-     */
-    public SearchResult<Product> getProducts(ProductFilter filter);
-
-    /**
      * @see IStorefrontService#getStorefrontStats
      */
     public StorefrontStats getStorefrontStats(int maxCustomerIdleTimeSec, Integer maxAgeSec);
-
-    /**
-     * Fetches stats for the storefront by region. Metrics that are not region-specific (like productCategoryCount) are placed in a region with an
-     * empty string name, with 0 set in the other regions.
-     * 
-     * @param maxCustomerIdleTimeSec
-     *            Max seconds a customer can be idle before being considered inactive.
-     */
-    public Map<String, StorefrontStats> getStorefrontStatsByRegion(int maxCustomerIdleTimeSec);
-
-    /**
-     * Removes instances from the AppInstances table who have not sent a heartbeat since the specified time.
-     */
-    public int deleteDeadAppInstances(Calendar maxLastHeartbeat);
 
     /**
      * Gets the "georegion" tag of the NuoDB Transaction Engine of the current database connection. Since the Storefront uses a thread pool and may
@@ -70,11 +37,5 @@ public interface IStorefrontDao extends IBaseDao {
      * heartbeat time) associated with this region. If no such instance exists, <code>null</code> is returned instead.
      */
     public Currency getRegionCurrency(String region);
-
-    public int getActiveAppInstanceCount(Calendar idleThreshold);
     
-    /**
-     * Incremenets the purchase counts of the products contained in the selection by the respective specified quantities.
-     */
-    public void incrementPurchaseCounts(List<PurchaseSelection> selections);
 }
