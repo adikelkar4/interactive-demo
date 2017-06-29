@@ -2,7 +2,6 @@
 
 package com.nuodb.storefront.api;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -19,16 +18,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
-import com.amazonaws.services.cloudwatch.model.Dimension;
-import com.amazonaws.services.cloudwatch.model.MetricDatum;
-import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
-import com.amazonaws.services.cloudwatch.model.StandardUnit;
-
 import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.model.dto.*;
-import com.storefront.workload.launcher.LambdaLauncher;
 
 @Path("/stats")
 public class StatsApi extends BaseApi {
@@ -36,9 +27,6 @@ public class StatsApi extends BaseApi {
     private static final String WORKLOAD_STATS_MAP_KEY = "workloadStats";
 
     private static Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
-
-    private static final Integer statsPutMax = 500;
-    private static Integer statsPutCount = 0;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -159,40 +147,13 @@ public class StatsApi extends BaseApi {
                     wTmp.put(entry.getKey(), newStats);
                 }
             }
-
-            if (this.statsPutCount >= this.statsPutMax) {
-                this.statsPutCount = 0;
-                int totalCount = 0;
-                long totalDuration = 0;
-
-                for (Map.Entry<String, TransactionStats> ts : tTmp.entrySet()) {
-                    totalCount += ts.getValue().getTotalCount();
-                    totalDuration += ts.getValue().getTotalDurationMs();
-                }
-
-                try {
-                    AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
-                    Dimension dimension = new Dimension()
-                            .withName("ClusterName")
-                            .withValue(LambdaLauncher.getEcsClusterName());
-                    MetricDatum datum = new MetricDatum()
-                            .withMetricName("MS")
-                            .withUnit(StandardUnit.Milliseconds)
-                            .withValue((double) (totalDuration / totalCount))
-                            .withDimensions(dimension);
-                    PutMetricDataRequest pmdr = new PutMetricDataRequest()
-                            .withNamespace("INSTANCE/METRICS")
-                            .withMetricData(datum);
-                    cw.putMetricData(pmdr);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            } else {
-                this.statsPutCount++;
-            }
         }
 
         return Response.status(Response.Status.OK).build();
+    }
+
+    public static Map<String, Map<String, TransactionStats>> getTransactionStatHeap() {
+        return transactionStatHeap;
     }
 
     protected Map<String, WorkloadStats> clearWorkloadProperty(Map<String, WorkloadStats> statsMap)
