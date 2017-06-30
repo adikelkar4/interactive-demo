@@ -1,13 +1,36 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Purpose:  manage demo clusters
 
 import os
+import functools
+import collections
+import sys
+import shutil
+import subprocess
+import time
 import argparse
 import boto3
 import concurrent.futures
+import re
+
+# from http://code.activestate.com/recipes/578231-probably-the-fastest-memoization-decorator-in-the-/
+def memoize(f):
+    """ Memoization decorator for functions taking one or more arguments. """
+    class memodict(dict):
+        def __init__(self, f):
+            self.f = f
+        def __call__(self, *args):
+            return self[args]
+        def __missing__(self, key):
+            ret = self[key] = self.f(*key)
+            return ret
+    return memodict(f)
 
 def list_clusters(session, args):
+    '''main 'list' command implementation.  
+
+Select clusters using common 'select' method and print them out'''
     cf = session.resource('cloudformation')
 
     for x in select(session, args):
@@ -24,6 +47,10 @@ def list_clusters(session, args):
         print "{} {} {} ".format(x['StackName'], x['StackStatus'], url[0])
 
 def select(session, args):
+    '''Common cluster selection method.
+
+This should be used by any function selecting clusters to implement --include and --exclude consistently'''
+
     cf = session.client("cloudformation")
 
     result = cf.list_stacks(
@@ -47,22 +74,33 @@ def select(session, args):
 
     return stacks
 
-def delete_clusters(*args):
-    stacks = select(*args)
+def delete_clusters(session, args):
+    '''main 'delete' command
+
+Select the clusters and then delete them in parallel.'''
+    stacks = select(session, args)
     futures=[]
 
-    pool = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+    pool = concurrent.futures.ThreadPoolExecutor(args.parallel)
     for stack in stacks:
-        futures.append(pool.submit(delete_cluster, stack, *args))
+        futures.append(pool.submit(delete_cluster, stack, session, args))
         #delete_cluster(stack, *args)
         
-        reduce(lambda x,y: x and y, map(lambda x: x.done(), futures), True)
+    reduce(lambda x,y: x and y, map(lambda x: x.done(), futures), True)
 
-def find_cluster(ecs, stack_name):
+def find_ecs_cluster(ecs, stack_name):
+    '''Find the ECS cluster with the given name'''
     cluster = ecs.describe_clusters(clusters=[stack_name])
     return cluster['clusters'][0]
 
 def delete_ecs_cluster(ecs, stack_name, p):
+    '''Delete the given ECS cluster.
+
+Arguments:
+  ecs -- the boto3 ecs client
+  stack_name -- the name of the ecs cluster
+  p -- a function of one argument that will be called with status update strings
+'''
     services=[]
     response = {'nextToken': 'True'}
 
@@ -96,6 +134,7 @@ def delete_ecs_cluster(ecs, stack_name, p):
     ecs.delete_cluster(cluster=stack_name)
 
 def delete_cluster(stack, session, args):
+    '''Delete a single cluster given the stack object'''
     cf = session.client('cloudformation')
 
     stack_name=stack['StackName']
@@ -121,7 +160,7 @@ def delete_cluster(stack, session, args):
     p("deletion blocked by undeleted resources")
     # manually delete the cluster
     ecs=session.client('ecs')
-    cluster = find_cluster(ecs, stack_name)
+    cluster = find_ecs_cluster(ecs, stack_name)
 
     # Perform the delete
     if cluster:
@@ -142,22 +181,159 @@ def delete_cluster(stack, session, args):
         print "FAILED to delete cluster %s" % stack_name
         return False
 
-def create_cluster(session, args):
-    pass
+def create_cluster_name(number, args):
+    '''Create a cluster name from the number on which we're working and the given command line args'''
+    if args.suffix:
+        return "{}-{}-{}".format(args.prefix, args.user, args.suffix)
+    else:
+        return "{}-{}-{}".format(args.prefix, args.user, time.strftime("%Y%m%d-%H%M-{}".format(number)))
 
+def create_clusters(session, args):
+    '''main 'create' command
+
+Create one or more clusters as requested
+'''
+    names=[]
+    futures=[]
+
+
+    for number in range(1, args.count+1):
+        names.append(create_cluster_name(number, args))
+
+    for name in names:
+        create_cluster(name, session, args)
+
+    futures=[]
+
+    cf = session.client("cloudformation")
+    cfr = session.resource("cloudformation")
+
+    pool = concurrent.futures.ThreadPoolExecutor(args.parallel)
+
+    for name in names:
+        def status(x):
+            pass
+#            print x.result()
+
+        future = pool.submit(wait_for_stack(name,cf, cfr,args))
+#        future.add_done_callback(status)
+        futures.append(future)
+
+#    if not reduce(lambda x,y: x and y, map(lambda x: x.done(), futures), True):
+#        os.exit(1)
+        map(lambda x: status(x), futures)
+
+
+def read_params(file):
+    '''Read a parameters file and return an array of parameters
+    suitable to passing to
+    boto3.client('cloudformation').create_stack'''
+
+    linepattern = re.compile("(\w+)\s*[:=]\s*(\S+)\s*")
+
+    params = { x[0]: x[1] for x in map(
+            lambda x: (x.group(1),
+                       x.group(2)),
+            filter(None, map(linepattern.match,
+                             open(file))))}
+
+    return params
+
+def get_template_body(args):
+    '''Return the entire template body as a string'''
+    with open(args.template) as f:
+        return f.read()
+
+
+def format_params(params):
+    '''Pretty print params so that they line up nicely'''
+    width = reduce(max, map(len, params))
+
+    return ["{0: <{width}} = {1}".format(x, y, width=width) for x,y in params.items()]
+
+
+def create_cluster(name, session, args):
+    '''Create a single cluster of the given name.  
+
+This function does *NOT* wait for cluster build to complete, only for
+the command to return successfully.
+'''
+    print "Creating cluster %s" % name
+    # TODO:  make this file relative to the script path
+    params_file = args.params_file
+    if not os.path.exists(params_file):
+        params_file = os.path.dirname(__file__) + "/../" + params_file
+
+    # Turn the parameters file into a dict with name=value
+    params = read_params(args.params_file)
+
+    # Override the parameters we need to
+    params['EcsClusterName'] = name
+    params['KeyName'] = args.key_name
+
+    # Now turn our dict into an array suitable for passing to create_stack
+    paramArgs = [dict(ParameterKey=x, ParameterValue=y) for x,y in params.items()]
+
+    template = get_template_body(args)
+
+    tags = [
+        dict(Key='Owner',
+             Value=os.environ['USER'])
+        ]
+
+
+    cfn = session.client("cloudformation")
+
+    if(args.dry_run):
+        print "DRY RUN:  create stack {} with\n   {}".format(
+            name,
+            "\n   ".join(format_params(params)))
+    else:
+        cfn.create_stack(
+            StackName = name,
+            TemplateBody = template,
+            Parameters = paramArgs,
+            DisableRollback = True,
+            Tags=tags,
+            Capabilities=['CAPABILITY_IAM']
+            )
+
+
+def wait_for_stack(name, client, resource, args):
+    '''Wait for the cloudformation stack with the given name to complete
+
+Arguments:
+name - name of the stack
+client -- boto3 cloudformation client
+resource -- boto3 cloudformation resource
+args -- command line arguments
+'''
+    print "...waiting for %s to create" % name
+    waiter = client.get_waiter("stack_create_complete")
+    try:
+        waiter.wait(StackName=name)
+        print "%s: SUCCESS" % name
+        stack = resource.Stack(name)
+        url = [y['OutputValue'] 
+               for y in stack.outputs 
+               if y['OutputKey'] == "StorefrontElbURL"]
+        return "{} {}".format(name, url)
+                 
+    except:
+        print "%s: creation FAILED" % name
+    
 
 def main():
+    '''The main event!'''
     parser = argparse.ArgumentParser(description="Manage Demo Clusters")
 
-    parser.add_argument("--profile", help="The AWS profile to use", nargs=1)
+    parser.add_argument("--profile", help="The AWS profile to use", )
+    parser.add_argument("--parallel", help="Number of operations to perform in parallel", default=40)
 
     subs = parser.add_subparsers(help='sub-command help')
 
-    parser.add_argument("--include", help="The AWS profile to use", nargs=1)
-    parser.add_argument("--exclude", help="The AWS profile to use", nargs=1)
-
     parse_create = subs.add_parser('create', help='Create one or more clusters')
-    parse_create.set_defaults(function=create_cluster)
+    parse_create.set_defaults(function=create_clusters)
 
     parse_list = subs.add_parser('list', help='List clusters')
     parse_list.set_defaults(function=list_clusters)
@@ -165,17 +341,27 @@ def main():
     parse_delete = subs.add_parser('delete', help='Delete clusters')
     parse_delete.set_defaults(function=delete_clusters)
 
-    parse_create.add_argument("--count", help="number of clusters to create", type=int, nargs=1)
+    parse_create.add_argument("--user", help="user name to include in cluster name", nargs=1, default=os.environ['USER'])
+    parse_create.add_argument("--prefix", help="cluster name prefix", nargs=1, default='interactive-demo')
+    parse_create.add_argument("--no-wait", help="Do not wait for cluster completion", action='store_true')
+    parse_create.add_argument("--dry-run", help="Do not actually create the stack", action='store_true')
+    parse_create.add_argument("--params-file", help="Parameters file", default="params/ecs-cluster.params")
+    parse_create.add_argument("--template", help="CFN Template file", default="cfn/ecs-cluster.cfn.json")
+
+    group = parse_create.add_mutually_exclusive_group()
+    group.add_argument("--count", help="number of clusters to create", type=int,  default=1)
+    group.add_argument("--suffix", help="cluster name suffix.  Default is a timestamp")
+    group.add_argument("--key-name", help="SSH key name for instance", default="interactive-demo")
 
     # This shoud, perhaps, be a parent parser
     for p in [parse_list, parse_delete]:
-        p.add_argument("--include", help="The AWS profile to use", nargs=1)
-        p.add_argument("--exclude", help="The AWS profile to use", nargs=1)
+        p.add_argument("--include", help="include clusters containing", nargs=1)
+        p.add_argument("--exclude", help="exclude clusters containing", nargs=1)
 
     args = parser.parse_args()
 
     if args.profile:
-        session = boto3.Session(profile_name=args.profile[0])
+        session = boto3.Session(profile_name=args.profile)
     else:
         session = boto3.Session()
 
