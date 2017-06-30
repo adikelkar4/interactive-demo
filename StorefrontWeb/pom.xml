@@ -4,10 +4,8 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.nuodb.storefront</groupId>
 	<artifactId>StorefrontWeb</artifactId>
 	<packaging>war</packaging>
-	<version>1.0-SNAPSHOT</version>
 	<name>NuoDB Storefront WebApp</name>
 	<url />
 
@@ -18,26 +16,6 @@
 	</parent>
 
 	<dependencies>
-		<!-- Logging -->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jul-to-slf4j</artifactId>
-		</dependency>
-
-		<!-- Common utils -->
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-		</dependency>
-
 		<!-- Servlet -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -50,55 +28,16 @@
 			<artifactId>jersey-servlet</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-json</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-client</artifactId>
-		</dependency>
-
-		<!-- Hibernate -->
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-validator</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>javassist</groupId>
-			<artifactId>javassist</artifactId>
-		</dependency>
-
-		<!-- NuoDB JDBC + Hibernate dialect -->
-		<dependency>
-			<groupId>${nuodb.jdbc.gid}</groupId>
-			<artifactId>${nuodb.jdbc.aid}</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${nuodb.hibernate.gid}</groupId>
-			<artifactId>${nuodb.hibernate.aid}</artifactId>
-		</dependency>
-
-		<!-- DAO -->
-		<dependency>
-			<groupId>com.googlecode.genericdao</groupId>
-			<artifactId>dao-hibernate</artifactId>
-		</dependency>
-
-		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk</artifactId>
 		</dependency>
 
-<!-- 		<dependency>
+		<dependency>
 			<groupId>com.nuodb.storefront</groupId>
 			<artifactId>NuoShowcaseCommon</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
- -->
+
 	</dependencies>
 
 	<build>
@@ -111,30 +50,6 @@
 					<source>1.8</source>
 					<target>1.8</target>
 				</configuration>
-			</plugin>
-
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>com.nuodb.storefront.StorefrontApp</mainClass>
-						</manifest>
-					</archive>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-					<finalName>StorefrontDriver</finalName>
-					<appendAssemblyId>false</appendAssemblyId>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 
 			<plugin>

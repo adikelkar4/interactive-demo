@@ -15,24 +15,6 @@
 	<url>http://maven.apache.org</url>
 
 	<dependencies>
-		<!-- Common utils -->
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jul-to-slf4j</artifactId>
-		</dependency>
-
 		<!-- Servlet -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -45,41 +27,10 @@
 			<artifactId>jersey-servlet</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-json</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-client</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
 		</dependency>
 
-		<!-- Hibernate -->
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-validator</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>javassist</groupId>
-			<artifactId>javassist</artifactId>
-		</dependency>
-
-		<!-- JDBC + Hibernate dialect -->
-		<dependency>
-			<groupId>${nuodb.jdbc.gid}</groupId>
-			<artifactId>${nuodb.jdbc.aid}</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${nuodb.hibernate.gid}</groupId>
-			<artifactId>${nuodb.hibernate.aid}</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
@@ -88,10 +39,6 @@
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>com.googlecode.genericdao</groupId>
-			<artifactId>dao-hibernate</artifactId>
-		</dependency>
 
 		<!-- test -->
 		<dependency>
@@ -99,12 +46,12 @@
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
-<!-- 		<dependency>
+ 		<dependency>
 			<groupId>com.nuodb.storefront</groupId>
 			<artifactId>NuoShowcaseCommon</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
- -->	</dependencies>
+ 	</dependencies>
 
 	<build>
 		<plugins>
@@ -118,6 +65,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.0.0</version>
 				<configuration>
 					<archive>
 						<manifest>

@@ -20,6 +20,8 @@ import org.hibernate.SQLQuery;
 import org.hibernate.Session;
 import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.type.BigDecimalType;
+import org.hibernate.type.IntegerType;
+import org.hibernate.type.LongType;
 import org.hibernate.type.StringType;
 
 import com.googlecode.genericdao.search.SearchResult;
@@ -62,40 +64,65 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
                 + " (SELECT COUNT(*) FROM PRODUCT_REVIEW) AS PRODUCT_REVIEW_COUNT,"
                 + " (SELECT COUNT(*) FROM CUSTOMER) AS CUSTOMER_COUNT,"
                 + " (SELECT COUNT(*) FROM CUSTOMER WHERE DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME) AS ACTIVE_CUSTOMER_COUNT,"
-                + " (SELECT COUNT(*) FROM CUSTOMER WHERE WORKLOAD IS NULL AND DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME) AS ACTIVE_WEB_CUSTOMER_COUNT"
+                + " (SELECT COUNT(*) FROM CUSTOMER WHERE WORKLOAD IS NULL AND DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME) AS ACTIVE_WEB_CUSTOMER_COUNT,"
+                + " (SELECT SUM(QUANTITY) FROM CART_SELECTION) AS CART_ITEM_COUNT,"
+                + " (SELECT SUM(QUANTITY * UNIT_PRICE) FROM CART_SELECTION) AS CART_VALUE,"
+                + " (SELECT COUNT(*) FROM PURCHASE) AS PURCHASE_COUNT,"
+                + " (SELECT SUM(QUANTITY) FROM PURCHASE_SELECTION) AS PURCHASE_ITEM_COUNT,"
+                + " (SELECT SUM(QUANTITY * UNIT_PRICE) FROM PURCHASE_SELECTION) AS PURCHASE_VALUE,"
+                + " (SELECT MIN(DATE_STARTED) FROM APP_INSTANCE WHERE LAST_HEARTBEAT >= :MIN_HEARTBEAT_TIME) AS START_TIME"
                 + " FROM DUAL;";
 
         final String RECENT_STATS_QUERY = "SELECT"
                 + " (SELECT COUNT(*) FROM PRODUCT) AS PRODUCT_COUNT,"
                 + " (SELECT COUNT(*) FROM (SELECT DISTINCT CATEGORY FROM PRODUCT_CATEGORY) AS A) AS CATEGORY_COUNT,"
                 + " (SELECT COUNT(*) FROM PRODUCT_REVIEW WHERE DATE_ADDED >= :MIN_MODIFIED_TIME) AS PRODUCT_REVIEW_COUNT,"
-                + " (SELECT NULL AS CUSTOMER_COUNT FROM DUAL),"
+                + " (SELECT COUNT(*) FROM CUSTOMER) AS CUSTOMER_COUNT,"
                 + " (SELECT COUNT(*) FROM CUSTOMER WHERE DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME) AS ACTIVE_CUSTOMER_COUNT,"
-                + " (SELECT COUNT(*) FROM CUSTOMER WHERE DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME AND WORKLOAD IS NULL) AS ACTIVE_WEB_CUSTOMER_COUNT"
+                + " (SELECT COUNT(*) FROM CUSTOMER WHERE DATE_LAST_ACTIVE >= :MIN_ACTIVE_TIME AND WORKLOAD IS NULL) AS ACTIVE_WEB_CUSTOMER_COUNT,"
+                + " (SELECT SUM(QUANTITY) FROM CART_SELECTION WHERE DATE_MODIFIED >= :MIN_MODIFIED_TIME) AS CART_ITEM_COUNT,"
+                + " (SELECT SUM(QUANTITY * UNIT_PRICE) FROM CART_SELECTION WHERE DATE_MODIFIED >= :MIN_MODIFIED_TIME) AS CART_VALUE,"
+                + " (SELECT COUNT(*) FROM PURCHASE WHERE DATE_PURCHASED >= :MIN_MODIFIED_TIME) AS PURCHASE_COUNT,"
+                + " (SELECT SUM(QUANTITY) FROM PURCHASE_SELECTION WHERE DATE_MODIFIED >= :MIN_MODIFIED_TIME) AS PURCHASE_ITEM_COUNT,"
+                + " (SELECT SUM(QUANTITY * UNIT_PRICE) FROM PURCHASE_SELECTION WHERE DATE_MODIFIED >= :MIN_MODIFIED_TIME) AS PURCHASE_VALUE,"
+                + " (SELECT MIN(DATE_STARTED) FROM APP_INSTANCE WHERE LAST_HEARTBEAT >= :MIN_HEARTBEAT_TIME) AS START_TIME"
                 + " FROM DUAL;";
 
         // Run query
         SQLQuery query = getSession().createSQLQuery((maxAgeSec == null) ? ALL_STATS_QUERY : RECENT_STATS_QUERY);
+        query.addScalar("PRODUCT_COUNT", IntegerType.INSTANCE);
+        query.addScalar("CATEGORY_COUNT", IntegerType.INSTANCE);
+        query.addScalar("CART_VALUE", IntegerType.INSTANCE);
+        query.addScalar("PRODUCT_REVIEW_COUNT", IntegerType.INSTANCE);
+        query.addScalar("CUSTOMER_COUNT", IntegerType.INSTANCE);
+        query.addScalar("ACTIVE_CUSTOMER_COUNT", IntegerType.INSTANCE);
+        query.addScalar("ACTIVE_WEB_CUSTOMER_COUNT", IntegerType.INSTANCE);
+        query.addScalar("CART_ITEM_COUNT", IntegerType.INSTANCE);
+        query.addScalar("CART_VALUE", BigDecimalType.INSTANCE);
+        query.addScalar("PURCHASE_COUNT", IntegerType.INSTANCE);
+        query.addScalar("PURCHASE_ITEM_COUNT", IntegerType.INSTANCE);
+        query.addScalar("PURCHASE_VALUE", IntegerType.INSTANCE);
+        query.addScalar("START_TIME", LongType.INSTANCE);
         setStorefrontStatsParameters(query, maxCustomerIdleTimeSec, maxAgeSec);
-        Object[] result = (Object[]) query.uniqueResult();
+        Object[] results = (Object[]) query.uniqueResult();
 
         // Fill stats
         StorefrontStats stats = new StorefrontStats();
-        stats.setProductCount(getIntValue(result[0]));
-        stats.setCategoryCount(getIntValue(result[1]));
-        stats.setProductReviewCount(getIntValue(result[2]));
-        stats.setCustomerCount(getIntValue(result[3]));
-        stats.setActiveCustomerCount(getIntValue(result[4]));
-        stats.setActiveWebCustomerCount(getIntValue(result[5]));
-//        stats.setCartItemCount(getIntValue(result[6]));
-//        stats.setCartValue(getBigDecimalValue(result[7]));
-//        stats.setPurchaseCount(getIntValue(result[8]));
-//        stats.setPurchaseItemCount(getIntValue(result[9]));
-//        stats.setPurchaseValue(getBigDecimalValue(result[10]));
+        stats.setProductCount(getIntValue(results[0]));
+        stats.setCategoryCount(getIntValue(results[1]));
+        stats.setProductReviewCount(getIntValue(results[2]));
+        stats.setCustomerCount(getIntValue(results[3]));
+        stats.setActiveCustomerCount(getIntValue(results[4]));
+        stats.setActiveWebCustomerCount(getIntValue(results[5]));
+        stats.setCartItemCount(getIntValue(results[6]));
+        stats.setCartValue(getBigDecimalValue(results[7]));
+        stats.setPurchaseCount(getIntValue(results[8]));
+        stats.setPurchaseItemCount(getIntValue(results[9]));
+        stats.setPurchaseValue(getBigDecimalValue(results[10]));
 
-//        Calendar cal = Calendar.getInstance();
-//        cal.setTimeInMillis(getLongValue(result[11]));
-//        stats.setDateStarted(cal);
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(getLongValue(results[11]));
+        stats.setDateStarted(cal);
 
         return stats;
     }

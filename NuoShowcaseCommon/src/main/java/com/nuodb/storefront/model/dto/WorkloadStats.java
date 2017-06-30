@@ -2,6 +2,8 @@
 
 package com.nuodb.storefront.model.dto;
 
+import java.util.Map;
+
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
 import com.nuodb.storefront.util.LoggerToStringStyle;
@@ -20,6 +22,8 @@ public class WorkloadStats {
     private int workCompletionCount;
     private long totalWorkTimeMs;
     private long totalWorkCompletionTimeMs;
+    
+    public WorkloadStats() {}
     
     public WorkloadStats(Workload workload) {
         this.workload = workload;
@@ -50,7 +54,22 @@ public class WorkloadStats {
 
         return;
     }
+    
+    public void applyDeltas(Map<String, Integer> stats) {
+    	if (stats.get("activeWorkerLimit") != null) {    		
+    		this.activeWorkerLimit += stats.get("activeWorkerLimit");
+    	}
+        this.activeWorkerCount += stats.get("activeWorkerCount");
+        this.failedWorkerCount += stats.get("failedWorkerCount");
+        this.killedWorkerCount += stats.get("killedWorkerCount");
+        this.completedWorkerCount += stats.get("completedWorkerCount");
+        this.workInvocationCount += stats.get("workInvocationCount");
+        this.workCompletionCount += stats.get("workCompletionCount");
+        this.totalWorkTimeMs += stats.get("totalWorkTimeMs");
+        this.totalWorkCompletionTimeMs += stats.get("totalWorkCompletionTimeMs");
 
+        return;
+    }
     
     public Workload getWorkload() {
         return workload;
