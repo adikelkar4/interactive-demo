@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,7 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.nuodb.storefront.exception.DataValidationException;
 import com.nuodb.storefront.exception.TenantNotFoundException;
-import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.service.storefront.StorefrontTenant;

@@ -9,15 +9,15 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.model.entity.Customer;
-import com.nuodb.storefront.servlet.StorefrontWebApp;
 
 public class PageConfig {
-    private String pageTitle = StorefrontWebApp.APP_NAME;
+    private String pageTitle = PageConfig.APP_NAME;
     private String pageName;
     private Object pageData;
     private Customer customer;
     private List<Message> messages;
     private List<AppInstance> appInstances;
+	public static final String APP_NAME = System.getProperty("storefront.name", "NuoDB Storefront Demo");
 
     public PageConfig() {
     }

@@ -33,7 +33,6 @@ public class StorefrontWebApp implements ServletContextListener {
 	public static final String IP_DETECT_URL = System.getProperty("storefront.ipDetectUrl", "http://checkip.amazonaws.com");
 	public static final String DEFAULT_URL = System.getProperty("storefront.url", "{protocol}://{host}:{port}/{context}");
 	public static final int DEFAULT_PORT = Integer.valueOf(System.getProperty("maven.tomcat.port", "9001"));
-	public static final String APP_NAME = System.getProperty("storefront.name", "NuoDB Storefront Demo");
 	public static final String TENANT_PARAM_NAME = "tenant";
 	public static final String LOGGER_NAME_TENANT_SEP = ":";
 	// Storefront timings

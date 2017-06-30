@@ -25,7 +25,6 @@ import org.hibernate.type.StringType;
 import com.googlecode.genericdao.search.SearchResult;
 import com.nuodb.storefront.model.dto.Category;
 import com.nuodb.storefront.model.dto.DbRegionInfo;
-import com.nuodb.storefront.model.dto.ProductFilter;
 import com.nuodb.storefront.model.dto.StorefrontStats;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.entity.IEntity;

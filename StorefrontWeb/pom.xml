@@ -92,6 +92,13 @@
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk</artifactId>
 		</dependency>
+
+<!-- 		<dependency>
+			<groupId>com.nuodb.storefront</groupId>
+			<artifactId>NuoShowcaseCommon</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+ -->
 	</dependencies>
 
 	<build>

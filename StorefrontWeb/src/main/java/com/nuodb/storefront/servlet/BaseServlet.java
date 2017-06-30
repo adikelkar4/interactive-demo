@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,7 +20,6 @@ import com.nuodb.storefront.StorefrontTenantManager;
 import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.dto.Message;
 import com.nuodb.storefront.model.dto.PageConfig;
-import com.nuodb.storefront.model.dto.ProductFilter;
 import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.model.entity.Customer;
 import com.nuodb.storefront.model.type.MessageSeverity;
@@ -56,16 +54,6 @@ public abstract class BaseServlet extends HttpServlet {
 
     public static IDbApi getDbApi(HttpServletRequest req) {
         return getTenant(req).getDbApi();
-    }
-
-    public static ProductFilter getOrCreateProductFilter(HttpServletRequest req) {
-        HttpSession session = req.getSession();
-        ProductFilter filter = (ProductFilter)session.getAttribute(SESSION_PRODUCT_FILTER);
-        if (filter == null) {
-            filter = new ProductFilter();
-            session.setAttribute(SESSION_PRODUCT_FILTER, filter);
-        }
-        return filter;
     }
 
     public static Message addErrorMessage(HttpServletRequest req, Exception e) {
@@ -118,7 +106,7 @@ public abstract class BaseServlet extends HttpServlet {
         AppInstance appInstance = tenant.getAppInstance();
 
         // Build full page title
-        String storeName = appInstance.getName() + " - " + StorefrontWebApp.APP_NAME;
+        String storeName = appInstance.getName() + " - " + PageConfig.APP_NAME;
         if (pageTitle == null || pageTitle.isEmpty()) {
             pageTitle = storeName;
         } else {
