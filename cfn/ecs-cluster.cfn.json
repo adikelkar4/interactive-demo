@@ -315,7 +315,8 @@
               "CidrIp" : { "Ref" : "SourceCidr" } },
             { "IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "SourceSecurityGroupId" :  { "Ref" : "ElbSecurityGroup" } },
             { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
-            { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } }
+            { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
+            { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp": "0.0.0.0/0" }
           ]
       }
     },
@@ -585,6 +586,42 @@
         } ],
         "ComparisonOperator": "GreaterThanThreshold",
         "MetricName": "CPUUtilization"
+      }
+    },
+
+    "LatencyAlarmHigh": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Statistic": "Average",
+        "Threshold": "200",
+        "AlarmDescription": "Alarm if transaction latency too high",
+        "Period": "60",
+        "Namespace": "INSTANCE/METRICS",
+        "Dimensions": [ {
+          "Name": "ClusterName",
+          "Value": { "Ref": "EcsClusterName" }
+        } ],
+        "ComparisonOperator": "GreaterThanThreshold",
+        "MetricName": "AverageLatency"
+      }
+    },
+
+    "LatencyAlarmLow": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Statistic": "Average",
+        "Threshold": "50",
+        "AlarmDescription": "Alarm if transaction latency too high",
+        "Period": "60",
+        "Namespace": "INSTANCE/METRICS",
+        "Dimensions": [ {
+          "Name": "ClusterName",
+          "Value": { "Ref": "EcsClusterName" }
+        } ],
+        "ComparisonOperator": "LessThanThreshold",
+        "MetricName": "AverageLatency"
       }
     },
 

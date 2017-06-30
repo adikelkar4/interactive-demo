@@ -8,7 +8,7 @@ set -o pipefail
 
 dir=$(dirname $0)
 user=$USER
-now=$(date +%Y%m%d-%H%M)
+now=$(date +%Y%m%d-%H%M%S)
 KEY="interactive-demo"
 
 WAIT=true

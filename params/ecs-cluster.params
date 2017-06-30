@@ -9,7 +9,7 @@ EcsInstanceType: r4.8xlarge
 
 KeyName: interactive-demo
 
-EcsClusterName: interactive-demo-8
+EcsClusterName: interactive-demo-dewey-20170629-152634
 
 
 #docker container images
