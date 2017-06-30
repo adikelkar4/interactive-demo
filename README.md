@@ -149,8 +149,8 @@ Admin client-side libraries:
 
 
 
-Interactive Demo
-================
+Creating an Interactive Demo Cluster
+====================================
 
 Quick Start
 -----------
@@ -191,3 +191,129 @@ NOTES:
 
 * When deleting stacks, you must delete the stack, then manually
   delete the ECS cluster, then delete the stack again.
+
+
+The Demo Cluster Manipulation Tool
+==================================
+
+```
+usage: cluster [-h] [--profile PROFILE] [--include INCLUDE]
+                    [--exclude EXCLUDE]
+                    {list,delete}
+
+Manage Demo Clusters
+
+positional arguments:
+  {list,delete}      Action to take
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --profile PROFILE  The AWS profile to use
+  --include INCLUDE  The AWS profile to use
+  --exclude EXCLUDE  The AWS profile to use
+```
+
+Listing Demo Clusters
+---------------------
+
+```
+bin/cluster list
+```
+
+Will list all clusters with the current user's username in the title,
+along with the status of the cloudformation stack that creates them.
+
+
+Deleting a Demo Cluster
+-----------------------
+
+```
+bin/cluster delete 
+```
+
+This will delete all clusters with the current user in the cluster
+name.
+
+Other optionas `--include` and `--exclude` allow explicit
+specification of clusters to delete by substring of the cluster name.
+
+If multiple clusters are selected, they are deleted in parallel.
+
+Example of cluster listing and deletion
+---------------------------------------
+
+```
+$ bin/cluster --profile nuodb_profile list
+interactive-demo-dewey-20170629-152634 CREATE_COMPLETE http://interacti-Storefro-1C7H76P7HVOZB-1318389021.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152626 CREATE_COMPLETE http://interacti-Storefro-4B7NMPD6W5RV-1221034874.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152609 CREATE_COMPLETE http://interacti-Storefro-7YBVA3P9NB9L-1791407450.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152600 CREATE_COMPLETE http://interacti-Storefro-1NU6MNNW84HJX-743284347.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-151448 DELETE_FAILED
+interactive-demo-dewey-20170629-151440 DELETE_FAILED
+interactive-demo-dewey-20170629-151431 DELETE_FAILED
+
+$ bin/cluster --profile nuodb_profile delete --include interactive-demo-dewey-20170629-152600
+Deleting cluster interactive-demo-dewey-20170629-152600
+...interactive-demo-dewey-20170629-152600: deleting stack
+...interactive-demo-dewey-20170629-152600: deletion blocked by undeleted resources
+...interactive-demo-dewey-20170629-152600: deleting ECS cluster
+...interactive-demo-dewey-20170629-152600: downscaling services
+...interactive-demo-dewey-20170629-152600: deleting services
+...interactive-demo-dewey-20170629-152600: deleting ecs cluster
+...interactive-demo-dewey-20170629-152600: deleting stack
+SUCCESS deleting interactive-demo-dewey-20170629-152600
+
+$ bin/cluster --profile nuodb_profile delete --include 151431
+Deleting cluster interactive-demo-dewey-20170629-151431
+...interactive-demo-dewey-20170629-151431: deleting stack
+...interactive-demo-dewey-20170629-151431: SUCCESS deleting stack
+SUCCESS deleting cluster interactive-demo-dewey-20170629-151431
+```
+
+Deletion of multiple stacks is done in parallel:
+
+```
+$ bin/cluster --profile nuodb_profile list
+interactive-demo-dewey-20170629-152634 CREATE_COMPLETE http://interacti-Storefro-1C7H76P7HVOZB-1318389021.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152626 CREATE_COMPLETE http://interacti-Storefro-4B7NMPD6W5RV-1221034874.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152609 CREATE_COMPLETE http://interacti-Storefro-7YBVA3P9NB9L-1791407450.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-151448 DELETE_FAILED
+interactive-demo-dewey-20170629-151440 DELETE_FAILED
+
+$ bin/cluster --profile nuodb_profile list --exclude 152634
+interactive-demo-dewey-20170629-152626 CREATE_COMPLETE http://interacti-Storefro-4B7NMPD6W5RV-1221034874.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152609 CREATE_COMPLETE http://interacti-Storefro-7YBVA3P9NB9L-1791407450.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-151448 DELETE_FAILED
+interactive-demo-dewey-20170629-151440 DELETE_FAILED
+
+$ bin/cluster --profile nuodb_profile delete --exclude 152634
+Deleting cluster interactive-demo-dewey-20170629-152626
+...interactive-demo-dewey-20170629-152626: deleting stack
+Deleting cluster interactive-demo-dewey-20170629-152609
+...interactive-demo-dewey-20170629-152609: deleting stack
+Deleting cluster interactive-demo-dewey-20170629-151448
+...interactive-demo-dewey-20170629-151448: deleting stack
+Deleting cluster interactive-demo-dewey-20170629-151440
+...interactive-demo-dewey-20170629-151440: deleting stack
+...interactive-demo-dewey-20170629-151440: SUCCESS deleting stack
+SUCCESS deleting cluster interactive-demo-dewey-20170629-151440
+...interactive-demo-dewey-20170629-151448: SUCCESS deleting stack
+SUCCESS deleting cluster interactive-demo-dewey-20170629-151448
+...interactive-demo-dewey-20170629-152609: deletion blocked by undeleted resources
+...interactive-demo-dewey-20170629-152609: deleting ECS cluster
+...interactive-demo-dewey-20170629-152609: downscaling services
+...interactive-demo-dewey-20170629-152609: deleting services
+...interactive-demo-dewey-20170629-152609: deleting ecs cluster
+...interactive-demo-dewey-20170629-152609: deleting stack
+SUCCESS deleting interactive-demo-dewey-20170629-152609
+...interactive-demo-dewey-20170629-152626: deletion blocked by undeleted resources
+...interactive-demo-dewey-20170629-152626: deleting ECS cluster
+...interactive-demo-dewey-20170629-152626: downscaling services
+...interactive-demo-dewey-20170629-152626: deleting services
+...interactive-demo-dewey-20170629-152626: deleting ecs cluster
+...interactive-demo-dewey-20170629-152626: deleting stack
+SUCCESS deleting interactive-demo-dewey-20170629-152626
+
+$ bin/cluster --profile nuodb_profile  list
+interactive-demo-dewey-20170629-152634 CREATE_COMPLETE http://interacti-Storefro-1C7H76P7HVOZB-1318389021.us-east-2.elb.amazonaws.com/StorefrontWeb/
+```

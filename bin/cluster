@@ -1,0 +1,176 @@
+#!/usr/bin/python
+
+# Purpose:  manage demo clusters
+
+import os
+import argparse
+import boto3
+import concurrent.futures
+
+def list_clusters(session, args):
+    cf = session.resource('cloudformation')
+
+    for x in select(session, args):
+        url=[""]
+        if x['StackStatus'] == 'CREATE_COMPLETE':
+            stack = cf.Stack(x['StackName'])
+        else:
+            stack=None
+        if stack:
+            url = [y['OutputValue'] 
+                   for y in stack.outputs 
+                   if y['OutputKey'] == "StorefrontElbURL"]
+
+        print "{} {} {} ".format(x['StackName'], x['StackStatus'], url[0])
+
+def select(session, args):
+    cf = session.client("cloudformation")
+
+    result = cf.list_stacks(
+    StackStatusFilter=[
+        'CREATE_IN_PROGRESS','CREATE_FAILED','CREATE_COMPLETE','ROLLBACK_IN_PROGRESS','ROLLBACK_FAILED','ROLLBACK_COMPLETE','DELETE_IN_PROGRESS','DELETE_FAILED','UPDATE_IN_PROGRESS','UPDATE_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_COMPLETE','UPDATE_ROLLBACK_IN_PROGRESS','UPDATE_ROLLBACK_FAILED','UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_ROLLBACK_COMPLETE','REVIEW_IN_PROGRESS',
+    ])
+
+    stacks = result['StackSummaries']
+
+    if not args.include and not args.exclude:
+        filter = os.environ['USER']
+        stacks = [x for x in stacks if filter in x['StackName']]
+
+    if args.include:
+        filter = args.include[0]
+        stacks = [x for x in stacks if filter in x['StackName']]
+
+    if args.exclude:
+        filter = args.exclude[0]
+        stacks = [x for x in stacks if not filter in x['StackName']]
+
+    return stacks
+
+def delete_clusters(*args):
+    stacks = select(*args)
+    futures=[]
+
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+    for stack in stacks:
+        futures.append(pool.submit(delete_cluster, stack, *args))
+        #delete_cluster(stack, *args)
+        
+        reduce(lambda x,y: x and y, map(lambda x: x.done(), futures), True)
+
+def find_cluster(ecs, stack_name):
+    cluster = ecs.describe_clusters(clusters=[stack_name])
+    return cluster['clusters'][0]
+
+def delete_ecs_cluster(ecs, stack_name, p):
+    services=[]
+    response = {'nextToken': 'True'}
+
+    # Get all the services in multiple calls, because boto only
+    # returns 10 at a time.
+
+    while 'nextToken' in response:
+        response = ecs.list_services(cluster=stack_name)
+        services.extend(response['serviceArns'])
+
+    p("downscaling services")
+    for arn in services:
+        ecs.update_service(cluster=stack_name,
+                           service=arn,
+                           desiredCount=0)
+
+    waiter = ecs.get_waiter('services_inactive')
+
+    # this idiocy is required by boto, which was clearly written with
+    # a GUI in mind
+#    chunks = [services[i:i + 10] for i in xrange(0, len(services), 10)]
+#    map(lambda chunk: waiter.wait(cluster=stack_name, services=chunk), chunks)
+
+    # At this point all services are inactive, so we can delete them.
+    p("deleting services")
+    for arn in services:
+        ecs.delete_service(cluster=stack_name, service=arn)
+
+    # now that all the services are deleted, we can delete the cluster
+    p("deleting ecs cluster")
+    ecs.delete_cluster(cluster=stack_name)
+
+def delete_cluster(stack, session, args):
+    cf = session.client('cloudformation')
+
+    stack_name=stack['StackName']
+
+    print "Deleting cluster %s" % stack_name
+
+    def p(message):
+        print "...{}: {}".format(stack_name, message)
+
+    p("deleting stack")
+
+    cf.delete_stack(StackName=stack_name)
+
+    waiter = cf.get_waiter('stack_delete_complete')
+    try:
+        waiter.wait(StackName=stack_name)
+        p("SUCCESS deleting stack")
+        print "SUCCESS deleting cluster %s" % stack_name
+        return
+    except:
+        pass
+
+    p("deletion blocked by undeleted resources")
+    # manually delete the cluster
+    ecs=session.client('ecs')
+    cluster = find_cluster(ecs, stack_name)
+
+    # Perform the delete
+    if cluster:
+        p("deleting ECS cluster")
+        delete_ecs_cluster(ecs, stack_name, p)
+    else:
+        p("ECS cluster already deleted")
+
+    # Now we'll have to delete the stack again
+
+    p("deleting stack")
+    cf.delete_stack(StackName=stack_name)
+    try:
+        waiter.wait(StackName=stack_name)
+        print "SUCCESS deleting %s" % stack_name
+        return True
+    except:
+        print "FAILED to delete cluster %s" % stack_name
+        return False
+
+
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Manage Demo Clusters")
+
+    parser.add_argument("--profile", help="The AWS profile to use",
+                        nargs=1)
+
+    parser.add_argument("--include", help="The AWS profile to use",
+                        nargs=1)
+
+    parser.add_argument("--exclude", help="The AWS profile to use",
+                        nargs=1)
+
+    parser.add_argument("function", choices=['list','delete'], help="Action to take")
+
+    args = parser.parse_args()
+
+    if args.profile:
+        session = boto3.Session(profile_name=args.profile[0])
+    else:
+        session = boto3.Session()
+
+    if args.function == "list":
+        list_clusters(session,args)
+    if args.function == "delete":
+        delete_clusters(session,args)
+
+
+if __name__ == "__main__":
+    main()
