@@ -130,6 +130,8 @@ public class HeartbeatService implements IHeartbeatService {
             }
 
             try {
+                double avg = (totalCount < 1) ? 0 : (totalDuration / totalCount);
+
                 AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
                 Dimension dimension = new Dimension()
                         .withName("ClusterName")
@@ -137,7 +139,7 @@ public class HeartbeatService implements IHeartbeatService {
                 MetricDatum datum = new MetricDatum()
                         .withMetricName("AverageLatency")
                         .withUnit(StandardUnit.Milliseconds)
-                        .withValue((double) (totalDuration / totalCount))
+                        .withValue(avg)
                         .withDimensions(dimension);
                 PutMetricDataRequest pmdr = new PutMetricDataRequest()
                         .withNamespace("INSTANCE/METRICS")
