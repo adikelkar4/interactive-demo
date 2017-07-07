@@ -36,9 +36,9 @@ Ext.define('App.view.HeaderBar', {
             }
         }, {
             xtype: 'metricwell',
-            text: '<b>Processes</b>',
+            text: '<b>Transaction Engines</b>',
             icon: 'ico-process.png',
-            metric: 'dbStats.usedHostCount',
+            metric: 'dbStats.usedTeHostCount',
             itemId: 'metrics-hosts',
             inputMaxMetric: 'dbStats.hostCount',
             flex: 0.7,
