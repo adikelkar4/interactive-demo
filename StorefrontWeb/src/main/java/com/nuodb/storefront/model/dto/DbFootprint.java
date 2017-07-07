@@ -8,6 +8,7 @@ import java.util.Set;
 public class DbFootprint {
     public int hostCount;
     public int usedHostCount;
+    public int usedTeHostCount;
     public int regionCount;
     public int usedRegionCount;
     public Set<String> usedRegions = new HashSet<String>();

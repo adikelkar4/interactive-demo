@@ -523,8 +523,17 @@ public class DbApiProxy implements IDbApi {
         dbStats.regionCount = regions.size();
 
         for (Region region : regions) {
-            dbStats.hostCount = getDbProcesses().size();
-            dbStats.usedHostCount = getDbProcesses().size();
+            List<Process> procs = getDbProcesses();
+
+            for (Process proc : procs) {
+                dbStats.hostCount += 1;
+                dbStats.usedHostCount += 1;
+
+                if (proc.type == "TE") {
+                    dbStats.usedTeHostCount += 1;
+                }
+            }
+
             if (region.usedHostCount > 0) {
                 dbStats.usedRegions.add(region.region);
                 dbStats.usedRegionCount++;
