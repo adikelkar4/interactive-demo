@@ -131,20 +131,21 @@ public class HeartbeatService implements IHeartbeatService {
 
             try {
                 double avg = (totalCount < 1) ? 0 : (totalDuration / totalCount);
-
-                AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
-                Dimension dimension = new Dimension()
-                        .withName("ClusterName")
-                        .withValue(LambdaLauncher.getEcsClusterName());
-                MetricDatum datum = new MetricDatum()
-                        .withMetricName("AverageLatency")
-                        .withUnit(StandardUnit.Milliseconds)
-                        .withValue(avg)
-                        .withDimensions(dimension);
-                PutMetricDataRequest pmdr = new PutMetricDataRequest()
-                        .withNamespace("INSTANCE/METRICS")
-                        .withMetricData(datum);
-                cw.putMetricData(pmdr);
+                if (!tenant.getDbConnInfo().getHost().contains("localhost")) {                	
+                	AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
+                	Dimension dimension = new Dimension()
+                			.withName("ClusterName")
+                			.withValue(LambdaLauncher.getEcsClusterName());
+                	MetricDatum datum = new MetricDatum()
+                			.withMetricName("AverageLatency")
+                			.withUnit(StandardUnit.Milliseconds)
+                			.withValue(avg)
+                			.withDimensions(dimension);
+                	PutMetricDataRequest pmdr = new PutMetricDataRequest()
+                			.withNamespace("INSTANCE/METRICS")
+                			.withMetricData(datum);
+                	cw.putMetricData(pmdr);
+                }
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
