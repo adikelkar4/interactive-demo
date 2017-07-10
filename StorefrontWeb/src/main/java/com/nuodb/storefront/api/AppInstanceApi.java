@@ -6,6 +6,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.LinkedList;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -16,6 +18,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -28,6 +31,8 @@ import com.nuodb.storefront.servlet.StorefrontWebApp;
 
 @Path("/app-instances")
 public class AppInstanceApi extends BaseApi {
+    private static Queue<String> activityLog = new LinkedList<>();
+
     public AppInstanceApi() {
     }
 
@@ -103,5 +108,24 @@ public class AppInstanceApi extends BaseApi {
         tenant.startUp();
 
         return dbConfig;
+    }
+
+    @PUT
+    @Path("/log")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response putLog(@Context HttpServletRequest req, @FormParam("message") String message) {
+        activityLog.add(message);
+
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/log")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Queue<String> getLog(@Context HttpServletRequest req) {
+        Queue<String> ret = new LinkedList<String>(activityLog);
+        activityLog.clear();
+
+        return ret;
     }
 }
