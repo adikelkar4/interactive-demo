@@ -235,10 +235,11 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 
             // Verify this worker can still run
             synchronized (workloadStatsMap) {
+            	WorkloadStats stats = getOrCreateWorkloadStats(workload);
                 if (originalThreadPool != threadPool) {
+                    stats.setActiveWorkerCount(stats.getActiveWorkerCount() - 1);
                     return;
                 }
-                WorkloadStats stats = getOrCreateWorkloadStats(workload);
                 if (stats.exceedsWorkerLimit()) {
                     // Don't run this worker. We're over the limit
                     stats.setActiveWorkerCount(stats.getActiveWorkerCount() - 1);
@@ -268,10 +269,11 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 
             // Update stats
             synchronized (workloadStatsMap) {
+            	WorkloadStats stats = getOrCreateWorkloadStats(workload);
                 if (originalThreadPool != threadPool) {
+                    stats.setActiveWorkerCount(stats.getActiveWorkerCount() - 1);
                     return;
                 }
-                WorkloadStats stats = getOrCreateWorkloadStats(workload);
                 stats.setWorkInvocationCount(stats.getWorkInvocationCount() + 1);
                 stats.setTotalWorkTimeMs(stats.getTotalWorkTimeMs() + completionWorkTimeMs);
                 if (delay < 0) {

@@ -69,9 +69,9 @@ public class StorefrontApp {
     public static final int CW_METRIC_LOG_TIME = 1000;
 
     // Database properties
-    public static final String DB_NAME = System.getProperty("storefront.db.name");
-    public static final String DB_USER = System.getProperty("storefront.db.user");
-    public static final String DB_PASSWORD = System.getProperty("storefront.db.password");
+    public static final String DB_NAME = System.getProperty("storefront.db.name", "Storefront@localhost");
+    public static final String DB_USER = System.getProperty("storefront.db.user", "StorefrontUser");
+    public static final String DB_PASSWORD = System.getProperty("storefront.db.password", "StorefrontUser");
     public static final String DB_OPTIONS = System.getProperty("storefront.db.options");
     public static final int DB_PING_TIMEOUT_SEC = Integer.valueOf(System.getProperty("storefront.db.pingTimeoutSec", "0")); // 0=disabled
     public static final int DB_MAX_INIT_WAIT_TIME_SEC = Integer.valueOf(System.getProperty("storefront.db.initWaitTimeSec", "5"));
