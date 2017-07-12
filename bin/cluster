@@ -233,6 +233,11 @@ def read_params(file):
     suitable to passing to
     boto3.client('cloudformation').create_stack'''
 
+    if not os.path.exists(file):
+        other = os.path.dirname(__file__) + "/../" + params_file
+        if os.path.exists(other):
+            file = other
+
     linepattern = re.compile("(\w+)\s*[:=]\s*(\S+)\s*")
 
     params = { x[0]: x[1] for x in map(
@@ -247,6 +252,10 @@ def read_params(file):
 @cache
 def get_template_body(template):
     '''Return the entire template body as a string'''
+    if not os.path.exists(template):
+        other  = os.path.dirname(__file__) + "/../" + template
+        if os.path.exists(other):
+            template=other
     with open(template) as f:
         return f.read()
 
@@ -267,9 +276,6 @@ the command to return successfully.
 '''
     print "Creating cluster %s" % name
     # TODO:  make this file relative to the script path
-    params_file = args.params_file
-    if not os.path.exists(params_file):
-        params_file = os.path.dirname(__file__) + "/../" + params_file
 
     # Turn the parameters file into a dict with name=value
     params = read_params(args.params_file)
