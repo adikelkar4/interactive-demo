@@ -29,7 +29,7 @@ Ext.define('App.view.NavBar', {
     initComponent: function() {
         var me = this;
 
-        var html = ['<ul id="nav-links">'];
+        var html = ['<div id="activity-log-container"><textarea id="activity-log" disabled="disabled">Testing this stuff</textarea></div>', '<ul id="nav-links">'];
         for ( var i = 0; i < me.links.length; i++) {
             var link = me.links[i];
             html.push('<li');
