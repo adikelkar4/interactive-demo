@@ -14,18 +14,21 @@ import boto3
 import concurrent.futures
 import re
 
-# from http://code.activestate.com/recipes/578231-probably-the-fastest-memoization-decorator-in-the-/
-def memoize(f):
-    """ Memoization decorator for functions taking one or more arguments. """
-    class memodict(dict):
-        def __init__(self, f):
-            self.f = f
-        def __call__(self, *args):
-            return self[args]
-        def __missing__(self, key):
-            ret = self[key] = self.f(*key)
-            return ret
-    return memodict(f)
+def cache(f):
+    '''Cache the funciton call arguments'''
+    cache=dict()
+    @functools.wraps(f)
+    def wrapper(*args):
+        if not isinstance(args, collections.Hashable):
+            return f(*args)
+        if args in cache:
+            return cache[args]
+        else:
+            result = f(*args)
+            cache[args]=result
+            return result
+
+    return wrapper
 
 def list_clusters(session, args):
     '''main 'list' command implementation.  
@@ -224,6 +227,7 @@ Create one or more clusters as requested
         map(lambda x: status(x), futures)
 
 
+@cache
 def read_params(file):
     '''Read a parameters file and return an array of parameters
     suitable to passing to
@@ -239,10 +243,13 @@ def read_params(file):
 
     return params
 
-def get_template_body(args):
+
+@cache
+def get_template_body(template):
     '''Return the entire template body as a string'''
-    with open(args.template) as f:
+    with open(template) as f:
         return f.read()
+
 
 
 def format_params(params):
@@ -274,7 +281,7 @@ the command to return successfully.
     # Now turn our dict into an array suitable for passing to create_stack
     paramArgs = [dict(ParameterKey=x, ParameterValue=y) for x,y in params.items()]
 
-    template = get_template_body(args)
+    template = get_template_body(args.template)
 
     tags = [
         dict(Key='Owner',
@@ -308,6 +315,11 @@ client -- boto3 cloudformation client
 resource -- boto3 cloudformation resource
 args -- command line arguments
 '''
+
+    if args.no_wait:
+        print "not waiting on %s" % name
+        return
+
     print "...waiting for %s to create" % name
     waiter = client.get_waiter("stack_create_complete")
     try:
