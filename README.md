@@ -6,6 +6,22 @@ This mock storefront web application showcases NuoDB's 5 value propositions:  sc
 ![ScreenShot](doc/home.png)
 
 
+Quickstart
+----------
+
+To run the Storefront Demo in a demo cluster on Amazon, assuming you
+have your `~/.aws/credentials` configured correctly, run...
+
+```
+bin/cluster create && bin/cluster list
+```
+
+...and point a web browser at the URL given in the output
+
+See [the detailed documentation](#the-demo-cluster-manipulation-tool)
+for further information on this tool.
+
+
 Prerequisites
 -------------
 
@@ -149,68 +165,71 @@ Admin client-side libraries:
 
 
 
-Creating an Interactive Demo Cluster
-====================================
-
-Quick Start
------------
-
-```./bin/create-demo-cluster```
-
-or
-
-```./bin/create-demo-cluster --profile AWS-PROFILE-NAME```
-
-This will create a demo cluster with a unique name based on the
-current user name and date.
-
-When the stack has completed creation, it will print the URL for the
-demo control panel.  Note that the NuoDB application may not, yet, be
-running when that hapens.
-
-use ```./bin/create-demo-cluster --help``` for more options.
-
-
-The long (manual) way
----------------------
-
-1. clone interactive-demo repo
-2. run in terminal: 
-   ```aws configure```
-3. cd into root of project
-4. edit params/ecs-cluster.params
-     - replace SSH key with your own
-     - replace ecscluster name with something unique
-5. run from terminal:
-   ```./bin/create ecs-cluster <give-it-a-unique-stack-name>```
-
-NOTES:
-
-* When creating a new cluster, you must create a unique
-  ecs-cluster-name in your params file each time.
-
-* When deleting stacks, you must delete the stack, then manually
-  delete the ECS cluster, then delete the stack again.
-
 
 The Demo Cluster Manipulation Tool
 ==================================
 
 ```
-usage: cluster [-h] [--profile PROFILE] [--include INCLUDE]
-                    [--exclude EXCLUDE]
-                    {list,delete}
+usage: cluster [-h] [--profile PROFILE] [--parallel PARALLEL]
+               {create,list,delete} ...
 
 Manage Demo Clusters
 
 positional arguments:
-  {list,delete}      Action to take
+  {create,list,delete}  sub-command help
+    create              Create one or more clusters
+    list                List clusters
+    delete              Delete clusters
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --profile PROFILE  The AWS profile to use
-  --include INCLUDE  The AWS profile to use
-  --exclude EXCLUDE  The AWS profile to use
+  -h, --help            show this help message and exit
+  --profile PROFILE     The AWS profile to use
+  --parallel PARALLEL   Number of operations to perform in parallel
+```
+
+
+Creating Demo Clusters
+----------------------
+
+```
+bin/cluster create
+```
+
+Will use the AWS 'default' profile to create a NuoDB demo cluster and,
+when created, report it's URL.
+
+You may also create multiple clusters at one time with e.g.
+
+```
+bin/cluster create --count 10
+```
+
+By default, the cluster name will contain the current user's login
+name and a timestamp.  You may use the `--user` and `--suffix` to
+change the name of the clusters.
+
+
+Full Usage:
+
+```
+$ bin/cluster create -h
+usage: cluster create [-h] [--user USER] [--prefix PREFIX] [--no-wait]
+                      [--dry-run] [--params-file PARAMS_FILE]
+                      [--template TEMPLATE]
+                      [--count COUNT | --suffix SUFFIX | --key-name KEY_NAME]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --user USER           user name to include in cluster name
+  --prefix PREFIX       cluster name prefix
+  --no-wait             Do not wait for cluster completion
+  --dry-run             Do not actually create the stack
+  --params-file PARAMS_FILE
+                        Parameters file
+  --template TEMPLATE   CFN Template file
+  --count COUNT         number of clusters to create
+  --suffix SUFFIX       cluster name suffix. Default is a timestamp
+  --key-name KEY_NAME   SSH key name for instance
 ```
 
 Listing Demo Clusters
@@ -222,6 +241,17 @@ bin/cluster list
 
 Will list all clusters with the current user's username in the title,
 along with the status of the cloudformation stack that creates them.
+
+Full Usage:
+```
+$ bin/cluster list -h
+usage: cluster list [-h] [--include INCLUDE] [--exclude EXCLUDE]
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --include INCLUDE  include clusters containing
+  --exclude EXCLUDE  exclude clusters containing
+``` 
 
 
 Deleting a Demo Cluster
@@ -238,6 +268,18 @@ Other optionas `--include` and `--exclude` allow explicit
 specification of clusters to delete by substring of the cluster name.
 
 If multiple clusters are selected, they are deleted in parallel.
+
+Full Usage:
+
+```
+$ bin/cluster delete -h
+usage: cluster delete [-h] [--include INCLUDE] [--exclude EXCLUDE]
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --include INCLUDE  include clusters containing
+  --exclude EXCLUDE  exclude clusters containing
+```
 
 Example of cluster listing and deletion
 ---------------------------------------
