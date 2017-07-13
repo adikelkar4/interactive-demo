@@ -34,7 +34,7 @@ public class LocalLauncher implements UserLauncher {
 			StringBuffer optionsBuffer = new StringBuffer();
 			optionsBuffer.append("workload.");
 			optionsBuffer.append(workloadType);
-			optionsBuffer.append("users=");
+			optionsBuffer.append(".users=");
 			optionsBuffer.append(workloadOptions.get(workloadType));
 			workloadOptionsList.add(optionsBuffer.toString());
 		}
