@@ -92,6 +92,12 @@
       "Type": "String"
     },
 
+    "Hostname" : {
+      "Description" : "Customer Route 53 host name used for Web UI.",
+      "Type" : "String",
+      "Default" : "NONE"
+    },
+
     "EcsAmiId" : {
       "Type" : "String",
       "Description" : "ECS AMI Id"
@@ -195,7 +201,8 @@
     ] },
     "CreateELB" : { "Fn::Or": [ { "Condition" : "CreateELBForExistingVpc" }, { "Condition" : "CreateELBForNewVpc" } ] },
     "CreateEC2LCWithKeyPair" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "KeyName" }, "" ] } ] },
-    "CreateEC2LCWithoutKeyPair" : { "Fn::Equals" : [ { "Ref" : "KeyName" }, "" ] }
+    "CreateEC2LCWithoutKeyPair" : { "Fn::Equals" : [ { "Ref" : "KeyName" }, "" ] },
+    "HasHostedZone" : { "Fn::Not": [{"Fn::Equals" : [{ "Ref" : "Hostname" },   "NONE"]}]}
   },
 
   "Resources" : {
@@ -339,6 +346,21 @@
           "Interval" : "30",
           "Timeout" : "5"
         }
+      }
+    },
+
+    "StorefrontCNAME" : {
+      "Condition" : "HasHostedZone",
+      "DependsOn" : "StorefrontELB",
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+        "HostedZoneName" : { "Fn::Join" : [ "", [ { "Ref" : "Hostname" }, "." ] ]
+        },
+        "Comment" : "CNAME for Storefront ELB.",
+        "Name" : { "Fn::Join": ["", [{"Ref" : "EcsClusterName"}, ".", { "Ref" : "Hostname" }, "." ]]},
+        "Type" : "CNAME",
+        "TTL" : "300",
+        "ResourceRecords" : [ { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] } ]
       }
     },
 
@@ -1125,8 +1147,10 @@
     },
     "StorefrontElbURL" : {
       "Description" : "Load Balancer for ECS Service",
-      "Value" : { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, "/StorefrontWeb/" ]]}
-    },
+      "Value" : { "Fn::If": [ "HasHostedZone",
+        { "Fn::Join": [ "", [ "http://", {"Ref": "StorefrontCNAME"}, "/StorefrontWeb/" ]]},
+      { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, "/StorefrontWeb/" ]]}]
+    }},
     "BrokerElbURL" : {
       "Description" : "Load Balancer for Broker Service",
       "Value" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] }

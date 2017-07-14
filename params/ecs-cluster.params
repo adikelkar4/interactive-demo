@@ -22,3 +22,5 @@ nuodbDocker: 248317454512.dkr.ecr.us-east-1.amazonaws.com/nuodb:latest
 dbuser: StorefrontUser
 dbpassword: StorefrontUser
 dbname: Storefront
+
+Hostname: nuodb.io
