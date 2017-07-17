@@ -13,15 +13,35 @@ Ext.define('App.view.NavBar', {
     autoScroll: true,
 
     links: [{
-        title: 'Demo Overview',
+        title: 'HOME',
         href: '/welcome',
         icon: 'ico-home.png'
     },
     {
         title: 'Guided Tours',
     }, {
-        title: 'Scale Out Performance',
+        title: 'Scale-Out Performance',
         href: '/tour-scale-out'
+    }, {
+        title: 'Database Comparison (Coming Soon)',
+        href: '/welcome'
+    }, {
+        title: 'Active-Active (Coming Soon)',
+        href: '/welcome'
+    }, {
+        title: 'Continuous Availability (Coming Soon)',
+        href: '/welcome'
+    }, {
+        title: 'Learn More',
+    }, {
+        title: 'About This Demo',
+        href: '/tour-scale-out'
+    }, {
+        title: 'Resources',
+        href: '/welcome'
+    }, {
+        title: 'Download CE',
+        href: 'http://www.nuodb.com/product/evaluate-nuodb'
     }
     ],
 

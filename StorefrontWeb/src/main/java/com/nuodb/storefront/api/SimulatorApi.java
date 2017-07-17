@@ -55,13 +55,13 @@ public class SimulatorApi extends BaseApi {
 
     	if (host.contains("localhost")) {
 			Map<String, String> dbSettings = new HashMap<>();
-			dbSettings.put("db.name", StorefrontApp.DB_NAME);
+			dbSettings.put("db.url", StorefrontApp.DB_NAME);
 			dbSettings.put("db.user", StorefrontApp.DB_USER);
 			dbSettings.put("db.password", StorefrontApp.DB_PASSWORD);
 			LocalLauncher local = new LocalLauncher();
 			local.setDbOptions(dbSettings);
 			Map<String, String> appSettings = new HashMap<>();
-			appSettings.put("app.host", host);
+			appSettings.put("app.host", "http://" + host + "/StorefrontWeb");
 			local.setAppOptions(appSettings);
 			launcher = local;
     	} else {

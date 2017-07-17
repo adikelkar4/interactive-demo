@@ -4,6 +4,7 @@ package com.nuodb.storefront.api;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
 import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
@@ -27,6 +28,7 @@ public class StatsApi extends BaseApi {
     private static final String WORKLOAD_STATS_MAP_KEY = "workloadStats";
 
     private static Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
+    private static Map<String, Date> lastStatUpdate = new HashMap<>();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -99,11 +101,15 @@ public class StatsApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response putContainerStats(@Context HttpServletRequest req, StatsPayload stats) {
-        if (stats.getPayload().size() < 1) {
+    	Map<String, Map> payload = stats.getPayload();
+        if (payload.size() < 1) {
             return Response.status(Response.Status.BAD_REQUEST).build();
+        } else if (lastStatUpdate.containsKey(stats.getUid())) {
+        	if (!lastStatUpdate.get(stats.getUid()).before(stats.getTimestamp())) {
+        		return Response.ok().build();
+        	}
         }
-
-        Map<String, Map> payload = stats.getPayload();
+        lastStatUpdate.put(stats.getUid(), stats.getTimestamp());
 
         @SuppressWarnings("unchecked")
         Map<String, Map<String, Integer>> tStats = (Map<String, Map<String, Integer>>)payload.getOrDefault(TRANSACTION_STATS_MAP_KEY, new HashMap<>());
