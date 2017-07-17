@@ -141,7 +141,22 @@ Ext.define('App.view.HeaderBar', {
 
     adjustUserLoad: function(value) {
         try {
-            var url = (value == 0) ? 'zeroUserCount' : ((value > 0) ? 'increaseUserCount' : 'decreaseUserCount');
+            var url;
+            var alog = $('#activity-log');
+            var prefix = (alog.text()) ? "\n" : "";
+
+            if (value == 0) {
+                url = 'zeroUserCount';
+                alog.append(prefix + "All user workloads have had a stop requested, should show shortly");
+            } else if (value > 0) {
+                url = 'increaseUserCount';
+                alog.append(prefix + "An increase in the user workload count has been requested, should appear within 3 minutes");
+            } else {
+                url = 'decreaseUserCount';
+                alog.append(prefix + "A decrease in the user workload count has been requested, show show shortly");
+            }
+
+            document.getElementById('activity-log').scrollTop = document.getElementById('activity-log').scrollHeight;
 
             Ext.Ajax.request({
                 url: App.app.apiBaseUrl + "/api/simulator/" + url,

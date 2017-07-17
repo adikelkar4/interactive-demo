@@ -4,6 +4,7 @@ package com.nuodb.storefront.api;
 
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -28,6 +30,8 @@ import com.nuodb.storefront.servlet.StorefrontWebApp;
 
 @Path("/app-instances")
 public class AppInstanceApi extends BaseApi {
+    public static Map<Long, String> activityLog = new LinkedHashMap<>();
+
     public AppInstanceApi() {
     }
 
@@ -103,5 +107,38 @@ public class AppInstanceApi extends BaseApi {
         tenant.startUp();
 
         return dbConfig;
+    }
+
+    @PUT
+    @Path("/log")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response putLog(@Context HttpServletRequest req, @FormParam("message") String message) {
+        synchronized (activityLog) {
+            activityLog.put(System.currentTimeMillis() / 1000, message);
+        }
+
+        return Response.ok().build();
+    }
+
+    @GET
+    @Path("/log")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<Long, String> getLog(@Context HttpServletRequest req, @FormParam("lasttime") Long lastTime) {
+        Map<Long, String> ret = new HashMap<>();
+        boolean appendLogs = (lastTime == 0) ? true : false;
+
+        synchronized (activityLog) {
+            for (Map.Entry<Long, String> entry : activityLog.entrySet()) {
+                if (appendLogs) {
+                    ret.put(entry.getKey(), entry.getValue());
+                }
+
+                if (!appendLogs && entry.getKey() >= lastTime) {
+                    appendLogs = true;
+                }
+            }
+        }
+
+        return ret;
     }
 }

@@ -158,6 +158,7 @@ Client-side libraries:
 - **Handlebars** -- HTML templating
 - **jQuery**
 - **jQuery RateIt plug-in** -- star ratings
+- **less CSS** -- Dynamic stylesheets
 
 Admin client-side libraries:
 - **Sencha Ext JS** -- look & feel

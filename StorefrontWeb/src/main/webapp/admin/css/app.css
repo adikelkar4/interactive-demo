@@ -133,6 +133,16 @@
 	box-sizing:content-box}
 #navbar{
 	background-color:#f4f4f4;font-family:museo-sans-rounded,"Open Sans",Tahoma;font-size:14px;font-weight:400;padding-top:20px}
+#navbar div {
+  text-align: center;
+}
+#navbar textarea {
+  width: 90%;
+  height: 125px;
+  margin-bottom: 15px;
+  resize: none;
+  padding: 2px;
+}
 #navbar ul>li.section-title{
 	color:#566f7b;font-weight:700;padding:25px 15px 5px;text-transform:uppercase}
 #navbar ul a{

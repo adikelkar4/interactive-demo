@@ -11,6 +11,7 @@ Ext.define('App.controller.Storefront', {
     stores: ['Metrics'],
     lastTimestamp: null,
     outstandingRequestCount: 0,
+    lastLogTimestamp: null,
 
     /** @Override */
     init: function() {
@@ -205,6 +206,45 @@ Ext.define('App.controller.Storefront', {
                 me.application.fireEvent('statsfail', response, null);
             }
         });
+
+        /*if (me.outstandingRequestCount >= App.app.maxOutstandingRequestCount) {
+            return;
+        }
+
+        me.outstandingRequestCount++;
+
+        Ext.Ajax.request({
+            url: App.app.apiBaseUrl + "/api/app-instances/log",
+            method: 'GET',
+            params: { lastTime: me.lastLogTimestamp || 0 },
+            scope: this,
+            callback: function () {
+                me.outstandingRequestCount--;
+            },
+            success: function (response) {
+                var logs = null;
+
+                try {
+                    logs = Ext.decode(response.responseText);
+                } catch (e) { }
+
+                if (!logs) {
+                    return;
+                }
+
+                var alog = $('#activity-log');
+
+                for (var l in logs) {
+                    me.lastLogTimestamp = l[0];
+                    alog.append(l[1]);
+                }
+
+                alog.scrollTop = alog.scrollHeight;
+            },
+            failure: function (response) {
+            me.application.fireEvent('statsfail', response, null);
+            }
+        });*/
     },
 
     processStats: function(stats) {

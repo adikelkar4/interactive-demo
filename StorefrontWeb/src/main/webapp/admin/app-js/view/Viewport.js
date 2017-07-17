@@ -58,7 +58,8 @@ Ext.define('App.view.Viewport', {
             }]
         }, {
             region: 'west',
-            xtype: 'navbar'
+            xtype: 'navbar',
+            width: '20%'
         }, {
             region: 'south',
             xtype: 'chartcontrolbar',
