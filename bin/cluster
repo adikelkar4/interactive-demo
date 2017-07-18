@@ -330,11 +330,12 @@ args -- command line arguments
     waiter = client.get_waiter("stack_create_complete")
     try:
         waiter.wait(StackName=name)
-        print "%s: SUCCESS" % name
         stack = resource.Stack(name)
         url = [y['OutputValue'] 
                for y in stack.outputs 
                if y['OutputKey'] == "StorefrontElbURL"]
+        print "{}: SUCCESS -- {}".format(name, url[0])
+
         return "{} {}".format(name, url)
                  
     except:
