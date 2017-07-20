@@ -11,6 +11,7 @@ import java.util.Map;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -123,7 +124,7 @@ public class AppInstanceApi extends BaseApi {
     @GET
     @Path("/log")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<Long, String> getLog(@Context HttpServletRequest req, @FormParam("lasttime") Long lastTime) {
+    public Map<Long, String> getLog(@Context HttpServletRequest req, @QueryParam("lasttime") Long lastTime) {
         Map<Long, String> ret = new HashMap<>();
         boolean appendLogs = (lastTime == 0) ? true : false;
 
