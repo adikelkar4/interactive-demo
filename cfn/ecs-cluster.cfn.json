@@ -1196,7 +1196,7 @@
             "        response = client.create_service(\n",
             "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
             "            serviceName='storefrontuser-service',\n",
-            "            taskDefinition=familyArn[taskDefinitionArns][0],\n",
+            "            taskDefinition=familyArn['taskDefinitionArns'][0],\n",
             "            desiredCount=count,\n",
             "            placementStrategy=[\n",
             "              {\n",
@@ -1210,7 +1210,7 @@
             "        response = client.update_service(\n",
             "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
             "            service='storefrontuser-service',\n",
-            "            taskDefinition=familyArn[taskDefinitionArns][0],\n",
+            "            taskDefinition=familyArn['taskDefinitionArns'][0],\n",
             "            desiredCount=count\n",
             "        )\n",
             "        print(response)\n"
