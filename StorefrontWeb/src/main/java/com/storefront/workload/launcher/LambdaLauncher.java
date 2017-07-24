@@ -72,7 +72,7 @@ public class LambdaLauncher implements UserLauncher {
 		return;
 	}
 	
-	public String getEcsClusterName() {
+	public static String getEcsClusterName() {
 		return ecsClusterName;
 	}
 

@@ -2,9 +2,10 @@
 
 package com.nuodb.storefront.api;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
+import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -41,9 +42,7 @@ public class StatsApi extends BaseApi {
     private static final String WORKLOAD_STATS_MAP_KEY = "workloadStats";
 
     private static Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
-
-    private static final Integer statsPutMax = 500;
-    private static Integer statsPutCount = 0;
+    private static Map<String, Date> lastStatUpdate = new HashMap<>();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -119,9 +118,15 @@ public class StatsApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response putContainerStats(@Context HttpServletRequest req, StatsPayload stats) {
-        if (stats.getPayload().size() < 1) {
+    	Map<String, Map> payload = stats.getPayload();
+        if (payload.size() < 1) {
             return Response.status(Response.Status.BAD_REQUEST).build();
+        } else if (lastStatUpdate.containsKey(stats.getUid())) {
+        	if (!lastStatUpdate.get(stats.getUid()).before(stats.getTimestamp())) {
+        		return Response.ok().build();
+        	}
         }
+        lastStatUpdate.put(stats.getUid(), stats.getTimestamp());
 
         Map<String, Map> payload = stats.getPayload();
         String databaseType = stats.getDatabaseType();
@@ -168,40 +173,13 @@ public class StatsApi extends BaseApi {
                     wTmp.put(entry.getKey(), newStats);
                 }
             }
-
-            if (this.statsPutCount >= this.statsPutMax) {
-                this.statsPutCount = 0;
-                int totalCount = 0;
-                long totalDuration = 0;
-
-                for (Map.Entry<String, TransactionStats> ts : tTmp.entrySet()) {
-                    totalCount += ts.getValue().getTotalCount();
-                    totalDuration += ts.getValue().getTotalDurationMs();
-                }
-
-                try {
-                    AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
-                    Dimension dimension = new Dimension()
-                            .withName("AVG_LATENCY")
-                            .withValue("MS");
-                    MetricDatum datum = new MetricDatum()
-                            .withMetricName("MS")
-                            .withUnit(StandardUnit.Milliseconds)
-                            .withValue((double) (totalDuration / totalCount))
-                            .withDimensions(dimension);
-                    PutMetricDataRequest pmdr = new PutMetricDataRequest()
-                            .withNamespace("INSTANCE/METRICS")
-                            .withMetricData(datum);
-                    cw.putMetricData(pmdr);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            } else {
-                this.statsPutCount++;
-            }
         }
 
         return Response.status(Response.Status.OK).build();
+    }
+
+    public static Map<String, Map<String, TransactionStats>> getTransactionStatHeap() {
+        return transactionStatHeap;
     }
 
     protected Map<String, WorkloadStats> clearWorkloadProperty(Map<String, WorkloadStats> statsMap)

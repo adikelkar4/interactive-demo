@@ -1,0 +1,4 @@
+*		text=auto
+bin/cluster 	text
+*.json		text
+*.params	text

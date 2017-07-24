@@ -523,8 +523,17 @@ public class DbApiProxy implements IDbApi {
         dbStats.regionCount = regions.size();
 
         for (Region region : regions) {
-            dbStats.hostCount = getDbProcesses().size();
-            dbStats.usedHostCount = getDbProcesses().size();
+            List<Process> procs = getDbProcesses();
+
+            for (Process proc : procs) {
+                dbStats.hostCount += 1;
+                dbStats.usedHostCount += 1;
+
+                if (proc.type.equals("TE")) {
+                    dbStats.usedTeHostCount += 1;
+                }
+            }
+
             if (region.usedHostCount > 0) {
                 dbStats.usedRegions.add(region.region);
                 dbStats.usedRegionCount++;
@@ -557,14 +566,26 @@ public class DbApiProxy implements IDbApi {
         // Determine which template to use, and add template-specific variables
         Map<String, String> vars = new HashMap<String, String>();
         String templateName;
+        
+        if (dbConnInfo.getHost().contains("localhost")) {
+        	tagConstraints.clear();
+            templateName = TEMPLATE_SINGLE_HOST;
+            vars.put(DBVAR_REGION, null);
+            vars.put(DBVAR_HOST, homeHostInfo.host.id);
+            vars.put(DBVAR_SM_MIN, null);
+            vars.put(DBVAR_SM_MAX, null);
+            vars.put(DBVAR_TE_MIN, null);
+            vars.put(DBVAR_TE_MAX, null);
 
-        templateName = TEMPLATE_MULTI_HOST;
-        vars.put(DBVAR_REGION, homeHostInfo.region.region);
-        vars.put(DBVAR_HOST, null);
-        vars.put(DBVAR_SM_MIN, "1");
-        vars.put(DBVAR_SM_MAX, "1");
-        vars.put(DBVAR_TE_MIN, "5");
-        vars.put(DBVAR_TE_MAX, "5");
+        } else {        	
+        	templateName = TEMPLATE_MULTI_HOST;
+        	vars.put(DBVAR_REGION, homeHostInfo.region.region);
+        	vars.put(DBVAR_HOST, null);
+        	vars.put(DBVAR_SM_MIN, "1");
+        	vars.put(DBVAR_SM_MAX, "1");
+        	vars.put(DBVAR_TE_MIN, "5");
+        	vars.put(DBVAR_TE_MAX, "5");
+        }
 
         // Apply template name
         int changeCount = 0;

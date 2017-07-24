@@ -92,6 +92,24 @@
       "Type": "String"
     },
 
+    "DomainPassword" : {
+      "Description" : "NuoDB Domain password",
+      "Type": "String",
+      "Default" : "bird"
+    },
+
+    "EnvironmentType" : {
+      "Description" : "Environment NuoDB container is deployed to",
+      "Type" : "String",
+      "Default" : "AWSECS"
+    },
+
+    "Hostname" : {
+      "Description" : "Customer Route 53 host name used for Web UI.",
+      "Type" : "String",
+      "Default" : "NONE"
+    },
+
     "EcsAmiId" : {
       "Type" : "String",
       "Description" : "ECS AMI Id"
@@ -195,7 +213,8 @@
     ] },
     "CreateELB" : { "Fn::Or": [ { "Condition" : "CreateELBForExistingVpc" }, { "Condition" : "CreateELBForNewVpc" } ] },
     "CreateEC2LCWithKeyPair" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "KeyName" }, "" ] } ] },
-    "CreateEC2LCWithoutKeyPair" : { "Fn::Equals" : [ { "Ref" : "KeyName" }, "" ] }
+    "CreateEC2LCWithoutKeyPair" : { "Fn::Equals" : [ { "Ref" : "KeyName" }, "" ] },
+    "HasHostedZone" : { "Fn::Not": [{"Fn::Equals" : [{ "Ref" : "Hostname" },   "NONE"]}]}
   },
 
   "Resources" : {
@@ -315,7 +334,8 @@
               "CidrIp" : { "Ref" : "SourceCidr" } },
             { "IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "SourceSecurityGroupId" :  { "Ref" : "ElbSecurityGroup" } },
             { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
-            { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } }
+            { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
+            { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp": "0.0.0.0/0" }
           ]
       }
     },
@@ -338,6 +358,21 @@
           "Interval" : "30",
           "Timeout" : "5"
         }
+      }
+    },
+
+    "StorefrontCNAME" : {
+      "Condition" : "HasHostedZone",
+      "DependsOn" : "StorefrontELB",
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+        "HostedZoneName" : { "Fn::Join" : [ "", [ { "Ref" : "Hostname" }, "." ] ]
+        },
+        "Comment" : "CNAME for Storefront ELB.",
+        "Name" : { "Fn::Join": ["", [{"Ref" : "EcsClusterName"}, ".", { "Ref" : "Hostname" }, "." ]]},
+        "Type" : "CNAME",
+        "TTL" : "300",
+        "ResourceRecords" : [ { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] } ]
       }
     },
 
@@ -588,6 +623,42 @@
       }
     },
 
+    "LatencyAlarmHigh": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Statistic": "Average",
+        "Threshold": "200",
+        "AlarmDescription": "Alarm if transaction latency too high",
+        "Period": "60",
+        "Namespace": "INSTANCE/METRICS",
+        "Dimensions": [ {
+          "Name": "ClusterName",
+          "Value": { "Ref": "EcsClusterName" }
+        } ],
+        "ComparisonOperator": "GreaterThanThreshold",
+        "MetricName": "AverageLatency"
+      }
+    },
+
+    "LatencyAlarmLow": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Statistic": "Average",
+        "Threshold": "50",
+        "AlarmDescription": "Alarm if transaction latency too high",
+        "Period": "60",
+        "Namespace": "INSTANCE/METRICS",
+        "Dimensions": [ {
+          "Name": "ClusterName",
+          "Value": { "Ref": "EcsClusterName" }
+        } ],
+        "ComparisonOperator": "LessThanThreshold",
+        "MetricName": "AverageLatency"
+      }
+    },
+
     "EcsCluster" : {
       "Type" : "AWS::ECS::Cluster",
       "Properties" : {
@@ -630,303 +701,419 @@
       }
     },
 
-
-    "LambdaStartTaskServices": {
-      "DependsOn": [
-        "lambdadeployNuodbContainers"
-      ],
-      "Type": "AWS::Lambda::Function",
+    "NuoDBBrokerTaskDefinitions": {
+      "Type": "AWS::ECS::TaskDefinition",
       "Properties": {
-        "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "LambdaInstanceRole",
-            "Arn"
-          ]
-        },
-        "Code": {
-          "ZipFile" : { "Fn::Join" : ["\n", [
-            "import boto3",
-            "import cfnresponse",
-            "import time",
-
-            "client = boto3.client('ecs')",
-
-            "def handler(event, context):",
-            "    containerType = ['BROKER', 'SM', 'TE']",
-            "    print(event)",
-
-            "    if 'Create' == event['RequestType']:",
-            "        count = 1",
-            "    else:",
-            "        count = 0",
-            "    for x in range(3):",
-            "        try:",
-            "            response = client.create_service(",
-            "                cluster=event['ResourceProperties']['cluster'],",
-            "                serviceName=containerType[x] + '-service',",
-            "                taskDefinition=containerType[x] + '-family',",
-            "                desiredCount=count,",
-            "                placementStrategy=[",
-            "                  {",
-            "                    'type': 'random'",
-            "                  }",
-            "                ]",
-            "            )",
-            "            responseData = {}",
-            "            responseData['Data'] = 'Successful task registration: ' + containerType[x] + '-service'",
-            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
-            "            if 'BROKER' == containerType[x]: time.sleep(60)",
-            "        except Exception as e:",
-            "            print(e)",
-            "            responseData = {}",
-            "            responseData['Data'] = 'Failed to create service: ' + containerType[x] + '-service'",
-            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
-
-          ]]}
-        },
-        "Runtime": "python2.7",
-        "Timeout": "300"
+        "Family": "BROKER-family",
+        "ContainerDefinitions": [
+          {
+            "Name": "BROKER-definition",
+            "Image": {
+              "Ref": "nuodbDocker"
+            },
+            "Cpu": "2",
+            "MemoryReservation": "4096",
+            "ReadonlyRootFilesystem": "false",
+            "PortMappings": [
+              {
+                "ContainerPort": "8888",
+                "HostPort": "8888"
+              },
+              {
+                "ContainerPort": "48004",
+                "HostPort": "48004"
+              }
+            ],
+            "Environment": [
+              {
+                "Name": "NODE_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "DOMAIN_PASSWORD",
+                "Value": {
+                  "Ref": "DomainPassword"
+                }
+              },
+              {
+                "Name": "ENV_TYPE",
+                "Value": {
+                  "Ref": "EnvironmentType"
+                }
+              },
+              {
+                "Name": "AGENT_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "BROKER_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "NODE_PORT",
+                "Value": "48010"
+              },
+              {
+                "Name": "NODE_TYPE",
+                "Value": "BROKER"
+              },
+              {
+                "Name": "PEER_ADDRESS",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "brokerELB",
+                    "DNSName"
+                  ]
+                }
+              },
+              {
+                "Name": "DB_NAME",
+                "Value": {
+                  "Ref": "dbname"
+                }
+              },
+              {
+                "Name": "DB_USER",
+                "Value": {
+                  "Ref": "dbuser"
+                }
+              },
+              {
+                "Name": "DB_PASSWORD",
+                "Value": {
+                  "Ref": "dbpassword"
+                }
+              }
+            ]
+          }
+        ]
       }
     },
 
-    "lambdadeployNuodbContainers": {
-      "DependsOn": [
-        "EcsInstanceAsg"
-      ],
-      "Type": "AWS::Lambda::Function",
+
+    "NuoDBSMTaskDefinitions": {
+      "DependsOn": [ "brokerELB" ],
+      "Type": "AWS::ECS::TaskDefinition",
       "Properties": {
-        "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "LambdaInstanceRole",
-            "Arn"
-          ]
-        },
-        "Code": {
-          "ZipFile" : { "Fn::Join" : ["\n", [
-            "import boto3",
-            "import cfnresponse",
-
-            "client = boto3.client('ecs')",
-
-            "def handler(event, context):",
-            "    print(event)",
-            "    containerType = ['BROKER', 'SM', 'TE']",
-
-            "    for x in range(3):",
-            "        ports = []",
-            "        if 'BROKER' == containerType[x]:",
-            "            ports = [{'containerPort': 48004,'hostPort': 48004, 'protocol': 'tcp'}, { 'containerPort': 8888, 'hostPort': 8888, 'protocol': 'tcp'}]",
-
-            "        try:",
-            "            response = client.register_task_definition(",
-            "                family=containerType[x] + '-family',",
-            "                taskRoleArn=event['ResourceProperties']['role'],",
-            "                containerDefinitions=[",
-            "                 {",
-            "                   'name': containerType[x] + '-definition',",
-            "                   'image': event['ResourceProperties']['dockerImage'],",
-            "                   'cpu': 1,",
-            "                   'memoryReservation': 4096,",
-            "                   'readonlyRootFilesystem': False,",
-            "                   'privileged': True,",
-            "                   'environment': [",
-            "                     {",
-            "                       'name': 'NODE_REGION',",
-            "                       'value': event['ResourceProperties']['region']",
-            "                     },",
-            "                     {",
-            "                       'name': 'DOMAIN_PASSWORD',",
-            "                       'value': 'bird'",
-            "                     },",
-            "                     {",
-            "                       'name': 'ENV_TYPE',",
-            "                       'value': 'AWSECS'",
-            "                     },",
-            "                     {",
-            "                       'name': 'AGENT_PORT',",
-            "                       'value': '48004'",
-            "                     },",
-            "                     {",
-            "                       'name': 'BROKER_PORT',",
-            "                       'value': '48004'",
-            "                     },",
-            "                     {",
-            "                       'name': 'NODE_PORT',",
-            "                       'value': '48010'",
-            "                     },",
-            "                     {",
-            "                       'name': 'NODE_TYPE',",
-            "                       'value': containerType[x]",
-            "                     },",
-            "                     {",
-            "                       'name': 'PEER_ADDRESS',",
-            "                       'value': event['ResourceProperties']['peer_address']",
-            "                     },",
-            "                     {",
-            "                       'name': 'DB_NAME',",
-            "                       'value': event['ResourceProperties']['db_name']",
-            "                     },",
-            "                     {",
-            "                       'name': 'DB_USER',",
-            "                       'value': event['ResourceProperties']['db_user']",
-            "                     },",
-            "                     {",
-            "                       'name': 'DB_PASSWORD',",
-            "                       'value': event['ResourceProperties']['db_password']",
-            "                     }",
-            "                   ],",
-            "                 'portMappings': ports",
-            "                 }",
-            "               ]",
-            "            )",
-            "            responseData = {}",
-            "            responseData['Data'] = 'Successful task registration: ' + containerType[x] + '-definition'",
-            "            cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
-            "        except Exception as e:",
-            "            print(e)",
-            "            responseData = {}",
-            "            responseData['Data'] = 'Failed to create ' + containerType[x] + ' task definition'",
-            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
-          ]]}
-        },
-        "Runtime": "python2.7",
-        "Timeout": "300"
+        "Family" : "SM-family",
+        "ContainerDefinitions": [
+          {
+            "Name": "SM-definition",
+            "Image": {
+              "Ref": "nuodbDocker"
+            },
+            "Cpu": "2",
+            "MemoryReservation": "4096",
+            "ReadonlyRootFilesystem": "false",
+            "Environment": [
+              {
+                "Name": "NODE_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "DOMAIN_PASSWORD",
+                "Value": { "Ref": "DomainPassword" }
+              },
+              {
+                "Name": "ENV_TYPE",
+                "Value": { "Ref": "EnvironmentType" }
+              },
+              {
+                "Name": "AGENT_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "BROKER_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "NODE_PORT",
+                "Value": "48010"
+              },
+              {
+                "Name": "NODE_TYPE",
+                "Value": "SM"
+              },
+              {
+                "Name": "PEER_ADDRESS",
+                "Value": { "Fn::GetAtt": [ "brokerELB",  "DNSName" ] }
+              },
+              {
+                "Name": "DB_NAME",
+                "Value": { "Ref": "dbname" }
+              },
+              {
+                "Name": "DB_USER",
+                "Value": { "Ref": "dbuser" }
+              },
+              {
+                "Name": "DB_PASSWORD",
+                "Value": { "Ref": "dbpassword" }
+              }
+            ]
+          }
+        ]
       }
     },
 
-    "lambdadeployDemoWebContainer": {
-      "DependsOn": [
-        "EcsInstanceAsg"
-      ],
-      "Type": "AWS::Lambda::Function",
+    "NuoDBTETaskDefinitions": {
+      "DependsOn": [ "brokerELB" ],
+      "Type": "AWS::ECS::TaskDefinition",
       "Properties": {
-        "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "LambdaInstanceRole",
-            "Arn"
-          ]
-        },
-        "Code": {
-          "ZipFile" : { "Fn::Join" : ["\n", [
-            "import boto3",
-            "import cfnresponse",
+        "Family" : "TE-family",
+        "ContainerDefinitions": [
+          {
+            "Name": "TE-definition",
+            "Image": {
+              "Ref": "nuodbDocker"
+            },
+            "Cpu": "2",
+            "MemoryReservation": "4096",
+            "ReadonlyRootFilesystem": "false",
+            "Environment": [
+              {
+                "Name": "NODE_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "DOMAIN_PASSWORD",
+                "Value": { "Ref": "DomainPassword" }
+              },
+              {
+                "Name": "ENV_TYPE",
+                "Value": { "Ref": "EnvironmentType" }
+              },
+              {
+                "Name": "AGENT_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "BROKER_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "NODE_PORT",
+                "Value": "48010"
+              },
+              {
+                "Name": "NODE_TYPE",
+                "Value": "TE"
+              },
+              {
+                "Name": "PEER_ADDRESS",
+                "Value": { "Fn::GetAtt": [ "brokerELB",  "DNSName" ] }
+              },
+              {
+                "Name": "DB_NAME",
+                "Value": { "Ref": "dbname" }
+              },
+              {
+                "Name": "DB_USER",
+                "Value": { "Ref": "dbuser" }
+              },
+              {
+                "Name": "DB_PASSWORD",
+                "Value": { "Ref": "dbpassword" }
+              }
+            ]
+          }
+        ]
+      }
+    },
 
-            "client = boto3.client('ecs')",
+    "BrokerService": {
+      "DependsOn" : ["NuoDBBrokerTaskDefinitions"],
+      "Type" : "AWS::ECS::Service",
+      "Properties" : {
+        "Cluster" : { "Ref" : "EcsClusterName" },
+        "DesiredCount" : "1",
+        "ServiceName" : "BROKER-service",
+        "PlacementStrategies" : [{ "Type": "random"}],
+        "TaskDefinition" : { "Ref" : "NuoDBBrokerTaskDefinitions" }
+      }
+    },
 
-            "def handler(event, context):",
-            "    print(event)",
-            "    dockerImage = event['ResourceProperties']['dockerImage']",
-            "    region = event['ResourceProperties']['region']",
-            "    cluster = event['ResourceProperties']['cluster']",
-            "    role = event['ResourceProperties']['role']",
-            "    jdbc_url = event['ResourceProperties']['jdbc_url']",
-            "    dbuser = event['ResourceProperties']['dbuser']",
-            "    dbpassword = event['ResourceProperties']['dbpassword']",
-            "    dbname = event['ResourceProperties']['dbname']",
-            "    userLoadLambdaArn = event['ResourceProperties']['userLoadLambdaArn']",
-            "    storefronturl = event['ResourceProperties']['storefronturl']",
-            "    try:",
-            "        response = client.register_task_definition(",
-            "            family='storefront-family',",
-            "            taskRoleArn=role,",
-            "            containerDefinitions=[",
-            "              {",
-            "                'name': 'storefront-definition',",
-            "                'image': dockerImage,",
-            "                'cpu': 2,",
-            "                'memoryReservation': 4096,",
-            "                'readonlyRootFilesystem': False,",
-            "                'privileged': True,",
-            "                'environment': [",
-            "                   {",
-            "                     'name': 'ENV_TYPE',",
-            "                     'value': 'AWSECS'",
-            "                   },",
-            "                   {",
-            "                     'name': 'ARG_JDBC_URL',",
-            "                     'value': jdbc_url",
-            "                   },",
-            "                   {",
-            "                      'name': 'ARG_userLoadLambdaArn',",
-            "                      'value': userLoadLambdaArn",
-            "                   },",
-            "                   {",
-            "                     'name': 'ARG_ecsClusterName',",
-            "                     'value': cluster",
-            "                   },",
-            "                   {",
-            "                     'name': 'ARG_awsRegion',",
-            "                     'value': region",
-            "                   },",
-            "                   {",
-            "                     'name': 'ARG_dbuser',",
-            "                     'value': dbuser",
-            "                   },",
-            "                   {",
-            "                     'name': 'ARG_dbpassword',",
-            "                     'value': dbpassword",
-            "                   },",
-            "                   {",
-            "                     'name': 'ARG_dbname',",
-            "                     'value': dbname",
-            "                   },",
-            "                   {",
-            "                     'name': 'ARG_storefronturl',",
-            "                     'value': storefronturl",
-            "                   }",
-            "                ],",
-            "                'portMappings': [",
-            "                  {",
-            "                    'containerPort': 8080,",
-            "                    'hostPort': 8080,",
-            "                    'protocol': 'tcp'",
-            "                  }",
-            "                ],",
-            "              }",
-            "           ]",
-            "        )",
-            "        responseData = {}",
-            "        responseData['Data'] = 'Successful task registration: storefront-definition'",
-            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
-            "    except Exception as e:",
-            "            print(e)",
-            "            responseData = {}",
-            "            responseData['Data'] = 'Failed to create storefront task definition'",
-            "            cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')",
-            "    try:",
-            "        response = client.create_service(",
-            "                cluster=cluster,",
-            "                serviceName='storefront-service',",
-            "                taskDefinition='storefront-family',",
-            "                desiredCount=1,",
-            "                placementStrategy=[",
-            "                  {",
-            "                    'type': 'random'",
-            "                  }",
-            "                ]",
-            "        )",
-            "        responseData = {}",
-            "        responseData['Data'] = 'Successful task registration: storefront-service'",
-            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
-            "    except Exception as e:",
-            "        print(e)",
-            "        responseData = {}",
-            "        responseData['Data'] = 'Failed to create storefront service'",
-            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, '')"
+    "TEService": {
+      "DependsOn" : ["BrokerService"],
+      "Type" : "AWS::ECS::Service",
+      "Properties" : {
+        "Cluster" : { "Ref" : "EcsClusterName" },
+        "DesiredCount" : "1",
+        "ServiceName" : "TE-service",
+        "PlacementStrategies" : [{ "Type": "random"}],
+        "TaskDefinition" : { "Ref" : "NuoDBTETaskDefinitions" }
+      }
+    },
 
-          ]]}
-        },
-        "Runtime": "python2.7",
-        "Timeout": "300"
+    "SMService": {
+      "DependsOn" : ["BrokerService"],
+      "Type" : "AWS::ECS::Service",
+      "Properties" : {
+        "Cluster" : { "Ref" : "EcsClusterName" },
+        "DesiredCount" : "1",
+        "ServiceName" : "SM-service",
+        "PlacementStrategies" : [{ "Type": "random"}],
+        "TaskDefinition" : { "Ref" : "NuoDBSMTaskDefinitions" }
+      }
+    },
+
+    "StorefrontUserTaskDefinition": {
+      "DependsOn" : "brokerELB",
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family" : "storefrontuser-family",
+        "ContainerDefinitions": [
+          {
+            "Name": "storefrontuser-definition",
+            "Image": { "Ref" : "storeFrontUserDocker" },
+            "Cpu": "2",
+            "MemoryReservation": "4096",
+            "ReadonlyRootFilesystem": "false",
+            "Environment": [
+              {
+                "Name": "ENV_TYPE",
+                "Value": { "Ref": "EnvironmentType" }
+              },
+              {
+                "Name": "ARG_dburl",
+                "Value": { "Fn::Join" : [ "", [ { "Ref" : "dbname"}, "@", { "Fn::GetAtt" : ["brokerELB", "DNSName"] }, ":48004" ]]}
+              },
+              {
+                "Name": "ARG_apphost",
+                "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
+              },
+              {
+                "Name": "ARG_dbname",
+                "Value": { "Ref": "dbname" }
+              },
+              {
+                "Name": "ARG_dbuser",
+                "Value": { "Ref": "dbuser" }
+              },
+              {
+                "Name": "ARG_dbpassword",
+                "Value": { "Ref": "dbpassword" }
+              },
+              {
+                "Name" : "ARG_workloadmulti_browseusers",
+                "Value" : "0"
+              },
+              {
+                "Name" : "ARG_workloadmulti_shopusers",
+                "Value" : "0"
+              },
+              {
+                "Name" : "ARG_workloadadmin_run_reportusers",
+                "Value" : "0"
+              },
+              {
+                "Name" : "ARG_workloadmulti_browse_and_reviewusers",
+                "Value" : "0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    "StorefrontUserService": {
+      "DependsOn" : ["StorefrontUserTaskDefinition"],
+      "Type" : "AWS::ECS::Service",
+      "Properties" : {
+        "Cluster" : { "Ref" : "EcsClusterName" },
+        "DesiredCount" : "0",
+        "ServiceName" : "storefrontuser-service",
+        "PlacementStrategies" : [{ "Type": "random"}],
+        "TaskDefinition" : { "Ref" : "StorefrontUserTaskDefinition"}
+      }
+    },
+
+    "StorefrontTaskDefinition": {
+      "DependsOn": [ "brokerELB", "deployUserContainer", "ScaleTEService"],
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family" : "storefront-family",
+        "ContainerDefinitions": [
+          {
+            "Name": "storefront-definition",
+            "Image": { "Ref" : "storeFrontWebDocker" },
+            "Cpu": "2",
+            "MemoryReservation": "4096",
+            "ReadonlyRootFilesystem": "false",
+            "PortMappings": [
+              {
+                "ContainerPort": "8080",
+                "HostPort": "8080"
+              }
+            ],
+            "Environment": [
+              {
+                "Name": "ARG_awsRegion",
+                "Value": { "Ref": "AWS::Region" }
+              },
+              {
+                "Name": "ENV_TYPE",
+                "Value": { "Ref": "EnvironmentType" }
+              },
+              {
+                "Name": "ARG_JDBC_URL",
+                "Value": { "Fn::GetAtt" : ["brokerELB", "DNSName"] }
+              },
+              {
+                "Name": "ARG_userLoadLambdaArn",
+                "Value": { "Fn::GetAtt" : [ "deployUserContainer", "Arn"] }
+              },
+              {
+                "Name" : "ARG_teScalingLambdaArn",
+                "Value" : { "Fn::GetAtt" : [ "ScaleTEService", "Arn" ]}
+              },
+              {
+                "Name": "ARG_ecsClusterName",
+                "Value": { "Ref" : "EcsClusterName" }
+              },
+              {
+                "Name": "ARG_storefronturl",
+                "Value": { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/" ]]}
+              },
+              {
+                "Name": "ARG_dbname",
+                "Value": { "Ref": "dbname" }
+              },
+              {
+                "Name": "ARG_dbuser",
+                "Value": { "Ref": "dbuser" }
+              },
+              {
+                "Name": "ARG_dbpassword",
+                "Value": { "Ref": "dbpassword" }
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    "StorefrontService": {
+      "DependsOn" : ["StorefrontTaskDefinition"],
+      "Type" : "AWS::ECS::Service",
+      "Properties" : {
+        "Cluster" : { "Ref" : "EcsClusterName" },
+        "DesiredCount" : "1",
+        "ServiceName" : "storefront-service",
+        "PlacementStrategies" : [{ "Type": "random"}],
+        "TaskDefinition" : { "Ref" : "StorefrontTaskDefinition" }
       }
     },
 
     "deployUserContainer": {
       "DependsOn": [
-        "EcsInstanceAsg"
+        "brokerELB", "StorefrontELB"
       ],
       "Type": "AWS::Lambda::Function",
       "Properties": {
@@ -1032,49 +1219,38 @@
       }
     },
 
-    "DeployNuoDBContainer" : {
-      "DependsOn" : ["lambdadeployNuodbContainers"],
-      "Type": "Custom::LaunchNuodbContainer",
-      "Version" : "1.0",
-      "Properties" : {
-        "ServiceToken": {"Fn::GetAtt" : [ "lambdadeployNuodbContainers", "Arn"] },
-        "dockerImage": { "Ref" : "nuodbDocker" },
-        "peer_address" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] },
-        "role" : { "Ref" : "ECSInstanceRole" },
-        "region": { "Ref" : "AWS::Region" },
-        "cluster" : { "Ref" : "EcsClusterName" },
-        "elbName" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] },
-        "db_user" : { "Ref" : "dbuser" },
-        "db_password": { "Ref" : "dbpassword" },
-        "db_name" : { "Ref": "dbname" }
-      }
-    },
+    "ScaleTEService": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaInstanceRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile" : { "Fn::Join" : ["", [
+            "import boto3\n",
+            "import cfnresponse\n",
+            "client = boto3.client('ecs')\n",
+            "def handler(event, context):\n",
+            "    print(event)\n",
 
-    "StartDbTaskServices" : {
-      "DependsOn" : ["LambdaStartTaskServices"],
-      "Type": "Custom::LaunchBrokerContainer",
-      "Version" : "1.0",
-      "Properties" : {
-        "ServiceToken": {"Fn::GetAtt" : [ "LambdaStartTaskServices", "Arn"] },
-        "cluster" : { "Ref" : "EcsClusterName" }
-      }
-    },
-    "DeployStorefrontWebContainer" : {
-      "DependsOn" : ["StartDbTaskServices"],
-      "Type": "Custom::LaunchStorefrontContainer",
-      "Version" : "1.0",
-      "Properties" : {
-        "ServiceToken": {"Fn::GetAtt" : [ "lambdadeployDemoWebContainer", "Arn"] },
-        "dockerImage": { "Ref" : "storeFrontWebDocker" },
-        "jdbc_url" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] },
-        "role" : { "Ref" : "ECSInstanceRole" },
-        "region": { "Ref" : "AWS::Region" },
-        "cluster" : { "Ref" : "EcsClusterName" },
-        "dbuser" : { "Ref" : "dbuser" },
-        "dbpassword": { "Ref" : "dbpassword" },
-        "dbname" : { "Ref": "dbname" },
-        "userLoadLambdaArn" : { "Fn::GetAtt" : [ "deployUserContainer", "Arn"] },
-        "storefronturl" : { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/" ]]}
+            "    count = event['count']\n",
+            "    try:\n",
+            "        response = client.update_service(\n",
+            "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
+            "            service='TE-service',\n",
+            "            desiredCount=count,\n",
+            "        )\n",
+            "        print(response)\n",
+            "    except Exception as e:\n",
+            "        print(e)\n"
+          ]]}
+        },
+        "Runtime": "python2.7",
+        "Timeout": "300"
       }
     }
 
@@ -1088,8 +1264,10 @@
     },
     "StorefrontElbURL" : {
       "Description" : "Load Balancer for ECS Service",
-      "Value" : { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, "/StorefrontWeb/" ]]}
-    },
+      "Value" : { "Fn::If": [ "HasHostedZone",
+        { "Fn::Join": [ "", [ "http://", {"Ref": "StorefrontCNAME"}, "/StorefrontWeb/" ]]},
+      { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, "/StorefrontWeb/" ]]}]
+    }},
     "BrokerElbURL" : {
       "Description" : "Load Balancer for Broker Service",
       "Value" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] }

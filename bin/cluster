@@ -1,0 +1,390 @@
+#!/usr/bin/env python
+
+# Purpose:  manage demo clusters
+
+import os
+import functools
+import collections
+import sys
+import shutil
+import subprocess
+import time
+import argparse
+import boto3
+import concurrent.futures
+import re
+
+def cache(f):
+    '''Cache the funciton call arguments'''
+    cache=dict()
+    @functools.wraps(f)
+    def wrapper(*args):
+        if not isinstance(args, collections.Hashable):
+            return f(*args)
+        if args in cache:
+            return cache[args]
+        else:
+            result = f(*args)
+            cache[args]=result
+            return result
+
+    return wrapper
+
+def list_clusters(session, args):
+    '''main 'list' command implementation.  
+
+Select clusters using common 'select' method and print them out'''
+    cf = session.resource('cloudformation')
+
+    for x in select(session, args):
+        url=[""]
+        if x['StackStatus'] == 'CREATE_COMPLETE':
+            stack = cf.Stack(x['StackName'])
+        else:
+            stack=None
+        if stack:
+            url = [y['OutputValue'] 
+                   for y in stack.outputs 
+                   if y['OutputKey'] == "StorefrontElbURL"]
+
+        print "{} {} {} ".format(x['StackName'], x['StackStatus'], url[0])
+
+def select(session, args):
+    '''Common cluster selection method.
+
+This should be used by any function selecting clusters to implement --include and --exclude consistently'''
+
+    cf = session.client("cloudformation")
+
+    result = cf.list_stacks(
+    StackStatusFilter=[
+        'CREATE_IN_PROGRESS','CREATE_FAILED','CREATE_COMPLETE','ROLLBACK_IN_PROGRESS','ROLLBACK_FAILED','ROLLBACK_COMPLETE','DELETE_IN_PROGRESS','DELETE_FAILED','UPDATE_IN_PROGRESS','UPDATE_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_COMPLETE','UPDATE_ROLLBACK_IN_PROGRESS','UPDATE_ROLLBACK_FAILED','UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_ROLLBACK_COMPLETE','REVIEW_IN_PROGRESS',
+    ])
+
+    stacks = result['StackSummaries']
+
+    if not args.include and not args.exclude:
+        filter = os.environ['USER']
+        stacks = [x for x in stacks if filter in x['StackName']]
+
+    if args.include:
+        filter = args.include[0]
+        stacks = [x for x in stacks if filter in x['StackName']]
+
+    if args.exclude:
+        filter = args.exclude[0]
+        stacks = [x for x in stacks if not filter in x['StackName']]
+
+    return stacks
+
+def delete_clusters(session, args):
+    '''main 'delete' command
+
+Select the clusters and then delete them in parallel.'''
+    stacks = select(session, args)
+    futures=[]
+
+    pool = concurrent.futures.ThreadPoolExecutor(args.parallel)
+    for stack in stacks:
+        futures.append(pool.submit(delete_cluster, stack, session, args))
+        #delete_cluster(stack, *args)
+        
+    reduce(lambda x,y: x and y, map(lambda x: x.done(), futures), True)
+
+def find_ecs_cluster(ecs, stack_name):
+    '''Find the ECS cluster with the given name'''
+    cluster = ecs.describe_clusters(clusters=[stack_name])
+    return cluster['clusters'][0]
+
+def delete_ecs_cluster(ecs, stack_name, p):
+    '''Delete the given ECS cluster.
+
+Arguments:
+  ecs -- the boto3 ecs client
+  stack_name -- the name of the ecs cluster
+  p -- a function of one argument that will be called with status update strings
+'''
+    services=[]
+    response = {'nextToken': 'True'}
+
+    # Get all the services in multiple calls, because boto only
+    # returns 10 at a time.
+
+    while 'nextToken' in response:
+        response = ecs.list_services(cluster=stack_name)
+        services.extend(response['serviceArns'])
+
+    p("downscaling services")
+    for arn in services:
+        ecs.update_service(cluster=stack_name,
+                           service=arn,
+                           desiredCount=0)
+
+    waiter = ecs.get_waiter('services_inactive')
+
+    # this idiocy is required by boto, which was clearly written with
+    # a GUI in mind
+#    chunks = [services[i:i + 10] for i in xrange(0, len(services), 10)]
+#    map(lambda chunk: waiter.wait(cluster=stack_name, services=chunk), chunks)
+
+    # At this point all services are inactive, so we can delete them.
+    p("deleting services")
+    for arn in services:
+        ecs.delete_service(cluster=stack_name, service=arn)
+
+    # now that all the services are deleted, we can delete the cluster
+    p("deleting ecs cluster")
+    ecs.delete_cluster(cluster=stack_name)
+
+def delete_cluster(stack, session, args):
+    '''Delete a single cluster given the stack object'''
+    cf = session.client('cloudformation')
+
+    stack_name=stack['StackName']
+
+    print "Deleting cluster %s" % stack_name
+
+    def p(message):
+        print "...{}: {}".format(stack_name, message)
+
+    p("deleting stack")
+
+    cf.delete_stack(StackName=stack_name)
+
+    waiter = cf.get_waiter('stack_delete_complete')
+    try:
+        waiter.wait(StackName=stack_name)
+        p("SUCCESS deleting stack")
+        print "SUCCESS deleting cluster %s" % stack_name
+        return
+    except:
+        pass
+
+    p("deletion blocked by undeleted resources")
+    # manually delete the cluster
+    ecs=session.client('ecs')
+    cluster = find_ecs_cluster(ecs, stack_name)
+
+    # Perform the delete
+    if cluster:
+        p("deleting ECS cluster")
+        delete_ecs_cluster(ecs, stack_name, p)
+    else:
+        p("ECS cluster already deleted")
+
+    # Now we'll have to delete the stack again
+
+    p("deleting stack")
+    cf.delete_stack(StackName=stack_name)
+    try:
+        waiter.wait(StackName=stack_name)
+        print "SUCCESS deleting %s" % stack_name
+        return True
+    except:
+        print "FAILED to delete cluster %s" % stack_name
+        return False
+
+def create_cluster_name(number, args):
+    '''Create a cluster name from the number on which we're working and the given command line args'''
+    if args.suffix:
+        return "{}-{}-{}".format(args.prefix, args.user, args.suffix)
+    else:
+        return "{}-{}-{}".format(args.prefix, args.user, time.strftime("%Y%m%d-%H%M-{}".format(number)))
+
+def create_clusters(session, args):
+    '''main 'create' command
+
+Create one or more clusters as requested
+'''
+    names=[]
+    futures=[]
+
+
+    for number in range(1, args.count+1):
+        names.append(create_cluster_name(number, args))
+
+    for name in names:
+        create_cluster(name, session, args)
+
+    futures=[]
+
+    cf = session.client("cloudformation")
+    cfr = session.resource("cloudformation")
+
+    pool = concurrent.futures.ThreadPoolExecutor(args.parallel)
+
+    for name in names:
+        def status(x):
+            pass
+#            print x.result()
+
+        future = pool.submit(wait_for_stack(name,cf, cfr,args))
+#        future.add_done_callback(status)
+        futures.append(future)
+
+#    if not reduce(lambda x,y: x and y, map(lambda x: x.done(), futures), True):
+#        os.exit(1)
+        map(lambda x: status(x), futures)
+
+
+@cache
+def read_params(file):
+    '''Read a parameters file and return an array of parameters
+    suitable to passing to
+    boto3.client('cloudformation').create_stack'''
+
+    if not os.path.exists(file):
+        other = os.path.dirname(__file__) + "/../" + params_file
+        if os.path.exists(other):
+            file = other
+
+    linepattern = re.compile("(\w+)\s*[:=]\s*(\S+)\s*")
+
+    params = { x[0]: x[1] for x in map(
+            lambda x: (x.group(1),
+                       x.group(2)),
+            filter(None, map(linepattern.match,
+                             open(file))))}
+
+    return params
+
+
+@cache
+def get_template_body(template):
+    '''Return the entire template body as a string'''
+    if not os.path.exists(template):
+        other  = os.path.dirname(__file__) + "/../" + template
+        if os.path.exists(other):
+            template=other
+    with open(template) as f:
+        return f.read()
+
+
+
+def format_params(params):
+    '''Pretty print params so that they line up nicely'''
+    width = reduce(max, map(len, params))
+
+    return ["{0: <{width}} = {1}".format(x, y, width=width) for x,y in params.items()]
+
+
+def create_cluster(name, session, args):
+    '''Create a single cluster of the given name.  
+
+This function does *NOT* wait for cluster build to complete, only for
+the command to return successfully.
+'''
+    print "Creating cluster %s" % name
+    # TODO:  make this file relative to the script path
+
+    # Turn the parameters file into a dict with name=value
+    params = read_params(args.params_file)
+
+    # Override the parameters we need to
+    params['EcsClusterName'] = name
+    params['KeyName'] = args.key_name
+
+    # Now turn our dict into an array suitable for passing to create_stack
+    paramArgs = [dict(ParameterKey=x, ParameterValue=y) for x,y in params.items()]
+
+    template = get_template_body(args.template)
+
+    tags = [
+        dict(Key='Owner',
+             Value=os.environ['USER'])
+        ]
+
+
+    cfn = session.client("cloudformation")
+
+    if(args.dry_run):
+        print "DRY RUN:  create stack {} with\n   {}".format(
+            name,
+            "\n   ".join(format_params(params)))
+    else:
+        cfn.create_stack(
+            StackName = name,
+            TemplateBody = template,
+            Parameters = paramArgs,
+            DisableRollback = True,
+            Tags=tags,
+            Capabilities=['CAPABILITY_IAM']
+            )
+
+
+def wait_for_stack(name, client, resource, args):
+    '''Wait for the cloudformation stack with the given name to complete
+
+Arguments:
+name - name of the stack
+client -- boto3 cloudformation client
+resource -- boto3 cloudformation resource
+args -- command line arguments
+'''
+
+    if args.no_wait:
+        print "not waiting on %s" % name
+        return
+
+    print "...waiting for %s to create" % name
+    waiter = client.get_waiter("stack_create_complete")
+    try:
+        waiter.wait(StackName=name)
+        stack = resource.Stack(name)
+        url = [y['OutputValue'] 
+               for y in stack.outputs 
+               if y['OutputKey'] == "StorefrontElbURL"]
+        print "{}: SUCCESS -- {}".format(name, url[0])
+
+        return "{} {}".format(name, url)
+                 
+    except:
+        print "%s: creation FAILED" % name
+    
+
+def main():
+    '''The main event!'''
+    parser = argparse.ArgumentParser(description="Manage Demo Clusters")
+
+    parser.add_argument("--profile", help="The AWS profile to use", )
+    parser.add_argument("--parallel", help="Number of operations to perform in parallel", default=40)
+
+    subs = parser.add_subparsers(help='sub-command help')
+
+    parse_create = subs.add_parser('create', help='Create one or more clusters')
+    parse_create.set_defaults(function=create_clusters)
+
+    parse_list = subs.add_parser('list', help='List clusters')
+    parse_list.set_defaults(function=list_clusters)
+
+    parse_delete = subs.add_parser('delete', help='Delete clusters')
+    parse_delete.set_defaults(function=delete_clusters)
+
+    parse_create.add_argument("--user", help="user name to include in cluster name", nargs=1, default=os.environ['USER'])
+    parse_create.add_argument("--prefix", help="cluster name prefix", nargs=1, default='interactive-demo')
+    parse_create.add_argument("--no-wait", help="Do not wait for cluster completion", action='store_true')
+    parse_create.add_argument("--dry-run", help="Do not actually create the stack", action='store_true')
+    parse_create.add_argument("--params-file", help="Parameters file", default="params/ecs-cluster.params")
+    parse_create.add_argument("--template", help="CFN Template file", default="cfn/ecs-cluster.cfn.json")
+
+    group = parse_create.add_mutually_exclusive_group()
+    group.add_argument("--count", help="number of clusters to create", type=int,  default=1)
+    group.add_argument("--suffix", help="cluster name suffix.  Default is a timestamp")
+    group.add_argument("--key-name", help="SSH key name for instance", default="interactive-demo")
+
+    # This shoud, perhaps, be a parent parser
+    for p in [parse_list, parse_delete]:
+        p.add_argument("--include", help="include clusters containing", nargs=1)
+        p.add_argument("--exclude", help="exclude clusters containing", nargs=1)
+
+    args = parser.parse_args()
+
+    if args.profile:
+        session = boto3.Session(profile_name=args.profile)
+    else:
+        session = boto3.Session()
+
+    args.function(session, args)
+
+if __name__ == "__main__":
+    main()

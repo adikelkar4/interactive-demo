@@ -13,15 +13,35 @@ Ext.define('App.view.NavBar', {
     autoScroll: true,
 
     links: [{
-        title: 'Demo Overview',
+        title: 'HOME',
         href: '/welcome',
         icon: 'ico-home.png'
     },
     {
         title: 'Guided Tours',
     }, {
-        title: 'Scale Out Performance',
+        title: 'Scale-Out Performance',
         href: '/tour-scale-out'
+    }, {
+        title: 'Database Comparison (Coming Soon)',
+        href: '/welcome'
+    }, {
+        title: 'Active-Active (Coming Soon)',
+        href: '/welcome'
+    }, {
+        title: 'Continuous Availability (Coming Soon)',
+        href: '/welcome'
+    }, {
+        title: 'Learn More',
+    }, {
+        title: 'About This Demo',
+        href: '/tour-scale-out'
+    }, {
+        title: 'Resources',
+        href: '/welcome'
+    }, {
+        title: 'Download CE',
+        href: 'http://www.nuodb.com/product/evaluate-nuodb'
     }
     ],
 
@@ -29,7 +49,7 @@ Ext.define('App.view.NavBar', {
     initComponent: function() {
         var me = this;
 
-        var html = ['<ul id="nav-links">'];
+        var html = ['<div id="activity-log-container"><textarea id="activity-log" disabled="disabled"></textarea></div>', '<ul id="nav-links">'];
         for ( var i = 0; i < me.links.length; i++) {
             var link = me.links[i];
             html.push('<li');

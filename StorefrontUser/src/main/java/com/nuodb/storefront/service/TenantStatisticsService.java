@@ -3,6 +3,8 @@ package com.nuodb.storefront.service;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
+import java.net.URL;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,6 +16,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.model.dto.TenantStatistics;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.dto.WorkloadStats;
@@ -52,6 +55,8 @@ public class TenantStatisticsService implements Runnable {
 		payload.put("workloadStats", workloadStats);
 		allStats.setDatabaseType(this.dbType);
 		allStats.setPayload(payload);
+		allStats.setUid(StorefrontApp.INSTANCE_UID.toString());
+		allStats.setTimestamp(new Date());
 		try {
 			postStatsAsJson(this.tenant.getAppSettings(), allStats);
 		} catch (IOException e) {

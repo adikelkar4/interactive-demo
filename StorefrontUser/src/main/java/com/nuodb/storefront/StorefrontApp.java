@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
@@ -97,6 +98,7 @@ public class StorefrontApp {
 	public static final String DEFAULT_DB_HOST = "localhost";
 	public static final String DEFAULT_REGION_NAME = "Unknown region";
 	public static final String DEFAULT_TENANT_NAME = "Default";
+	public static final UUID INSTANCE_UID = UUID.randomUUID();
 
 	public static void main(String[] args) throws Exception {
 		List<String> argsList = Arrays.asList(args);
@@ -111,7 +113,8 @@ public class StorefrontApp {
 		dbArgs.forEach(setting -> dbSettings.put(setting.split("=")[0], setting.split("=")[1]));
 		workloadArgs.forEach(setting -> workloadSettings.put(setting.split("=")[0], setting.split("=")[1]));
 		appArgs.forEach(setting -> appSettings.put(setting.split("=")[0], setting.split("=")[1]));
-		IStorefrontTenant tenant = StorefrontTenantManager.createTenant(dbSettings.get("db.name").split("@")[0], dbSettings);
+		String dbName = dbSettings.containsKey("db.name") ? dbSettings.get("db.name") : dbSettings.get("db.url");
+		IStorefrontTenant tenant = StorefrontTenantManager.createTenant(dbName.split("@")[0], dbSettings);
 		tenant.setAppSettings(appSettings);
 		ISimulatorService simulator = tenant.getSimulatorService();
 		executeTasks(simulator, workloadSettings);
