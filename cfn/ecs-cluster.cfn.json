@@ -1190,11 +1190,13 @@
             "    except Exception as e:\n",
             "        print(e)\n",
 
+            "    familyArn = client.list_task_definitions(familyPrefix='storefrontuser-family', sort='DESC', maxResults=1)\n",
+
             "    try:\n",
             "        response = client.create_service(\n",
             "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
             "            serviceName='storefrontuser-service',\n",
-            "            taskDefinition='storefrontuser-family',\n",
+            "            taskDefinition=familyArn['taskDefinitionArns'][0],\n",
             "            desiredCount=count,\n",
             "            placementStrategy=[\n",
             "              {\n",
@@ -1208,7 +1210,8 @@
             "        response = client.update_service(\n",
             "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
             "            service='storefrontuser-service',\n",
-            "            desiredCount=count,\n",
+            "            taskDefinition=familyArn['taskDefinitionArns'][0],\n",
+            "            desiredCount=count\n",
             "        )\n",
             "        print(response)\n"
 
