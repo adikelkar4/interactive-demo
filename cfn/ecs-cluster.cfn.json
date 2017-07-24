@@ -318,7 +318,8 @@
         "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
         "SecurityGroupIngress" : [
           { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "CidrIp" : { "Ref" : "SourceCidr" } },
-          { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "CidrIp" : { "Ref" : "SourceCidr" } }
+          { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "CidrIp" : { "Ref" : "SourceCidr" } },
+          { "IpProtocol" : "tcp", "FromPort" : "3306", "ToPort" : "3306", "CidrIp" : { "Ref" : "SourceCidr" } }
         ]
       }
     },
@@ -393,6 +394,11 @@
             "LoadBalancerPort" : "8888",
             "InstancePort" : "8888",
             "Protocol" : "HTTP"
+          },
+          {
+            "LoadBalancerPort" : "3306",
+            "InstancePort" : "3306",
+            "Protocol" : "TCP"
           }
         ],
         "HealthCheck" : {
@@ -1031,6 +1037,71 @@
         "ServiceName" : "storefrontuser-service",
         "PlacementStrategies" : [{ "Type": "random"}],
         "TaskDefinition" : { "Ref" : "StorefrontUserTaskDefinition"}
+      }
+    },
+
+    "MySQLTaskDefinitions": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "mysql-family",
+        "ContainerDefinitions": [
+          {
+            "Name": "mysql-definition",
+            "Image": "mysql",
+            "Cpu": "2",
+            "MemoryReservation": "4096",
+            "ReadonlyRootFilesystem": "false",
+            "PortMappings": [
+              {
+                "ContainerPort": "3306",
+                "HostPort": "3306"
+              }
+            ],
+            "Environment": [
+              {
+                "Name": "NODE_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "MYSQL_ROOT_PASSWORD",
+                "Value": {
+                  "Ref": "DomainPassword"
+                }
+              },
+              {
+                "Name": "MYSQL_DATABASE",
+                "Value": {
+                  "Ref": "dbname"
+                }
+              },
+              {
+                "Name": "MYSQL_USER",
+                "Value": {
+                  "Ref": "dbuser"
+                }
+              },
+              {
+                "Name": "MYSQL_PASSWORD",
+                "Value": {
+                  "Ref": "dbpassword"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    "MySQLService": {
+      "Type" : "AWS::ECS::Service",
+      "Properties" : {
+        "Cluster" : { "Ref" : "EcsClusterName" },
+        "DesiredCount" : "0",
+        "ServiceName" : "mysql-service",
+        "PlacementStrategies" : [{ "Type": "random"}],
+        "TaskDefinition" : { "Ref" : "MySQLTaskDefinitions"}
       }
     },
 
