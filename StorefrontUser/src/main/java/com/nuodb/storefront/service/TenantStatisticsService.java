@@ -1,9 +1,6 @@
 package com.nuodb.storefront.service;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
@@ -29,13 +26,15 @@ public class TenantStatisticsService implements Runnable {
 	private TenantStatistics allStats;
 	private IStorefrontTenant tenant;
 	private ObjectMapper mapper;
+	private String dbType;
 	
 	private static final String storefrontStatsEndpoint = "/api/stats";
 	
-	public TenantStatisticsService(IStorefrontTenant tenant) {
+	public TenantStatisticsService(IStorefrontTenant tenant, String dbVendor) {
 		this.setTenant(tenant);
 		allStats = new TenantStatistics();
 		mapper = new ObjectMapper();
+		dbType = dbVendor;
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -54,7 +53,7 @@ public class TenantStatisticsService implements Runnable {
 		Map<String, Map> payload = new HashMap<>();
 		payload.put("transactionStats", transactionStats);
 		payload.put("workloadStats", workloadStats);
-		allStats.setDatabaseType("nuodb");
+		allStats.setDatabaseType(this.dbType);
 		allStats.setPayload(payload);
 		allStats.setUid(StorefrontApp.INSTANCE_UID.toString());
 		allStats.setTimestamp(new Date());

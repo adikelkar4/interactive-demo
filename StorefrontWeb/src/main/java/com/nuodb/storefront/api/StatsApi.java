@@ -8,19 +8,33 @@ import java.util.Date;
 import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
+import com.amazonaws.services.cloudwatch.model.Dimension;
+import com.amazonaws.services.cloudwatch.model.MetricDatum;
+import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
+import com.amazonaws.services.cloudwatch.model.StandardUnit;
 import com.nuodb.storefront.StorefrontApp;
-import com.nuodb.storefront.model.dto.*;
+import com.nuodb.storefront.model.dto.DbFootprint;
+import com.nuodb.storefront.model.dto.RegionStats;
+import com.nuodb.storefront.model.dto.StatsPayload;
+import com.nuodb.storefront.model.dto.StorefrontStats;
+import com.nuodb.storefront.model.dto.StorefrontStatsReport;
+import com.nuodb.storefront.model.dto.TransactionStats;
+import com.nuodb.storefront.model.dto.WorkloadStats;
+import com.nuodb.storefront.model.dto.WorkloadStep;
+import com.nuodb.storefront.model.dto.WorkloadStepStats;
 
 @Path("/stats")
 public class StatsApi extends BaseApi {
@@ -34,12 +48,13 @@ public class StatsApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public StorefrontStatsReport getAllStatsReport(@Context HttpServletRequest req) {
         StorefrontStatsReport rpt = getSimulator(req).getStorefrontStatsReport();
+        String dbType = req.getParameter("dbType") == null ? "nuodb" : req.getParameter("dbType");
         DbFootprint footprint = getDbApi(req).getDbFootprint();
 
         rpt.setAppInstance(getTenant(req).getAppInstance());
         rpt.setDbStats(footprint);
-        rpt.setWorkloadStats(workloadStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
-        rpt.setTransactionStats(transactionStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
+        rpt.setWorkloadStats(workloadStatHeap.getOrDefault(dbType, new HashMap<>()));
+        rpt.setTransactionStats(transactionStatHeap.getOrDefault(dbType, new HashMap<>()));
         clearWorkloadProperty(rpt.getWorkloadStats());
 
         return rpt;
@@ -57,14 +72,16 @@ public class StatsApi extends BaseApi {
     @Path("/transactions")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, TransactionStats> getTransactionStats(@Context HttpServletRequest req) {
-        return transactionStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>());
+        String dbType = req.getParameter("dbType") == null ? "nuodb" : req.getParameter("dbType");
+        return transactionStatHeap.getOrDefault(dbType, new HashMap<>());
     }
 
     @GET
     @Path("/workloads")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, WorkloadStats> getWorkloadStats(@Context HttpServletRequest req) {
-        return workloadStatHeap.getOrDefault(NUODB_MAP_KEY, new HashMap<>());
+        String dbType = req.getParameter("dbType") == null ? "nuodb" : req.getParameter("dbType");
+        return workloadStatHeap.getOrDefault(dbType, new HashMap<>());
     }
 
     @GET
@@ -111,6 +128,9 @@ public class StatsApi extends BaseApi {
         }
         lastStatUpdate.put(stats.getUid(), stats.getTimestamp());
 
+        Map<String, Map> payload = stats.getPayload();
+        String databaseType = stats.getDatabaseType();
+
         @SuppressWarnings("unchecked")
         Map<String, Map<String, Integer>> tStats = (Map<String, Map<String, Integer>>)payload.getOrDefault(TRANSACTION_STATS_MAP_KEY, new HashMap<>());
         @SuppressWarnings("unchecked")
@@ -122,16 +142,16 @@ public class StatsApi extends BaseApi {
 
         // TODO - Break this off into its own threaded process, should only respond with acknowledged receipt of stats  - AndyM/KevinW
         synchronized (this.heapLock) { // Always synchronize on the heapLock so both maps are protected simultaneously
-            if (!transactionStatHeap.containsKey(NUODB_MAP_KEY)) {
-                transactionStatHeap.put(NUODB_MAP_KEY, new HashMap<>());
+            if (!transactionStatHeap.containsKey(databaseType)) {
+                transactionStatHeap.put(databaseType, new HashMap<>());
             }
 
-            if(!workloadStatHeap.containsKey(NUODB_MAP_KEY)) {
-                workloadStatHeap.put(NUODB_MAP_KEY, new HashMap<>());
+            if(!workloadStatHeap.containsKey(databaseType)) {
+                workloadStatHeap.put(databaseType, new HashMap<>());
             }
 
-            Map<String, TransactionStats> tTmp = transactionStatHeap.get(NUODB_MAP_KEY);
-            Map<String, WorkloadStats> wTmp = workloadStatHeap.get(NUODB_MAP_KEY);
+            Map<String, TransactionStats> tTmp = transactionStatHeap.get(databaseType);
+            Map<String, WorkloadStats> wTmp = workloadStatHeap.get(databaseType);
 
             for (Map.Entry<String, Map<String, Integer>> entry : tStats.entrySet()) {
                 if (tTmp.containsKey(entry.getKey())) {
