@@ -20,6 +20,8 @@ import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.model.dto.TenantStatistics;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.dto.WorkloadStats;
+import com.nuodb.storefront.model.dto.WorkloadStep;
+import com.nuodb.storefront.model.dto.WorkloadStepStats;
 
 public class TenantStatisticsService implements Runnable {
 	
@@ -42,17 +44,21 @@ public class TenantStatisticsService implements Runnable {
 	public void run() {
 		Map<String, TransactionStats> transactionStats = null;
 		Map<String, WorkloadStats> workloadStats = null;
+		Map<WorkloadStep, WorkloadStepStats> stepStats = null;
 		synchronized (this.tenant.getTransactionStats()) {
 			transactionStats = new HashMap<>(this.tenant.getTransactionStats());
 			this.tenant.getTransactionStats().clear();
 		}
 		synchronized (this.tenant.getSimulatorService()) {
 			workloadStats = new HashMap<>(this.tenant.getSimulatorService().getWorkloadStats());
+			stepStats = new HashMap<>(this.tenant.getSimulatorService().getWorkloadStepStats());
 			this.tenant.getSimulatorService().getWorkloadStats().clear();
+			this.tenant.getSimulatorService().getStepCompletionCounts().clear();
 		}
 		Map<String, Map> payload = new HashMap<>();
 		payload.put("transactionStats", transactionStats);
 		payload.put("workloadStats", workloadStats);
+		payload.put("stepStats", stepStats);
 		allStats.setDatabaseType(this.dbType);
 		allStats.setPayload(payload);
 		allStats.setUid(StorefrontApp.INSTANCE_UID.toString());
