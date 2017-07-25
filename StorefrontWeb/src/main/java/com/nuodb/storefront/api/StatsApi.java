@@ -126,9 +126,8 @@ public class StatsApi extends BaseApi {
         		return Response.ok().build();
         	}
         }
-        lastStatUpdate.put(stats.getUid(), stats.getTimestamp());
 
-        Map<String, Map> payload = stats.getPayload();
+        lastStatUpdate.put(stats.getUid(), stats.getTimestamp());
         String databaseType = stats.getDatabaseType();
 
         @SuppressWarnings("unchecked")
