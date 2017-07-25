@@ -4,6 +4,7 @@ package com.nuodb.storefront.api;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -36,6 +37,7 @@ public class StatsApi extends BaseApi {
     private static final String WORKLOAD_STATS_MAP_KEY = "workloadStats";
 
     private static Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
+    private static Map<String, Map<WorkloadStep, WorkloadStepStats>> stepStatsHeap = new HashMap<>();
     private static Map<String, Date> lastStatUpdate = new HashMap<>();
 
     @GET
@@ -44,11 +46,10 @@ public class StatsApi extends BaseApi {
         StorefrontStatsReport rpt = getSimulator(req).getStorefrontStatsReport();
         String dbType = req.getParameter("dbType") == null ? "nuodb" : req.getParameter("dbType");
         DbFootprint footprint = getDbApi(req).getDbFootprint();
-
-        rpt.setAppInstance(getTenant(req).getAppInstance());
         rpt.setDbStats(footprint);
         rpt.setWorkloadStats(workloadStatHeap.getOrDefault(dbType, new HashMap<>()));
         rpt.setTransactionStats(transactionStatHeap.getOrDefault(dbType, new HashMap<>()));
+        rpt.setWorkloadStepStats(stepStatsHeap.getOrDefault(dbType, new HashMap<>()));
         clearWorkloadProperty(rpt.getWorkloadStats());
 
         return rpt;
@@ -128,6 +129,8 @@ public class StatsApi extends BaseApi {
         Map<String, Map<String, Integer>> tStats = (Map<String, Map<String, Integer>>)payload.getOrDefault(TRANSACTION_STATS_MAP_KEY, new HashMap<>());
         @SuppressWarnings("unchecked")
         Map<String, Map<String, Integer>> wStats = (Map<String, Map<String, Integer>>)payload.getOrDefault(WORKLOAD_STATS_MAP_KEY, new HashMap<>());
+        @SuppressWarnings("unchecked")
+        Map<String, Map<String, Integer>> sStats = (Map<String, Map<String, Integer>>) payload.getOrDefault("stepStats", new HashMap<>());
 
         if (tStats.size() < 1 && wStats.size() < 1) {
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -142,9 +145,14 @@ public class StatsApi extends BaseApi {
             if(!workloadStatHeap.containsKey(databaseType)) {
                 workloadStatHeap.put(databaseType, new HashMap<>());
             }
+            
+            if (!stepStatsHeap.containsKey(databaseType)) {
+            	stepStatsHeap.put(databaseType, new HashMap<>());
+            }
 
             Map<String, TransactionStats> tTmp = transactionStatHeap.get(databaseType);
             Map<String, WorkloadStats> wTmp = workloadStatHeap.get(databaseType);
+            Map<WorkloadStep, WorkloadStepStats> sTmp = stepStatsHeap.get(databaseType);
 
             for (Map.Entry<String, Map<String, Integer>> entry : tStats.entrySet()) {
                 if (tTmp.containsKey(entry.getKey())) {
@@ -166,6 +174,18 @@ public class StatsApi extends BaseApi {
                     wTmp.put(entry.getKey(), newStats);
                 }
             }
+            
+            for (Map.Entry<String, Map<String, Integer>> entry : sStats.entrySet()) {
+                if (sTmp.containsKey(entry.getKey())) {
+                	sTmp.get(WorkloadStep.valueOf(entry.getKey())).applyDeltas(entry.getValue());
+                } else {
+                	WorkloadStepStats newStats = new WorkloadStepStats();
+                	newStats.setCompletionCount(0);
+                	newStats.applyDeltas(entry.getValue());
+                	sTmp.put(WorkloadStep.valueOf(entry.getKey()), newStats);
+                }
+            }
+
         }
 
         return Response.status(Response.Status.OK).build();
