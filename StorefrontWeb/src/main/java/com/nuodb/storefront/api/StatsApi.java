@@ -20,12 +20,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
-import com.amazonaws.services.cloudwatch.model.Dimension;
-import com.amazonaws.services.cloudwatch.model.MetricDatum;
-import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
-import com.amazonaws.services.cloudwatch.model.StandardUnit;
 import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.model.dto.DbFootprint;
 import com.nuodb.storefront.model.dto.RegionStats;
@@ -127,8 +121,8 @@ public class StatsApi extends BaseApi {
         		return Response.ok().build();
         	}
         }
-        lastStatUpdate.put(stats.getUid(), stats.getTimestamp());
 
+        lastStatUpdate.put(stats.getUid(), stats.getTimestamp());
         String databaseType = stats.getDatabaseType();
 
         @SuppressWarnings("unchecked")
@@ -136,7 +130,7 @@ public class StatsApi extends BaseApi {
         @SuppressWarnings("unchecked")
         Map<String, Map<String, Integer>> wStats = (Map<String, Map<String, Integer>>)payload.getOrDefault(WORKLOAD_STATS_MAP_KEY, new HashMap<>());
         @SuppressWarnings("unchecked")
-		Map<String, Map<String, Integer>> sStats = (Map<String, Map<String, Integer>>) payload.getOrDefault("stepStats", new HashMap<>());
+        Map<String, Map<String, Integer>> sStats = (Map<String, Map<String, Integer>>) payload.getOrDefault("stepStats", new HashMap<>());
 
         if (tStats.size() < 1 && wStats.size() < 1) {
             return Response.status(Response.Status.BAD_REQUEST).build();
