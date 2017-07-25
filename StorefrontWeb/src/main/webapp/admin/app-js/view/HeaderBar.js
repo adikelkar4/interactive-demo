@@ -29,6 +29,9 @@ Ext.define('App.view.HeaderBar', {
             metric: 'workloadStats.all.activeWorkerCount',
             itemId: 'metrics-users',
             input: 'spinner',
+            spinnerUpTip: 'Increase simulated users by 2100',
+            spinnerDownTip: 'Decrease simulated users by 2100',
+            spinnerStopTip: 'Stop all simulated users',
             flex: 0.7,
             listeners: {
                 click: clickHandler,
@@ -41,6 +44,10 @@ Ext.define('App.view.HeaderBar', {
             metric: 'dbStats.usedTeHostCount',
             itemId: 'metrics-hosts',
             inputMaxMetric: 'dbStats.hostCount',
+            input: 'spinner',
+            spinnerUpTip: 'Add another TE process',
+            spinnerDownTip: 'Remove a TE process',
+            spinnerStopTip: 'Reset to 1 TE process',
             flex: 0.7,
             href: '/control-panel-processes',
             listeners: {

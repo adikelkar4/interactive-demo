@@ -109,7 +109,7 @@ Ext.define('App.view.MetricWell', {
                     vertical: true,
                     items: [{
                         iconCls: 'ico-up',
-                        tooltip: 'Increase simulated users by 100 per workload, per region',
+                        tooltip: me.spinnerUpTip,
                         listeners: {
                             click: function() {
                                 me.fireEvent('change', me, 1);
@@ -117,7 +117,7 @@ Ext.define('App.view.MetricWell', {
                         }
                     }, {
                         iconCls: 'ico-down',
-                        tooltip: 'Decrease simulated users by 100 per workload, per region',
+                        tooltip: me.spinnerDownTip,
                         listeners: {
                             click: function() {
                                 me.fireEvent('change', me, -1);
@@ -125,7 +125,7 @@ Ext.define('App.view.MetricWell', {
                         }
                     }, ' ', {
                         iconCls: 'ico-cancel',
-                        tooltip: 'Stop all simulated users',
+                        tooltip: me.spinnerStopTip,
                         listeners: {
                             click: function() {
                                 me.fireEvent('change', me, 0);
