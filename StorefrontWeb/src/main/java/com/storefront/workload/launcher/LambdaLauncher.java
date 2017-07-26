@@ -25,7 +25,7 @@ public class LambdaLauncher implements UserLauncher {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} 
+		}
 		if (catalinaProperties != null) {
 			ecsClusterName = catalinaProperties.getProperty("ARG_ecsClusterName", "localhost");
 			userLoadLambdaArn = catalinaProperties.getProperty("ARG_userLoadLambdaArn", "");
@@ -34,7 +34,7 @@ public class LambdaLauncher implements UserLauncher {
 			userLoadLambdaArn = "";
 		}
 	}
-	
+
 	private static String ecsClusterName;
 	private static String userLoadLambdaArn;
 	
