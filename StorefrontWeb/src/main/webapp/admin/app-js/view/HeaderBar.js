@@ -112,6 +112,9 @@ Ext.define('App.view.HeaderBar', {
                 break;
 
             case 'metrics-hosts':
+                me.adjustHostCount(value);
+
+                break;
             case 'metrics-regions':
                 if (btn.activeRequest) {
                     Ext.Ajax.abort(btn.activeRequest);
@@ -143,6 +146,30 @@ Ext.define('App.view.HeaderBar', {
 
             default:
                 break;
+        }
+    },
+
+    adjustHostCount: function (value) {
+        try {
+            var url;
+
+            if (value == 0) {
+                url = 'resetHostCount';
+            } else if (value > 0) {
+                url = 'increaseHostCount';
+            } else {
+                url = 'decreaseHostCount';
+            }
+
+            Ext.Ajax.request({
+                url: App.app.apiBaseUrl + "/api/processes/" + url,
+                method: 'POST',
+                scope: this
+            });
+
+            return true;
+        } catch (e) {
+            return false;
         }
     },
 
