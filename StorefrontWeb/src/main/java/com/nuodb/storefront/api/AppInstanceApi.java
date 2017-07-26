@@ -115,7 +115,7 @@ public class AppInstanceApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public Response putLog(@Context HttpServletRequest req, @FormParam("message") String message) {
         synchronized (activityLog) {
-            activityLog.put(System.currentTimeMillis() / 1000, message);
+            activityLog.put(System.nanoTime(), message);
         }
 
         return Response.ok().build();
@@ -126,16 +126,11 @@ public class AppInstanceApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<Long, String> getLog(@Context HttpServletRequest req, @QueryParam("lasttime") Long lastTime) {
         Map<Long, String> ret = new HashMap<>();
-        boolean appendLogs = (lastTime == 0) ? true : false;
 
         synchronized (activityLog) {
             for (Map.Entry<Long, String> entry : activityLog.entrySet()) {
-                if (appendLogs) {
+                if (entry.getKey() > lastTime) {
                     ret.put(entry.getKey(), entry.getValue());
-                }
-
-                if (!appendLogs && entry.getKey() >= lastTime) {
-                    appendLogs = true;
                 }
             }
         }
