@@ -26,6 +26,7 @@ public abstract class BaseApi {
 
     protected static final Map<String, String> workloadDistribution;
     protected static int userContainerCount = 0;
+    protected static int hostContainerCount = 1;
 
     static {
         workloadDistribution = new HashMap<>();
