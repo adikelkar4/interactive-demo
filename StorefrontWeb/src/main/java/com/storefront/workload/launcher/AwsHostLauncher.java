@@ -30,7 +30,7 @@ public class AwsHostLauncher implements HostLauncher {
 
         if (catalinaProperties != null) {
             ecsClusterName = catalinaProperties.getProperty("ARG_ecsClusterName", "localhost");
-            hostLambdaArn = catalinaProperties.getProperty("ARG_userLoadLambdaArn", "");
+            hostLambdaArn = catalinaProperties.getProperty("ARG_teScalingLambdaArn", "");
         } else {
             ecsClusterName = "localhost";
             hostLambdaArn = "";
