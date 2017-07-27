@@ -791,6 +791,10 @@
                 "Value": {
                   "Ref": "dbpassword"
                 }
+              },
+              {
+                "Name": "ARG_apphost",
+                "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
               }
             ]
           }
@@ -859,6 +863,10 @@
               {
                 "Name": "DB_PASSWORD",
                 "Value": { "Ref": "dbpassword" }
+              },
+              {
+                "Name": "ARG_apphost",
+                "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
               }
             ]
           }
@@ -926,6 +934,10 @@
               {
                 "Name": "DB_PASSWORD",
                 "Value": { "Ref": "dbpassword" }
+              },
+              {
+                "Name": "ARG_apphost",
+                "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
               }
             ]
           }
