@@ -3,41 +3,72 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
 	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
-
 	<parent>
 		<groupId>com.nuodb.storefront</groupId>
 		<artifactId>StorefrontDemo</artifactId>
 		<version>1.0-SNAPSHOT</version>
 	</parent>
-
-	<artifactId>StorefrontUser</artifactId>
-	<name>NuoDB Storefront User</name>
+	<artifactId>NuoShowcaseCommon</artifactId>
+	<name>NuoShowcaseCommon</name>
 	<url>http://maven.apache.org</url>
-
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 	<dependencies>
-		<!-- Servlet -->
+		<!-- Common utils -->
 		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jul-to-slf4j</artifactId>
 		</dependency>
 
 		<!-- RESTful API -->
 		<dependency>
 			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-servlet</artifactId>
+			<artifactId>jersey-json</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpclient</artifactId>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-client</artifactId>
 		</dependency>
 
+		<!-- Hibernate -->
 		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-core</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>mysql</groupId>
-			<artifactId>mysql-connector-java</artifactId>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-validator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>javassist</groupId>
+			<artifactId>javassist</artifactId>
+		</dependency>
+
+		<!-- JDBC + Hibernate dialect -->
+		<dependency>
+			<groupId>${nuodb.jdbc.gid}</groupId>
+			<artifactId>${nuodb.jdbc.aid}</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>${nuodb.hibernate.gid}</groupId>
+			<artifactId>${nuodb.hibernate.aid}</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.googlecode.genericdao</groupId>
+			<artifactId>dao-hibernate</artifactId>
 		</dependency>
 
 		<!-- test -->
@@ -46,12 +77,7 @@
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
- 		<dependency>
-			<groupId>com.nuodb.storefront</groupId>
-			<artifactId>NuoShowcaseCommon</artifactId>
-			<version>1.0-SNAPSHOT</version>
-		</dependency>
- 	</dependencies>
+	</dependencies>
 
 	<build>
 		<plugins>
@@ -67,15 +93,10 @@
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>3.0.0</version>
 				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>com.nuodb.storefront.StorefrontApp</mainClass>
-						</manifest>
-					</archive>
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
-					<finalName>StorefrontUser</finalName>
+					<finalName>NuoShowCaseCommon</finalName>
 					<appendAssemblyId>false</appendAssemblyId>
 				</configuration>
 				<executions>
@@ -89,4 +110,5 @@
 			</plugin>
 		</plugins>
 	</build>
+
 </project>

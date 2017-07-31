@@ -16,7 +16,6 @@ import org.apache.log4j.Logger;
 import org.hibernate.exception.GenericJDBCException;
 import org.hibernate.exception.SQLGrammarException;
 
-import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.exception.ApiConnectionException;
 import com.nuodb.storefront.exception.ApiException;
 import com.nuodb.storefront.exception.ApiUnauthorizedException;
@@ -54,7 +53,7 @@ public class WelcomeServlet extends ControlPanelProductsServlet {
             tenant.setApiConnInfo(apiConnInfo);
 
             // Wait until the API is connected to the domain
-            for (int secondsWaited = 0; secondsWaited < StorefrontApp.DBAPI_MAX_UNAVAILABLE_RETRY_TIME_SEC; secondsWaited++) {
+            for (int secondsWaited = 0; secondsWaited < StorefrontWebApp.DBAPI_MAX_UNAVAILABLE_RETRY_TIME_SEC; secondsWaited++) {
                 try {
                     tenant.getDbApi().testConnection();
                     break;
@@ -76,7 +75,7 @@ public class WelcomeServlet extends ControlPanelProductsServlet {
             tenant.getDbApi().fixDbSetup(true);
 
             // Wait until API acknowledges the DB exists
-            for (int secondsWaited = 0; secondsWaited < StorefrontApp.DB_MAX_INIT_WAIT_TIME_SEC; secondsWaited++) {
+            for (int secondsWaited = 0; secondsWaited < StorefrontWebApp.DB_MAX_INIT_WAIT_TIME_SEC; secondsWaited++) {
                 try {
                     tenant.getDbApi().fixDbSetup(false);
                     break;

@@ -19,15 +19,16 @@ import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.service.storefront.StorefrontTenant;
+import com.nuodb.storefront.servlet.StorefrontWebApp;
 
 public class StorefrontTenantManager {
     private static final AppInstance s_defaultAppInstance =
-            new AppInstance(StorefrontApp.DEFAULT_REGION_NAME, StorefrontApp.DEFAULT_TENANT_NAME, true);
+            new AppInstance(StorefrontWebApp.DEFAULT_REGION_NAME, StorefrontWebApp.DEFAULT_TENANT_NAME, true);
     private static final IStorefrontTenant s_defaultTenant = new StorefrontTenant(s_defaultAppInstance);
     private static final Map<String, IStorefrontTenant> s_tenantMap = new TreeMap<String, IStorefrontTenant>(String.CASE_INSENSITIVE_ORDER);
 
     static {
-        s_tenantMap.put(StorefrontApp.DEFAULT_TENANT_NAME, s_defaultTenant);
+        s_tenantMap.put(StorefrontWebApp.DEFAULT_TENANT_NAME, s_defaultTenant);
     }
 
     public static IStorefrontTenant getDefaultTenant() {
@@ -35,7 +36,7 @@ public class StorefrontTenantManager {
     }
 
     public static IStorefrontTenant getTenant(HttpServletRequest request) {
-        return getTenant(request.getParameter(StorefrontApp.TENANT_PARAM_NAME));
+        return getTenant(request.getParameter(StorefrontWebApp.TENANT_PARAM_NAME));
     }
 
     public static IStorefrontTenant getTenantOrDefault(String tenantName) {
@@ -99,22 +100,5 @@ public class StorefrontTenantManager {
             tenant.startUp();
             return tenant;
         }
-    }
-
-    public static void destroyTenant(String tenantName) {
-        IStorefrontTenant tenant;
-
-        synchronized (s_tenantMap) {
-            tenant = s_tenantMap.get(tenantName);
-            if (tenant == null) {
-                throw new DataValidationException("Tenant \"" + tenantName + "\" does not exist");
-            }
-            if (isDefaultTenant(tenant)) {
-                throw new DataValidationException("Cannot remove default tenant");
-            }
-            s_tenantMap.remove(tenantName);
-        }
-
-        tenant.shutDown();
     }
 }

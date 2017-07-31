@@ -6,14 +6,13 @@ import java.util.Calendar;
 import java.util.Map;
 
 import com.nuodb.storefront.api.StatsApi;
+import com.nuodb.storefront.servlet.StorefrontWebApp;
 import org.apache.log4j.Logger;
 
-import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.dal.IStorefrontDao;
 import com.nuodb.storefront.dal.TransactionType;
 import com.nuodb.storefront.model.dto.DbRegionInfo;
 import com.nuodb.storefront.model.entity.AppInstance;
-import com.nuodb.storefront.service.IHeartbeatService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.util.PerformanceUtil;
 import com.storefront.workload.launcher.LambdaLauncher;
@@ -26,7 +25,7 @@ import com.amazonaws.services.cloudwatch.model.MetricDatum;
 import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
 import com.amazonaws.services.cloudwatch.model.StandardUnit;
 
-public class HeartbeatService implements IHeartbeatService {
+public class HeartbeatService implements Runnable {
     private final Logger logger;
     private final IStorefrontTenant tenant;
     private int secondsUntilNextPurge = 0;
@@ -44,14 +43,14 @@ public class HeartbeatService implements IHeartbeatService {
 
     @Override
     public void run() {
-        try {            
+        try {
             final IStorefrontDao dao = tenant.createStorefrontDao();
             dao.runTransaction(TransactionType.READ_WRITE, "sendHeartbeat", new Runnable() {
                 @Override
                 public void run() {
                     Calendar now = Calendar.getInstance();
                     AppInstance appInstance = tenant.getAppInstance();
-                    secondsUntilNextPurge -= StorefrontApp.HEARTBEAT_INTERVAL_SEC;
+                    secondsUntilNextPurge -= StorefrontWebApp.HEARTBEAT_INTERVAL_SEC;
 
                     if (appInstance.getFirstHeartbeat() == null) {
                         appInstance.setFirstHeartbeat(now);
@@ -68,27 +67,15 @@ public class HeartbeatService implements IHeartbeatService {
 
                     // If interactive user has left the app, shut down any active workloads
                     Calendar idleThreshold = Calendar.getInstance();
-                    idleThreshold.add(Calendar.SECOND, -StorefrontApp.STOP_USERS_AFTER_IDLE_UI_SEC);
-                    if (appInstance.getStopUsersWhenIdle() && appInstance.getLastApiActivity().before(idleThreshold)) {
-                        // Don't do any heavy lifting if there are no simulated workloads in progress
-                        int activeWorkerCount = tenant.getSimulatorService().getActiveWorkerLimit();
-                        if (activeWorkerCount > 0) {
-                            // Check for idleness across *all* instances
-                            if (dao.getActiveAppInstanceCount(idleThreshold) == 0) {
-                                logger.info(appInstance.getTenantName() + ": Stopping all " + activeWorkerCount
-                                        + " simulated users due to idle app instances.");
-                                //tenant.getSimulatorService().stopAll();
-                            }
-                        }
-                    }
+                    idleThreshold.add(Calendar.SECOND, -StorefrontWebApp.STOP_USERS_AFTER_IDLE_UI_SEC);
 
                     consecutiveFailureCount = 0;
                     successCount++;
                 }
             });
-            
+
             long gcTime = PerformanceUtil.getGarbageCollectionTime();
-            if (gcTime > cumGcTime + StorefrontApp.GC_CUMULATIVE_TIME_LOG_MS) {
+            if (gcTime > cumGcTime + StorefrontWebApp.GC_CUMULATIVE_TIME_LOG_MS) {
                 logger.info("Cumulative GC time of " + gcTime + " ms");
                 cumGcTime = gcTime;
             }
@@ -100,7 +87,7 @@ public class HeartbeatService implements IHeartbeatService {
 
         long cwTime = System.currentTimeMillis();
 
-        if (cwTime > (cumCwTime + StorefrontApp.CW_METRIC_LOG_TIME)) {
+        if (cwTime > (cumCwTime + StorefrontWebApp.CW_METRIC_LOG_TIME)) {
             cumCwTime = cwTime;
             int totalCount = 0;
             long totalDuration = 0;
@@ -131,20 +118,20 @@ public class HeartbeatService implements IHeartbeatService {
 
             try {
                 double avg = (totalCount < 1) ? 0 : (totalDuration / totalCount);
-                if (!tenant.getDbConnInfo().getHost().contains("localhost")) {                	
-                	AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
-                	Dimension dimension = new Dimension()
-                			.withName("ClusterName")
-                			.withValue(LambdaLauncher.getEcsClusterName());
-                	MetricDatum datum = new MetricDatum()
-                			.withMetricName("AverageLatency")
-                			.withUnit(StandardUnit.Milliseconds)
-                			.withValue(avg)
-                			.withDimensions(dimension);
-                	PutMetricDataRequest pmdr = new PutMetricDataRequest()
-                			.withNamespace("INSTANCE/METRICS")
-                			.withMetricData(datum);
-                	cw.putMetricData(pmdr);
+                if (!tenant.getDbConnInfo().getHost().contains("localhost")) {
+                    AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
+                    Dimension dimension = new Dimension()
+                            .withName("ClusterName")
+                            .withValue(LambdaLauncher.getEcsClusterName());
+                    MetricDatum datum = new MetricDatum()
+                            .withMetricName("AverageLatency")
+                            .withUnit(StandardUnit.Milliseconds)
+                            .withValue(avg)
+                            .withDimensions(dimension);
+                    PutMetricDataRequest pmdr = new PutMetricDataRequest()
+                            .withNamespace("INSTANCE/METRICS")
+                            .withMetricData(datum);
+                    cw.putMetricData(pmdr);
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();

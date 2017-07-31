@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,7 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.nuodb.storefront.exception.DataValidationException;
 import com.nuodb.storefront.exception.TenantNotFoundException;
-import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.service.storefront.StorefrontTenant;
@@ -27,7 +25,7 @@ public class StorefrontTenantManager {
 			String.CASE_INSENSITIVE_ORDER);
 
 	public static IStorefrontTenant getTenant(HttpServletRequest request) {
-		return getTenant(request.getParameter(StorefrontApp.TENANT_PARAM_NAME));
+		return getTenant(request.getParameter(StorefrontTenantManager.TENANT_PARAM_NAME));
 	}
 
 	public static IStorefrontTenant getTenant(String tenantName) {
@@ -85,4 +83,6 @@ public class StorefrontTenantManager {
 
 		tenant.shutDown();
 	}
+
+	public static final String TENANT_PARAM_NAME = "tenant";
 }

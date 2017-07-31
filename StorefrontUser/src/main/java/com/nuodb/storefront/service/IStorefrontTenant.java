@@ -32,12 +32,6 @@ public interface IStorefrontTenant {
 
     public void setApiConnInfo(ConnInfo info);
 
-    // URLs
-    
-    public String getAdminConsoleUrl();
-
-    public String getSqlExplorerUrl();
-
     // Schema management
     
     public SchemaExport createSchemaExport();
@@ -48,8 +42,6 @@ public interface IStorefrontTenant {
     
     public IStorefrontService createStorefrontService();
 
-    public IDataGeneratorService createDataGeneratorService();
-
     public IStorefrontDao createStorefrontDao();
     
     public Client createApiClient();
@@ -57,10 +49,6 @@ public interface IStorefrontTenant {
     // Tenant singletons
     
     public ISimulatorService getSimulatorService();
-
-    public IStorefrontPeerService getStorefrontPeerService();
-
-    public IDbApi getDbApi();
     
     public Logger getLogger(Class<?> clazz);
     

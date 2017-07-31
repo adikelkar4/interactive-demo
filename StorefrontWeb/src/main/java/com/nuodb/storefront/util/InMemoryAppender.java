@@ -8,8 +8,8 @@ import org.apache.log4j.WriterAppender;
 import org.apache.log4j.helpers.OptionConverter;
 import org.apache.log4j.spi.LoggingEvent;
 
-import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.StorefrontTenantManager;
+import com.nuodb.storefront.servlet.StorefrontWebApp;
 
 public class InMemoryAppender extends WriterAppender {
     protected long maxFileSize = 10 * 1024 * 1024;
@@ -32,7 +32,7 @@ public class InMemoryAppender extends WriterAppender {
 
     @Override
     protected synchronized void subAppend(LoggingEvent event) {
-        String[] loggerNameParts = event.getLoggerName().split(StorefrontApp.LOGGER_NAME_TENANT_SEP, 2);
+        String[] loggerNameParts = event.getLoggerName().split(StorefrontWebApp.LOGGER_NAME_TENANT_SEP, 2);
         String tenantName = loggerNameParts.length > 1 ? loggerNameParts[1] : null;
         StringWriter writer = StorefrontTenantManager.getTenantOrDefault(tenantName).getLogWriter();
         setWriter(writer);

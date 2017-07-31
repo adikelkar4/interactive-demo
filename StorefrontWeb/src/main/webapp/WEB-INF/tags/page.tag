@@ -1,6 +1,6 @@
 <%-- Copyright (c) 2013-2015 NuoDB, Inc. --%>
 <%@tag import="com.sun.jersey.api.uri.UriComponent"%>
-<%@tag import="com.nuodb.storefront.StorefrontApp"%>
+<%@tag import="com.nuodb.storefront.servlet.StorefrontWebApp"%>
 <%@tag import="com.nuodb.storefront.model.dto.PageConfig"%>
 <%@tag import="com.nuodb.storefront.servlet.BaseServlet"%>
 <%@tag description="Page template" pageEncoding="UTF-8"%>
@@ -8,7 +8,7 @@
 <%@attribute name="showHeader" required="false" type="java.lang.Boolean" %>
 <%
     PageConfig cfg = (PageConfig)request.getAttribute(BaseServlet.ATTR_PAGE_CONFIG);
-    String qs = (cfg.getLocalInstance() != null) ? "?" + StorefrontApp.TENANT_PARAM_NAME + "=" + UriComponent.encode(cfg.getLocalInstance().getTenantName(), UriComponent.Type.QUERY_PARAM) : null;
+    String qs = (cfg.getLocalInstance() != null) ? "?" + StorefrontWebApp.TENANT_PARAM_NAME + "=" + UriComponent.encode(cfg.getLocalInstance().getTenantName(), UriComponent.Type.QUERY_PARAM) : null;
     String baseHref = (String)request.getAttribute(BaseServlet.ATTR_BASE_HREF);
     request.setAttribute("qs", qs);
 %>

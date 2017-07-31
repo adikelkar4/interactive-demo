@@ -20,7 +20,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.nuodb.storefront.StorefrontApp;
+import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.nuodb.storefront.model.dto.DbFootprint;
 import com.nuodb.storefront.model.dto.RegionStats;
 import com.nuodb.storefront.model.dto.StatsPayload;
@@ -43,7 +43,7 @@ public class StatsApi extends BaseApi {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public StorefrontStatsReport getAllStatsReport(@Context HttpServletRequest req) {
-        StorefrontStatsReport rpt = getSimulator(req).getStorefrontStatsReport();
+        StorefrontStatsReport rpt = buildBaseStatsReport(req);
         String dbType = req.getParameter("dbType") == null ? "nuodb" : req.getParameter("dbType");
         DbFootprint footprint = getDbApi(req).getDbFootprint();
         rpt.setDbStats(footprint);
@@ -59,7 +59,7 @@ public class StatsApi extends BaseApi {
     @Path("/storefront")
     @Produces(MediaType.APPLICATION_JSON)
     public StorefrontStats getStorefrontStats(@Context HttpServletRequest req, @QueryParam("sessionTimeoutSec") Integer sessionTimeoutSec, @QueryParam("maxAgeSec") Integer maxAgeSec) {
-        int maxCustomerIdleTimeSec = (sessionTimeoutSec == null) ? StorefrontApp.DEFAULT_SESSION_TIMEOUT_SEC : sessionTimeoutSec;
+        int maxCustomerIdleTimeSec = (sessionTimeoutSec == null) ? StorefrontWebApp.DEFAULT_SESSION_TIMEOUT_SEC : sessionTimeoutSec;
         return getService(req).getStorefrontStats(maxCustomerIdleTimeSec, maxAgeSec);
     }
 
@@ -77,13 +77,6 @@ public class StatsApi extends BaseApi {
     public Map<String, WorkloadStats> getWorkloadStats(@Context HttpServletRequest req) {
         String dbType = req.getParameter("dbType") == null ? "nuodb" : req.getParameter("dbType");
         return workloadStatHeap.getOrDefault(dbType, new HashMap<>());
-    }
-
-    @GET
-    @Path("/workload-steps")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<WorkloadStep, WorkloadStepStats> getWorkloadStepStats(@Context HttpServletRequest req) {
-        return getSimulator(req).getWorkloadStepStats();
     }
 
     @GET
@@ -113,13 +106,13 @@ public class StatsApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response putContainerStats(@Context HttpServletRequest req, StatsPayload stats) {
-    	Map<String, Map> payload = stats.getPayload();
+        Map<String, Map> payload = stats.getPayload();
         if (payload.size() < 1) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         } else if (lastStatUpdate.containsKey(stats.getUid())) {
-        	if (!lastStatUpdate.get(stats.getUid()).before(stats.getTimestamp())) {
-        		return Response.ok().build();
-        	}
+            if (!lastStatUpdate.get(stats.getUid()).before(stats.getTimestamp())) {
+                return Response.ok().build();
+            }
         }
 
         lastStatUpdate.put(stats.getUid(), stats.getTimestamp());
@@ -145,9 +138,9 @@ public class StatsApi extends BaseApi {
             if(!workloadStatHeap.containsKey(databaseType)) {
                 workloadStatHeap.put(databaseType, new HashMap<>());
             }
-            
+
             if (!stepStatsHeap.containsKey(databaseType)) {
-            	stepStatsHeap.put(databaseType, new HashMap<>());
+                stepStatsHeap.put(databaseType, new HashMap<>());
             }
 
             Map<String, TransactionStats> tTmp = transactionStatHeap.get(databaseType);
@@ -158,8 +151,8 @@ public class StatsApi extends BaseApi {
                 if (tTmp.containsKey(entry.getKey())) {
                     tTmp.get(entry.getKey()).applyDeltas(entry.getValue());
                 } else {
-                	TransactionStats newStats = new TransactionStats();
-                	newStats.applyDeltas(entry.getValue());
+                    TransactionStats newStats = new TransactionStats();
+                    newStats.applyDeltas(entry.getValue());
                     tTmp.put(entry.getKey(), newStats);
                 }
             }
@@ -168,21 +161,21 @@ public class StatsApi extends BaseApi {
                 if (wTmp.containsKey(entry.getKey())) {
                     wTmp.get(entry.getKey()).applyDeltas(entry.getValue());
                 } else {
-                	WorkloadStats newStats = new WorkloadStats();
-                	newStats.setActiveWorkerLimit(0);
-                	newStats.applyDeltas(entry.getValue());
+                    WorkloadStats newStats = new WorkloadStats();
+                    newStats.setActiveWorkerLimit(0);
+                    newStats.applyDeltas(entry.getValue());
                     wTmp.put(entry.getKey(), newStats);
                 }
             }
-            
+
             for (Map.Entry<String, Map<String, Integer>> entry : sStats.entrySet()) {
                 if (sTmp.containsKey(entry.getKey())) {
-                	sTmp.get(WorkloadStep.valueOf(entry.getKey())).applyDeltas(entry.getValue());
+                    sTmp.get(WorkloadStep.valueOf(entry.getKey())).applyDeltas(entry.getValue());
                 } else {
-                	WorkloadStepStats newStats = new WorkloadStepStats();
-                	newStats.setCompletionCount(0);
-                	newStats.applyDeltas(entry.getValue());
-                	sTmp.put(WorkloadStep.valueOf(entry.getKey()), newStats);
+                    WorkloadStepStats newStats = new WorkloadStepStats();
+                    newStats.setCompletionCount(0);
+                    newStats.applyDeltas(entry.getValue());
+                    sTmp.put(WorkloadStep.valueOf(entry.getKey()), newStats);
                 }
             }
 

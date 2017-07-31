@@ -16,7 +16,7 @@ import java.util.TreeSet;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.nuodb.storefront.StorefrontApp;
+import com.nuodb.storefront.servlet.StorefrontWebApp;
 
 public class NetworkUtil {
     private NetworkUtil() {
@@ -64,12 +64,12 @@ public class NetworkUtil {
     }
 
     private static String detectExternalIpAddress() {
-        if (StringUtils.isEmpty(StorefrontApp.IP_DETECT_URL)) {
+        if (StringUtils.isEmpty(StorefrontWebApp.IP_DETECT_URL)) {
             return null;
         }
 
         try {
-            URL whatismyip = new URL(StorefrontApp.IP_DETECT_URL);
+            URL whatismyip = new URL(StorefrontWebApp.IP_DETECT_URL);
             BufferedReader in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
             String ip = in.readLine();
             InetAddress.getByName(ip);

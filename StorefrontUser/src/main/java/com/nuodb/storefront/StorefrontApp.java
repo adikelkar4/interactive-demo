@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
 
-import com.nuodb.storefront.model.dto.Workload;
 import com.nuodb.storefront.model.dto.WorkloadStats;
 import com.nuodb.storefront.model.dto.WorkloadStep;
 import com.nuodb.storefront.model.dto.WorkloadStepStats;
@@ -40,20 +39,12 @@ public class StorefrontApp {
 		System.setProperty("org.apache.jasper.compiler.disablejsr199", "true");
 	}
 
-	// Storefront properties
-	public static final String IP_DETECT_URL = System.getProperty("storefront.ipDetectUrl",
-			"http://checkip.amazonaws.com");
-	public static final String DEFAULT_URL = System.getProperty("storefront.url",
-			"{protocol}://{host}:{port}/{context}");
-	public static final int DEFAULT_PORT = Integer.valueOf(System.getProperty("maven.tomcat.port", "9001"));
-	public static final String APP_NAME = System.getProperty("storefront.name", "NuoDB Storefront Demo");
-	public static final String TENANT_PARAM_NAME = "tenant";
 	public static final String LOGGER_NAME_TENANT_SEP = ":";
 
 	// Storefront timings
 	public static final int HEARTBEAT_INTERVAL_SEC = 10;
-	public static final int CPU_SAMPLING_INTERVAL_SEC = 1;
 	public static final int MAX_HEARTBEAT_AGE_SEC = 20;
+	public static final int CPU_SAMPLING_INTERVAL_SEC = 1;
 	public static final int PURGE_FREQUENCY_SEC = 60 * 30; // 30 min
 	public static final int STOP_USERS_AFTER_IDLE_UI_SEC = 60 * 10; // 10 min
 	public static final int MIN_INSTANCE_PURGE_AGE_SEC = 60 * 60; // 1 hour

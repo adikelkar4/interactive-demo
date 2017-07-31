@@ -12,7 +12,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 
-import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.model.dto.StorefrontStats;
 import com.nuodb.storefront.model.entity.Customer;
 import com.nuodb.storefront.model.type.MessageSeverity;
@@ -55,17 +54,17 @@ public class ControlPanelProductsServlet extends BaseServlet {
         IDataGeneratorService dataGen = getTenant(req).createDataGeneratorService();
         Logger logger = getLogger(req,  getClass());
         if (btnAction.contains("load")) {
-            StorefrontApp.loadData(dataGen);
+            StorefrontWebApp.loadData(dataGen);
             addMessage(req, MessageSeverity.INFO, "Product data loaded successfully.");
             logger.info("Product data loaded");
         } else if (btnAction.contains("generate")) {
-            StorefrontApp.generateData(dataGen);
+            StorefrontWebApp.generateData(dataGen);
             addMessage(req, MessageSeverity.INFO, "Product data generated successfully.");
             logger.info("Product data generated");
         } else if (btnAction.contains("remove")) {
             // Now remove all data
             try {
-                StorefrontApp.removeData(dataGen);
+                StorefrontWebApp.removeData(dataGen);
                 logger.info("Product data removed");
             } catch (Exception e) {
                 logger.error("Unable to remove product data", e);
@@ -74,7 +73,7 @@ public class ControlPanelProductsServlet extends BaseServlet {
     }
 
     protected StorefrontStats checkForProducts(HttpServletRequest req) {
-        StorefrontStats stats = getStorefrontService(req).getStorefrontStats(StorefrontApp.DEFAULT_SESSION_TIMEOUT_SEC, null);
+        StorefrontStats stats = getStorefrontService(req).getStorefrontStats(StorefrontWebApp.DEFAULT_SESSION_TIMEOUT_SEC, null);
 
         if (stats.getProductCount() == 0) {
             addMessage(

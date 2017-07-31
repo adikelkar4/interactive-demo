@@ -3,8 +3,6 @@
 package com.nuodb.storefront.service.storefront;
 
 import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -18,11 +16,9 @@ import org.apache.log4j.Logger;
 import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.hibernate.SessionFactory;
-import org.hibernate.StatelessSession;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
-import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 
@@ -35,16 +31,10 @@ import com.nuodb.storefront.model.dto.ConnInfo;
 import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.entity.AppInstance;
-import com.nuodb.storefront.service.IDataGeneratorService;
-import com.nuodb.storefront.service.IDbApi;
-import com.nuodb.storefront.service.IHeartbeatService;
 import com.nuodb.storefront.service.ISimulatorService;
-import com.nuodb.storefront.service.IStorefrontPeerService;
 import com.nuodb.storefront.service.IStorefrontService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.service.TenantStatisticsService;
-import com.nuodb.storefront.service.datagen.DataGeneratorService;
-import com.nuodb.storefront.service.dbapi.DbApiProxy;
 import com.nuodb.storefront.service.simulator.SimulatorService;
 import com.nuodb.storefront.util.PerformanceUtil;
 import com.sun.jersey.api.client.Client;
@@ -67,8 +57,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 	private Map<String, String> appSettings;
 	private SessionFactory sessionFactory;
 	private ISimulatorService simulatorSvc;
-	private IHeartbeatService heartbeatSvc;
-	private IDbApi dbApi;
+	private HeartbeatService heartbeatSvc;
 	private ConnInfo apiConnInfo;
 	private ScheduledExecutorService executor;
 	private final StringWriter logWriter = new StringWriter();
@@ -85,11 +74,11 @@ public class StorefrontTenant implements IStorefrontTenant {
 		s_apiCfg.getSingletons().add(new JacksonJaxbJsonProvider()
 				.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false));
 	}
-	
+
 	public StorefrontTenant(AppInstance appInstance, Map<String, String> dbSettings) {
 		this.appInstance = appInstance;
 		this.hibernateCfg = buildHibernateConfiguration(dbSettings);
-		
+
 		for (String transactionName : TRANSACTION_NAMES) {
 			transactionStatsMap.put(transactionName, new TransactionStats());
 		}
@@ -107,14 +96,14 @@ public class StorefrontTenant implements IStorefrontTenant {
 		config = config.configure("hibernate_" + driverType + ".cfg.xml");
 		if (dbName != null) {
 			dbName = dbName.replace("{domain.broker}", StorefrontApp.DB_DOMAIN_BROKER);
-			
+
 			Matcher dbNameMatcher = Pattern.compile("([^@]*)@([^@:]*(?::\\d+|$))").matcher(dbName);
 			if (!dbNameMatcher.matches()) {
 				throw new IllegalArgumentException("Database name must be of the format name@host[:port]");
 			}
 			String name = dbNameMatcher.group(1);
 			String host = dbNameMatcher.group(2);
-			
+
 			String url = "jdbc:" + driverType + "://" + host + "/" + name;
 			if (dbOptions != null) {
 				url = url + "?" + dbOptions;
@@ -146,7 +135,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 				if (sampler != null) {
 					executor.scheduleAtFixedRate(sampler, 0, StorefrontApp.CPU_SAMPLING_INTERVAL_SEC, TimeUnit.SECONDS);
 				}
-				
+
 				executor.scheduleAtFixedRate(getStatsSvc(), 0, 500, TimeUnit.MILLISECONDS);
 			}
 		}
@@ -193,7 +182,6 @@ public class StorefrontTenant implements IStorefrontTenant {
 		hibernateCfg.setProperty(Environment.URL, dbConnInfo.getUrl());
 
 		synchronized (lock) {
-			dbApi = null;
 			if (sessionFactory != null) {
 				sessionFactory.close();
 				sessionFactory = null;
@@ -219,7 +207,6 @@ public class StorefrontTenant implements IStorefrontTenant {
 	public void setApiConnInfo(ConnInfo info) {
 		synchronized (lock) {
 			apiConnInfo = new ConnInfo(info);
-			dbApi = null;
 		}
 	}
 
@@ -249,19 +236,6 @@ public class StorefrontTenant implements IStorefrontTenant {
 		return new StorefrontService(appInstance, createStorefrontDao());
 	}
 
-	public IDataGeneratorService createDataGeneratorService() {
-		SessionFactory factory = getOrCreateSessionFactory();
-		try {
-			Connection connection = factory.getSessionFactoryOptions().getServiceRegistry()
-					.getService(ConnectionProvider.class).getConnection();
-			StatelessSession session = factory.openStatelessSession(connection);
-			connection.setAutoCommit(true);
-			return new DataGeneratorService(session, connection, appInstance.getRegion());
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	public ISimulatorService getSimulatorService() {
 		if (simulatorSvc == null) {
 			synchronized (lock) {
@@ -273,23 +247,8 @@ public class StorefrontTenant implements IStorefrontTenant {
 		return simulatorSvc;
 	}
 
-	public IDbApi getDbApi() {
-		if (dbApi == null) {
-			synchronized (lock) {
-				if (dbApi == null) {
-					dbApi = createDbApi();
-				}
-			}
-		}
-		return dbApi;
-	}
-
 	public IStorefrontDao createStorefrontDao() {
 		return createStorefrontDao(getOrCreateSessionFactory());
-	}
-
-	public IStorefrontPeerService getStorefrontPeerService() {
-		return (IStorefrontPeerService) getHeartbeatService();
 	}
 
 	public Client createApiClient() {
@@ -308,11 +267,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 		return transactionStatsMap;
 	}
 
-	protected IDbApi createDbApi() {
-		return new DbApiProxy(this);
-	}
-
-	protected IHeartbeatService getHeartbeatService() {
+	protected HeartbeatService getHeartbeatService() {
 		if (heartbeatSvc == null) {
 			synchronized (lock) {
 				heartbeatSvc = new HeartbeatService(this);
@@ -323,7 +278,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 
 	protected SessionFactory getOrCreateSessionFactory() {
 		if (!initializedApp) {
-			
+
 			synchronized (lock) {
 				if (sessionFactory == null) {
 					ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()

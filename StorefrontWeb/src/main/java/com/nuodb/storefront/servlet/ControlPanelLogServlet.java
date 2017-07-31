@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.nuodb.storefront.StorefrontTenantManager;
+import com.nuodb.storefront.api.BaseApi;
 import com.nuodb.storefront.model.dto.WorkloadStats;
 import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.model.entity.Customer;
@@ -98,14 +99,16 @@ public class ControlPanelLogServlet extends BaseServlet {
         buff.append("\n\n");
         buff.append("LOCAL SIMULATED WORKLOADS:\n\n");
         try {
-            for (Map.Entry<String, WorkloadStats> entry : getSimulator(req).getWorkloadStats().entrySet()) {
-                buff.append(++workerCount);
-                buff.append(". ");
-                buff.append(entry.getKey());
-                buff.append(": ");
-                buff.append(entry.getValue());
-                buff.append("\n");
-            }
+        	for (Map<String, WorkloadStats> dbTypeStats : BaseApi.getWorkloadStatHeap().values()) {        		
+        		for (Map.Entry<String, WorkloadStats> entry : dbTypeStats.entrySet()) {
+        			buff.append(++workerCount);
+        			buff.append(". ");
+        			buff.append(entry.getKey());
+        			buff.append(": ");
+        			buff.append(entry.getValue());
+        			buff.append("\n");
+        		}
+        	}
         } catch (Exception e) {
             buff.append(e.getMessage() + "\n\n");
         }
