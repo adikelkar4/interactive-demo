@@ -3,9 +3,8 @@
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
 <t:page showHeader="false">
-    <h1>Welcome to the NuoDB Storefront Demo!</h1>
+    <h1>NuoDB INTERACTIVE DEMO</h1>
     <t:messages />
-    
     <div class="alert alert-block alert-info hide" id="api-box">
         <p>Before you can use this demo, you must specify domain credentials to connect to NuoDB.<br> &nbsp;</p>
         
@@ -72,18 +71,23 @@
 
     <div id="welcome">
         <div class="row">
-            <div class="span8">
-                <br />
-                <p>This is an e-commerce web application with a built-in ability to simulate activity from thousands of users. You can use it to see how NuoDB shines under a variety of scenarios.</p>
-
-                <p>Get started with a <a href="./tour-scale-out${qs}">guided tour</a> (see left sidebar). These tours showcase NuoDB’s value propositions in your environment.  Or visit the <a href="./store-products${qs}">Storefront Website</a>.</p>
-
-                <p>
-                    The Storefront demo is an open source application written in Java. It uses Hibernate for data access with NuoDB’s JDBC driver and DataSource for connection pooling. <a href="https://github.com/nuodb/nuodb-samples/tree/master/StorefrontDemo" target="_blank">Check it out on GitHub</a>.
-                </p>
+            <h2>Select a tour to get started</h2>
+            <div class="home-page-btn">
+                <a href=""><img src="img/scale-btn.png"/></a>
+                <h5 style="text-align: center;">Scale-Out Performance</h5>
+                <p style="text-align: center;">Brief description of what the scale-out demo is</p>
             </div>
-            <div class="span4">
-                <img src="img/cart.png" />
+            <div class="home-page-btn">
+                <a href=""><img src="img/db-comparison-btn.png" /></a>
+                <h5 style="text-align: center;">[COMING SOON]</h5>
+            </div>
+            <div class="home-page-btn">
+                <a href=""><img src="img/active-active-btn.png" /></a>
+                <h5 style="text-align: center;">[COMING SOON]</h5>
+            </div>
+             <div class="home-page-btn">
+                <a href=""><img src="img/ca-btn.png" /></a>
+                <h5 style="text-align: center;">[COMING SOON]</h5>
             </div>
         </div>
     </div>

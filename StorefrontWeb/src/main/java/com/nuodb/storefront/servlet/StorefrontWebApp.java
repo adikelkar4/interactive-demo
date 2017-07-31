@@ -47,6 +47,7 @@ public class StorefrontWebApp implements ServletContextListener {
 	public static final int BENCHMARK_DURATION_MS = 10000;
 	public static final int SIMULATOR_STATS_DISPLAY_INTERVAL_MS = 5000;
 	public static final int GC_CUMULATIVE_TIME_LOG_MS = 500; // every 0.5 sec of cumulative GC time logged
+	public static final int CW_METRIC_LOG_TIME = 1000;
 	// Database properties
 	public static final String DB_NAME = System.getProperty("storefront.db.name");
 	public static final String DB_USER = System.getProperty("storefront.db.user");

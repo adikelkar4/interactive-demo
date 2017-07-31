@@ -2,9 +2,11 @@
 
 package com.nuodb.storefront.api;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -18,12 +20,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
-import com.amazonaws.services.cloudwatch.model.Dimension;
-import com.amazonaws.services.cloudwatch.model.MetricDatum;
-import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
-import com.amazonaws.services.cloudwatch.model.StandardUnit;
+import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.nuodb.storefront.model.dto.DbFootprint;
 import com.nuodb.storefront.model.dto.RegionStats;
 import com.nuodb.storefront.model.dto.StatsPayload;
@@ -31,26 +28,34 @@ import com.nuodb.storefront.model.dto.StorefrontStats;
 import com.nuodb.storefront.model.dto.StorefrontStatsReport;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.dto.WorkloadStats;
-import com.nuodb.storefront.servlet.StorefrontWebApp;
+import com.nuodb.storefront.model.dto.WorkloadStep;
+import com.nuodb.storefront.model.dto.WorkloadStepStats;
 
 @Path("/stats")
 public class StatsApi extends BaseApi {
     private static final String TRANSACTION_STATS_MAP_KEY = "transactionStats";
     private static final String WORKLOAD_STATS_MAP_KEY = "workloadStats";
 
-    private static final Integer statsPutMax = 500;
-    private static Integer statsPutCount = 0;
+    private static Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
+    private static Map<String, Map<WorkloadStep, WorkloadStepStats>> stepStatsHeap = new HashMap<>();
+    private static Map<String, Date> lastStatUpdate = new HashMap<>();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public StorefrontStatsReport getAllStatsReport(@Context HttpServletRequest req) {
         StorefrontStatsReport rpt = buildBaseStatsReport(req);
+        String dbType = req.getParameter("dbType") == null ? "nuodb" : req.getParameter("dbType");
+        DbFootprint footprint = getDbApi(req).getDbFootprint();
+        rpt.setDbStats(footprint);
+        rpt.setWorkloadStats(workloadStatHeap.getOrDefault(dbType, new HashMap<>()));
+        rpt.setTransactionStats(transactionStatHeap.getOrDefault(dbType, new HashMap<>()));
+        rpt.setWorkloadStepStats(stepStatsHeap.getOrDefault(dbType, new HashMap<>()));
         clearWorkloadProperty(rpt.getWorkloadStats());
 
         return rpt;
     }
 
-	@GET
+    @GET
     @Path("/storefront")
     @Produces(MediaType.APPLICATION_JSON)
     public StorefrontStats getStorefrontStats(@Context HttpServletRequest req, @QueryParam("sessionTimeoutSec") Integer sessionTimeoutSec, @QueryParam("maxAgeSec") Integer maxAgeSec) {
@@ -62,14 +67,16 @@ public class StatsApi extends BaseApi {
     @Path("/transactions")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, TransactionStats> getTransactionStats(@Context HttpServletRequest req) {
-        return getTransactionStatHeap().getOrDefault(NUODB_MAP_KEY, new HashMap<>());
+        String dbType = req.getParameter("dbType") == null ? "nuodb" : req.getParameter("dbType");
+        return transactionStatHeap.getOrDefault(dbType, new HashMap<>());
     }
 
     @GET
     @Path("/workloads")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, WorkloadStats> getWorkloadStats(@Context HttpServletRequest req) {
-        return getWorkloadStatHeap().getOrDefault(NUODB_MAP_KEY, new HashMap<>());
+        String dbType = req.getParameter("dbType") == null ? "nuodb" : req.getParameter("dbType");
+        return workloadStatHeap.getOrDefault(dbType, new HashMap<>());
     }
 
     @GET
@@ -99,16 +106,24 @@ public class StatsApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response putContainerStats(@Context HttpServletRequest req, StatsPayload stats) {
-        if (stats.getPayload().size() < 1) {
+        Map<String, Map> payload = stats.getPayload();
+        if (payload.size() < 1) {
             return Response.status(Response.Status.BAD_REQUEST).build();
+        } else if (lastStatUpdate.containsKey(stats.getUid())) {
+            if (!lastStatUpdate.get(stats.getUid()).before(stats.getTimestamp())) {
+                return Response.ok().build();
+            }
         }
 
-        Map<String, Map> payload = stats.getPayload();
+        lastStatUpdate.put(stats.getUid(), stats.getTimestamp());
+        String databaseType = stats.getDatabaseType();
 
         @SuppressWarnings("unchecked")
         Map<String, Map<String, Integer>> tStats = (Map<String, Map<String, Integer>>)payload.getOrDefault(TRANSACTION_STATS_MAP_KEY, new HashMap<>());
         @SuppressWarnings("unchecked")
         Map<String, Map<String, Integer>> wStats = (Map<String, Map<String, Integer>>)payload.getOrDefault(WORKLOAD_STATS_MAP_KEY, new HashMap<>());
+        @SuppressWarnings("unchecked")
+        Map<String, Map<String, Integer>> sStats = (Map<String, Map<String, Integer>>) payload.getOrDefault("stepStats", new HashMap<>());
 
         if (tStats.size() < 1 && wStats.size() < 1) {
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -116,23 +131,28 @@ public class StatsApi extends BaseApi {
 
         // TODO - Break this off into its own threaded process, should only respond with acknowledged receipt of stats  - AndyM/KevinW
         synchronized (this.heapLock) { // Always synchronize on the heapLock so both maps are protected simultaneously
-            if (!getTransactionStatHeap().containsKey(NUODB_MAP_KEY)) {
-                getTransactionStatHeap().put(NUODB_MAP_KEY, new HashMap<>());
+            if (!transactionStatHeap.containsKey(databaseType)) {
+                transactionStatHeap.put(databaseType, new HashMap<>());
             }
 
-            if(!getWorkloadStatHeap().containsKey(NUODB_MAP_KEY)) {
-                getWorkloadStatHeap().put(NUODB_MAP_KEY, new HashMap<>());
+            if(!workloadStatHeap.containsKey(databaseType)) {
+                workloadStatHeap.put(databaseType, new HashMap<>());
             }
 
-            Map<String, TransactionStats> tTmp = getTransactionStatHeap().get(NUODB_MAP_KEY);
-            Map<String, WorkloadStats> wTmp = getWorkloadStatHeap().get(NUODB_MAP_KEY);
+            if (!stepStatsHeap.containsKey(databaseType)) {
+                stepStatsHeap.put(databaseType, new HashMap<>());
+            }
+
+            Map<String, TransactionStats> tTmp = transactionStatHeap.get(databaseType);
+            Map<String, WorkloadStats> wTmp = workloadStatHeap.get(databaseType);
+            Map<WorkloadStep, WorkloadStepStats> sTmp = stepStatsHeap.get(databaseType);
 
             for (Map.Entry<String, Map<String, Integer>> entry : tStats.entrySet()) {
                 if (tTmp.containsKey(entry.getKey())) {
                     tTmp.get(entry.getKey()).applyDeltas(entry.getValue());
                 } else {
-                	TransactionStats newStats = new TransactionStats();
-                	newStats.applyDeltas(entry.getValue());
+                    TransactionStats newStats = new TransactionStats();
+                    newStats.applyDeltas(entry.getValue());
                     tTmp.put(entry.getKey(), newStats);
                 }
             }
@@ -141,45 +161,39 @@ public class StatsApi extends BaseApi {
                 if (wTmp.containsKey(entry.getKey())) {
                     wTmp.get(entry.getKey()).applyDeltas(entry.getValue());
                 } else {
-                	WorkloadStats newStats = new WorkloadStats();
-                	newStats.setActiveWorkerLimit(0);
-                	newStats.applyDeltas(entry.getValue());
+                    WorkloadStats newStats = new WorkloadStats();
+                    newStats.setActiveWorkerLimit(0);
+                    newStats.applyDeltas(entry.getValue());
                     wTmp.put(entry.getKey(), newStats);
                 }
             }
 
-            if (this.statsPutCount >= this.statsPutMax) {
-                this.statsPutCount = 0;
-                int totalCount = 0;
-                long totalDuration = 0;
-
-                for (Map.Entry<String, TransactionStats> ts : tTmp.entrySet()) {
-                    totalCount += ts.getValue().getTotalCount();
-                    totalDuration += ts.getValue().getTotalDurationMs();
+            for (Map.Entry<String, Map<String, Integer>> entry : sStats.entrySet()) {
+                if (sTmp.containsKey(entry.getKey())) {
+                    sTmp.get(WorkloadStep.valueOf(entry.getKey())).applyDeltas(entry.getValue());
+                } else {
+                    WorkloadStepStats newStats = new WorkloadStepStats();
+                    newStats.setCompletionCount(0);
+                    newStats.applyDeltas(entry.getValue());
+                    sTmp.put(WorkloadStep.valueOf(entry.getKey()), newStats);
                 }
-
-                try {
-                    AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
-                    Dimension dimension = new Dimension()
-                            .withName("AVG_LATENCY")
-                            .withValue("MS");
-                    MetricDatum datum = new MetricDatum()
-                            .withMetricName("MS")
-                            .withUnit(StandardUnit.Milliseconds)
-                            .withValue((double) (totalDuration / totalCount))
-                            .withDimensions(dimension);
-                    PutMetricDataRequest pmdr = new PutMetricDataRequest()
-                            .withNamespace("INSTANCE/METRICS")
-                            .withMetricData(datum);
-                    cw.putMetricData(pmdr);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            } else {
-                this.statsPutCount++;
             }
+
         }
 
         return Response.status(Response.Status.OK).build();
+    }
+
+    public static Map<String, Map<String, TransactionStats>> getTransactionStatHeap() {
+        return transactionStatHeap;
+    }
+
+    protected Map<String, WorkloadStats> clearWorkloadProperty(Map<String, WorkloadStats> statsMap)
+    {
+        // Clear unnecessary workload property to reduce payload size by ~25%
+        for (WorkloadStats stats : statsMap.values()) {
+            stats.setWorkload(null);
+        }
+        return statsMap;
     }
 }

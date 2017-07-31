@@ -18,7 +18,6 @@ import org.apache.log4j.Logger;
 import com.nuodb.storefront.dal.BaseDao;
 import com.nuodb.storefront.model.dto.StorefrontStatsReport;
 import com.nuodb.storefront.model.dto.Workload;
-import com.nuodb.storefront.model.dto.WorkloadFlow;
 import com.nuodb.storefront.model.dto.WorkloadStats;
 import com.nuodb.storefront.model.dto.WorkloadStep;
 import com.nuodb.storefront.model.dto.WorkloadStepStats;
@@ -50,17 +49,6 @@ public class SimulatorService implements ISimulator, ISimulatorService {
                     throw new RuntimeException(e);
                 }
             }
-        }
-
-        // Seed steps map
-        try {
-            for (WorkloadStep step : WorkloadStep.values()) {
-                if (step.getClass().getField(step.name()).getAnnotation(WorkloadFlow.class) == null) {
-                    stepCompletionCounts.put(step, new AtomicInteger(0));
-                }
-            }
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -176,7 +164,10 @@ public class SimulatorService implements ISimulator, ISimulatorService {
     }
 
     public void incrementStepCompletionCount(WorkloadStep step) {
-        stepCompletionCounts.get(step).incrementAndGet();
+    	if (!getStepCompletionCounts().containsKey(step)) {
+    		getStepCompletionCounts().put(step, new AtomicInteger());
+    	}
+        getStepCompletionCounts().get(step).incrementAndGet();
     }
 
     public StorefrontStatsReport getStorefrontStatsReport() {
@@ -219,6 +210,10 @@ public class SimulatorService implements ISimulator, ISimulatorService {
     	workloadStats.applyDeltas(stats);
     }
 
+	public Map<WorkloadStep, AtomicInteger> getStepCompletionCounts() {
+		return stepCompletionCounts;
+	}
+
 	protected class RunnableWorker implements Runnable {
         private final IWorker worker;
         private long completionWorkTimeMs;
@@ -235,10 +230,11 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 
             // Verify this worker can still run
             synchronized (workloadStatsMap) {
+            	WorkloadStats stats = getOrCreateWorkloadStats(workload);
                 if (originalThreadPool != threadPool) {
+                    stats.setActiveWorkerCount(stats.getActiveWorkerCount() - 1);
                     return;
                 }
-                WorkloadStats stats = getOrCreateWorkloadStats(workload);
                 if (stats.exceedsWorkerLimit()) {
                     // Don't run this worker. We're over the limit
                     stats.setActiveWorkerCount(stats.getActiveWorkerCount() - 1);
@@ -268,10 +264,11 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 
             // Update stats
             synchronized (workloadStatsMap) {
+            	WorkloadStats stats = getOrCreateWorkloadStats(workload);
                 if (originalThreadPool != threadPool) {
+                    stats.setActiveWorkerCount(stats.getActiveWorkerCount() - 1);
                     return;
                 }
-                WorkloadStats stats = getOrCreateWorkloadStats(workload);
                 stats.setWorkInvocationCount(stats.getWorkInvocationCount() + 1);
                 stats.setTotalWorkTimeMs(stats.getTotalWorkTimeMs() + completionWorkTimeMs);
                 if (delay < 0) {

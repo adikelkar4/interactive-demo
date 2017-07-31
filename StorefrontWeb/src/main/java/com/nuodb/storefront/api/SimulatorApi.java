@@ -45,7 +45,7 @@ public class SimulatorApi extends BaseApi {
 			LocalLauncher local = new LocalLauncher();
 			local.setDbOptions(dbSettings);
 			Map<String, String> appSettings = new HashMap<>();
-			appSettings.put("app.host", host);
+			appSettings.put("app.host", "http://" + host + "/StorefrontWeb");
 			local.setAppOptions(appSettings);
 			launcher = local;
     	} else {
@@ -65,6 +65,10 @@ public class SimulatorApi extends BaseApi {
             return Response.ok().build();
         }
 
+        //AppInstanceApi apiapi = new AppInstanceApi();
+        //apiapi.putLog(req, "More user workloads have been requested, should begin within 3 minutes");
+        getTenant(req).getLogger(this.getClass()).info("User workload was increased by 1");
+
         return Response.status(Response.Status.FORBIDDEN).build();
     }
 
@@ -79,6 +83,10 @@ public class SimulatorApi extends BaseApi {
             return Response.ok().build();
         }
 
+        //AppInstanceApi apiapi = new AppInstanceApi();
+        //apiapi.putLog(req, "A decrease in the user workloads has been requested, should show shortly");
+        getTenant(req).getLogger(this.getClass()).info("User workload was decreased by 1");
+
         return Response.status(Response.Status.FORBIDDEN).build();
     }
 
@@ -89,6 +97,10 @@ public class SimulatorApi extends BaseApi {
         userContainerCount = 0;
         moveUserCount(req, userContainerCount);
         clearWorkloadUserCounts();
+
+        //AppInstanceApi apiapi = new AppInstanceApi();
+        //apiapi.putLog(req, "All user workloads have been cleared out, should be at 0 workload shortly");
+        getTenant(req).getLogger(this.getClass()).info("User workload was set to 0");
 
         return Response.ok().build();
     }

@@ -3,6 +3,7 @@
 package com.nuodb.storefront.service;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.nuodb.storefront.model.dto.StorefrontStatsReport;
 import com.nuodb.storefront.model.dto.Workload;
@@ -59,6 +60,8 @@ public interface ISimulatorService {
     public void stopAll();
 
     public Map<String, WorkloadStats> getWorkloadStats();
+    
+    public Map<WorkloadStep, AtomicInteger> getStepCompletionCounts();
 
     public Map<WorkloadStep, WorkloadStepStats> getWorkloadStepStats();
 

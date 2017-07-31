@@ -19,8 +19,8 @@ import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.service.storefront.StorefrontTenant;
 
 public class StorefrontTenantManager {
-	private static final AppInstance s_defaultAppInstance = new AppInstance(StorefrontTenant.DEFAULT_REGION_NAME,
-			StorefrontTenant.DEFAULT_TENANT_NAME, true);
+	private static final AppInstance s_defaultAppInstance = new AppInstance(StorefrontApp.DEFAULT_REGION_NAME,
+			StorefrontApp.DEFAULT_TENANT_NAME, true);
 	private static final Map<String, IStorefrontTenant> s_tenantMap = new TreeMap<String, IStorefrontTenant>(
 			String.CASE_INSENSITIVE_ORDER);
 
@@ -63,7 +63,7 @@ public class StorefrontTenantManager {
 
 			// Build and start tenant
 			StorefrontTenant tenant = new StorefrontTenant(tenantApp, dbSettings);
-
+			tenant.setDbType(dbSettings.containsKey("db.type") ? dbSettings.get("db.type") : "nuodb");
 			s_tenantMap.put(tenantName, tenant);
 			tenant.startUp();
 			return tenant;

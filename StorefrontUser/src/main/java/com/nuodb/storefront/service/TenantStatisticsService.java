@@ -3,6 +3,7 @@ package com.nuodb.storefront.service;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,22 +15,27 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import com.nuodb.storefront.StorefrontApp;
 import com.nuodb.storefront.model.dto.TenantStatistics;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.dto.WorkloadStats;
+import com.nuodb.storefront.model.dto.WorkloadStep;
+import com.nuodb.storefront.model.dto.WorkloadStepStats;
 
 public class TenantStatisticsService implements Runnable {
 	
 	private TenantStatistics allStats;
 	private IStorefrontTenant tenant;
 	private ObjectMapper mapper;
+	private String dbType;
 	
 	private static final String storefrontStatsEndpoint = "/api/stats";
 	
-	public TenantStatisticsService(IStorefrontTenant tenant) {
+	public TenantStatisticsService(IStorefrontTenant tenant, String dbVendor) {
 		this.setTenant(tenant);
 		allStats = new TenantStatistics();
 		mapper = new ObjectMapper();
+		dbType = dbVendor;
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -37,19 +43,25 @@ public class TenantStatisticsService implements Runnable {
 	public void run() {
 		Map<String, TransactionStats> transactionStats = null;
 		Map<String, WorkloadStats> workloadStats = null;
+		Map<WorkloadStep, WorkloadStepStats> stepStats = null;
 		synchronized (this.tenant.getTransactionStats()) {
 			transactionStats = new HashMap<>(this.tenant.getTransactionStats());
 			this.tenant.getTransactionStats().clear();
 		}
 		synchronized (this.tenant.getSimulatorService()) {
 			workloadStats = new HashMap<>(this.tenant.getSimulatorService().getWorkloadStats());
+			stepStats = new HashMap<>(this.tenant.getSimulatorService().getWorkloadStepStats());
 			this.tenant.getSimulatorService().getWorkloadStats().clear();
+			this.tenant.getSimulatorService().getStepCompletionCounts().clear();
 		}
 		Map<String, Map> payload = new HashMap<>();
 		payload.put("transactionStats", transactionStats);
 		payload.put("workloadStats", workloadStats);
-		allStats.setDatabaseType("nuodb");
+		payload.put("stepStats", stepStats);
+		allStats.setDatabaseType(this.dbType);
 		allStats.setPayload(payload);
+		allStats.setUid(StorefrontApp.INSTANCE_UID.toString());
+		allStats.setTimestamp(new Date());
 		try {
 			postStatsAsJson(this.tenant.getAppSettings(), allStats);
 		} catch (IOException e) {

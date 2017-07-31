@@ -63,40 +63,22 @@ public class StorefrontTenant implements IStorefrontTenant {
 	private final StringWriter logWriter = new StringWriter();
 	private final Map<String, TransactionStats> transactionStatsMap = new HashMap<String, TransactionStats>();
 	private TenantStatisticsService statsSvc;
-	public static final String DB_PROCESS_TAG = System.getProperty("storefront.db.processTag", "demo_${db.name}");
-	public static final String DB_DOMAIN_BROKER = System.getProperty("domain.broker", "localhost");
-	public static final int CPU_SAMPLING_INTERVAL_SEC = 1;
-	public static final String DEFAULT_TENANT_NAME = "Default";
-	public static final String DEFAULT_REGION_NAME = "Unknown region";
-	public static final String DEFAULT_DB_HOST = "localhost";
-	// Default names
-	public static final String DEFAULT_DB_NAME = "Storefront";
-	public static final String DBAPI_PASSWORD = System.getProperty("storefront.dbapi.password", "bird");
-	public static final String DBAPI_USERNAME = System.getProperty("storefront.dbapi.user", "domain");
-	public static final int DBAPI_PORT = Integer.valueOf(System.getProperty("storefront.dbapi.port", "8888"));
-	public static final String DBAPI_HOST = System.getProperty("storefront.dbapi.host");
-	public static final int DBAPI_MAX_UNAVAILABLE_RETRY_TIME_SEC = Integer
-	.valueOf(System.getProperty("storefront.dbapi.unavailableRetryTimeSec", "3"));
-	public static final int DBAPI_CONNECT_TIMEOUT_SEC = Integer
-	.valueOf(System.getProperty("storefront.dbapi.connectTimeoutSec", "10"));
-	// Database API properties
-	public static final int DBAPI_READ_TIMEOUT_SEC = Integer
-			.valueOf(System.getProperty("storefront.dbapi.readTimeoutSec", "10"));
+	private String dbType;
 
 	// Initialize API client config
 	static {
 		Map<String, Object> props = s_apiCfg.getProperties();
-		props.put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, StorefrontTenant.DBAPI_CONNECT_TIMEOUT_SEC * 1000);
-		props.put(ClientConfig.PROPERTY_READ_TIMEOUT, StorefrontTenant.DBAPI_READ_TIMEOUT_SEC * 1000);
+		props.put(ClientConfig.PROPERTY_CONNECT_TIMEOUT, StorefrontApp.DBAPI_CONNECT_TIMEOUT_SEC * 1000);
+		props.put(ClientConfig.PROPERTY_READ_TIMEOUT, StorefrontApp.DBAPI_READ_TIMEOUT_SEC * 1000);
 
 		s_apiCfg.getSingletons().add(new JacksonJaxbJsonProvider()
 				.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false));
 	}
-	
+
 	public StorefrontTenant(AppInstance appInstance, Map<String, String> dbSettings) {
 		this.appInstance = appInstance;
 		this.hibernateCfg = buildHibernateConfiguration(dbSettings);
-		
+
 		for (String transactionName : TRANSACTION_NAMES) {
 			transactionStatsMap.put(transactionName, new TransactionStats());
 		}
@@ -113,15 +95,15 @@ public class StorefrontTenant implements IStorefrontTenant {
 		DriverNameEnum driverType = DriverNameEnum.valueOf(dbType);
 		config = config.configure("hibernate_" + driverType + ".cfg.xml");
 		if (dbName != null) {
-			dbName = dbName.replace("{domain.broker}", StorefrontTenant.DB_DOMAIN_BROKER);
-			
+			dbName = dbName.replace("{domain.broker}", StorefrontApp.DB_DOMAIN_BROKER);
+
 			Matcher dbNameMatcher = Pattern.compile("([^@]*)@([^@:]*(?::\\d+|$))").matcher(dbName);
 			if (!dbNameMatcher.matches()) {
 				throw new IllegalArgumentException("Database name must be of the format name@host[:port]");
 			}
 			String name = dbNameMatcher.group(1);
 			String host = dbNameMatcher.group(2);
-			
+
 			String url = "jdbc:" + driverType + "://" + host + "/" + name;
 			if (dbOptions != null) {
 				url = url + "?" + dbOptions;
@@ -151,9 +133,9 @@ public class StorefrontTenant implements IStorefrontTenant {
 
 				Runnable sampler = PerformanceUtil.createSampler();
 				if (sampler != null) {
-					executor.scheduleAtFixedRate(sampler, 0, StorefrontTenant.CPU_SAMPLING_INTERVAL_SEC, TimeUnit.SECONDS);
+					executor.scheduleAtFixedRate(sampler, 0, StorefrontApp.CPU_SAMPLING_INTERVAL_SEC, TimeUnit.SECONDS);
 				}
-				
+
 				executor.scheduleAtFixedRate(getStatsSvc(), 0, 500, TimeUnit.MILLISECONDS);
 			}
 		}
@@ -185,12 +167,12 @@ public class StorefrontTenant implements IStorefrontTenant {
 			info.setHost(dbNameMatcher.group(1));
 			info.setDbName(dbNameMatcher.group(3));
 		} else {
-			info.setHost(StorefrontTenant.DEFAULT_DB_HOST);
-			info.setDbName(StorefrontTenant.DEFAULT_DB_NAME);
+			info.setHost(StorefrontApp.DEFAULT_DB_HOST);
+			info.setDbName(StorefrontApp.DEFAULT_DB_NAME);
 		}
 		info.setUsername(hibernateCfg.getProperty(Environment.USER));
 		info.setPassword(hibernateCfg.getProperty(Environment.PASS));
-		info.setDbProcessTag(StorefrontTenant.DB_PROCESS_TAG.replace("${db.name}", info.getDbName()));
+		info.setDbProcessTag(StorefrontApp.DB_PROCESS_TAG.replace("${db.name}", info.getDbName()));
 		return info;
 	}
 
@@ -211,10 +193,10 @@ public class StorefrontTenant implements IStorefrontTenant {
 		synchronized (lock) {
 			if (apiConnInfo == null) {
 				String host = getDbApiHost();
-				int port = StorefrontTenant.DBAPI_PORT;
+				int port = StorefrontApp.DBAPI_PORT;
 				ConnInfo info = new ConnInfo();
-				info.setUsername(StorefrontTenant.DBAPI_USERNAME);
-				info.setPassword(StorefrontTenant.DBAPI_PASSWORD);
+				info.setUsername(StorefrontApp.DBAPI_USERNAME);
+				info.setPassword(StorefrontApp.DBAPI_PASSWORD);
 				info.setUrl("http://" + host + ":" + port + "/api/1");
 				apiConnInfo = info;
 			}
@@ -226,6 +208,18 @@ public class StorefrontTenant implements IStorefrontTenant {
 		synchronized (lock) {
 			apiConnInfo = new ConnInfo(info);
 		}
+	}
+
+	public String getAdminConsoleUrl() {
+		String host = getDbApiHost();
+		int port = StorefrontApp.DBAPI_PORT;
+		return "http://" + host + ":" + port + "/console";
+	}
+
+	public String getSqlExplorerUrl() {
+		String host = getDbApiHost();
+		int port = StorefrontApp.SQLEXPLORER_PORT;
+		return "http://" + host + ":" + port + "/explorer.jsp";
 	}
 
 	public SchemaExport createSchemaExport() {
@@ -284,7 +278,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 
 	protected SessionFactory getOrCreateSessionFactory() {
 		if (!initializedApp) {
-			
+
 			synchronized (lock) {
 				if (sessionFactory == null) {
 					ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
@@ -310,7 +304,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 	}
 
 	protected String getDbApiHost() {
-		String apiHost = StorefrontTenant.DBAPI_HOST;
+		String apiHost = StorefrontApp.DBAPI_HOST;
 		return (!StringUtils.isEmpty(apiHost)) ? apiHost : getDbConnInfo().getHost();
 	}
 
@@ -323,12 +317,17 @@ public class StorefrontTenant implements IStorefrontTenant {
 
 	public TenantStatisticsService getStatsSvc() {
 		if (statsSvc == null) {
-			statsSvc = new TenantStatisticsService(this);
+			statsSvc = new TenantStatisticsService(this, this.dbType);
 		}
 		return statsSvc;
 	}
 	public void setStatsSvc(TenantStatisticsService statsSvc) {
 		this.statsSvc = statsSvc;
+	}
+
+	public void setDbType(String dbVendor) {
+		// TODO Auto-generated method stub
+		this.dbType = dbVendor;
 	}
 
 }

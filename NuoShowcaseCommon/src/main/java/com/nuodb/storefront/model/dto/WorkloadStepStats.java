@@ -2,6 +2,8 @@
 
 package com.nuodb.storefront.model.dto;
 
+import java.util.Map;
+
 public class WorkloadStepStats {
     private int completionCount;
 
@@ -14,5 +16,13 @@ public class WorkloadStepStats {
 
     public void setCompletionCount(int completionCount) {
         this.completionCount = completionCount;
+    }
+
+    public void applyDeltas(Map<String, Integer> deltas) {
+        if (deltas.get("completionCount") != null) {
+            this.completionCount += deltas.get("completionCount");
+        }
+
+        return;
     }
 }

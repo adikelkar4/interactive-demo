@@ -6,6 +6,22 @@ This mock storefront web application showcases NuoDB's 5 value propositions:  sc
 ![ScreenShot](doc/home.png)
 
 
+Quickstart
+----------
+
+To run the Storefront Demo in a demo cluster on Amazon, assuming you
+have your `~/.aws/credentials` configured correctly, run...
+
+```
+bin/cluster create && bin/cluster list
+```
+
+...and point a web browser at the URL given in the output
+
+See [the detailed documentation](#the-demo-cluster-manipulation-tool)
+for further information on this tool.
+
+
 Prerequisites
 -------------
 
@@ -142,6 +158,7 @@ Client-side libraries:
 - **Handlebars** -- HTML templating
 - **jQuery**
 - **jQuery RateIt plug-in** -- star ratings
+- **less CSS** -- Dynamic stylesheets
 
 Admin client-side libraries:
 - **Sencha Ext JS** -- look & feel
@@ -149,45 +166,197 @@ Admin client-side libraries:
 
 
 
-Interactive Demo
-================
 
-Quick Start
------------
+The Demo Cluster Manipulation Tool
+==================================
 
-```./bin/create-demo-cluster```
+```
+usage: cluster [-h] [--profile PROFILE] [--parallel PARALLEL]
+               {create,list,delete} ...
 
-or
+Manage Demo Clusters
 
-```./bin/create-demo-cluster --profile AWS-PROFILE-NAME```
+positional arguments:
+  {create,list,delete}  sub-command help
+    create              Create one or more clusters
+    list                List clusters
+    delete              Delete clusters
 
-This will create a demo cluster with a unique name based on the
-current user name and date.
-
-When the stack has completed creation, it will print the URL for the
-demo control panel.  Note that the NuoDB application may not, yet, be
-running when that hapens.
-
-use ```./bin/create-demo-cluster --help``` for more options.
+optional arguments:
+  -h, --help            show this help message and exit
+  --profile PROFILE     The AWS profile to use
+  --parallel PARALLEL   Number of operations to perform in parallel
+```
 
 
-The long (manual) way
+Creating Demo Clusters
+----------------------
+
+```
+bin/cluster create
+```
+
+Will use the AWS 'default' profile to create a NuoDB demo cluster and,
+when created, report it's URL.
+
+You may also create multiple clusters at one time with e.g.
+
+```
+bin/cluster create --count 10
+```
+
+By default, the cluster name will contain the current user's login
+name and a timestamp.  You may use the `--user` and `--suffix` to
+change the name of the clusters.
+
+
+Full Usage:
+
+```
+$ bin/cluster create -h
+usage: cluster create [-h] [--user USER] [--prefix PREFIX] [--no-wait]
+                      [--dry-run] [--params-file PARAMS_FILE]
+                      [--template TEMPLATE]
+                      [--count COUNT | --suffix SUFFIX | --key-name KEY_NAME]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --user USER           user name to include in cluster name
+  --prefix PREFIX       cluster name prefix
+  --no-wait             Do not wait for cluster completion
+  --dry-run             Do not actually create the stack
+  --params-file PARAMS_FILE
+                        Parameters file
+  --template TEMPLATE   CFN Template file
+  --count COUNT         number of clusters to create
+  --suffix SUFFIX       cluster name suffix. Default is a timestamp
+  --key-name KEY_NAME   SSH key name for instance
+```
+
+Listing Demo Clusters
 ---------------------
 
-1. clone interactive-demo repo
-2. run in terminal: 
-   ```aws configure```
-3. cd into root of project
-4. edit params/ecs-cluster.params
-     - replace SSH key with your own
-     - replace ecscluster name with something unique
-5. run from terminal:
-   ```./bin/create ecs-cluster <give-it-a-unique-stack-name>```
+```
+bin/cluster list
+```
 
-NOTES:
+Will list all clusters with the current user's username in the title,
+along with the status of the cloudformation stack that creates them.
 
-* When creating a new cluster, you must create a unique
-  ecs-cluster-name in your params file each time.
+Full Usage:
+```
+$ bin/cluster list -h
+usage: cluster list [-h] [--include INCLUDE] [--exclude EXCLUDE]
 
-* When deleting stacks, you must delete the stack, then manually
-  delete the ECS cluster, then delete the stack again.
+optional arguments:
+  -h, --help         show this help message and exit
+  --include INCLUDE  include clusters containing
+  --exclude EXCLUDE  exclude clusters containing
+``` 
+
+
+Deleting a Demo Cluster
+-----------------------
+
+```
+bin/cluster delete 
+```
+
+This will delete all clusters with the current user in the cluster
+name.
+
+Other optionas `--include` and `--exclude` allow explicit
+specification of clusters to delete by substring of the cluster name.
+
+If multiple clusters are selected, they are deleted in parallel.
+
+Full Usage:
+
+```
+$ bin/cluster delete -h
+usage: cluster delete [-h] [--include INCLUDE] [--exclude EXCLUDE]
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --include INCLUDE  include clusters containing
+  --exclude EXCLUDE  exclude clusters containing
+```
+
+Example of cluster listing and deletion
+---------------------------------------
+
+```
+$ bin/cluster --profile nuodb_profile list
+interactive-demo-dewey-20170629-152634 CREATE_COMPLETE http://interacti-Storefro-1C7H76P7HVOZB-1318389021.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152626 CREATE_COMPLETE http://interacti-Storefro-4B7NMPD6W5RV-1221034874.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152609 CREATE_COMPLETE http://interacti-Storefro-7YBVA3P9NB9L-1791407450.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152600 CREATE_COMPLETE http://interacti-Storefro-1NU6MNNW84HJX-743284347.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-151448 DELETE_FAILED
+interactive-demo-dewey-20170629-151440 DELETE_FAILED
+interactive-demo-dewey-20170629-151431 DELETE_FAILED
+
+$ bin/cluster --profile nuodb_profile delete --include interactive-demo-dewey-20170629-152600
+Deleting cluster interactive-demo-dewey-20170629-152600
+...interactive-demo-dewey-20170629-152600: deleting stack
+...interactive-demo-dewey-20170629-152600: deletion blocked by undeleted resources
+...interactive-demo-dewey-20170629-152600: deleting ECS cluster
+...interactive-demo-dewey-20170629-152600: downscaling services
+...interactive-demo-dewey-20170629-152600: deleting services
+...interactive-demo-dewey-20170629-152600: deleting ecs cluster
+...interactive-demo-dewey-20170629-152600: deleting stack
+SUCCESS deleting interactive-demo-dewey-20170629-152600
+
+$ bin/cluster --profile nuodb_profile delete --include 151431
+Deleting cluster interactive-demo-dewey-20170629-151431
+...interactive-demo-dewey-20170629-151431: deleting stack
+...interactive-demo-dewey-20170629-151431: SUCCESS deleting stack
+SUCCESS deleting cluster interactive-demo-dewey-20170629-151431
+```
+
+Deletion of multiple stacks is done in parallel:
+
+```
+$ bin/cluster --profile nuodb_profile list
+interactive-demo-dewey-20170629-152634 CREATE_COMPLETE http://interacti-Storefro-1C7H76P7HVOZB-1318389021.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152626 CREATE_COMPLETE http://interacti-Storefro-4B7NMPD6W5RV-1221034874.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152609 CREATE_COMPLETE http://interacti-Storefro-7YBVA3P9NB9L-1791407450.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-151448 DELETE_FAILED
+interactive-demo-dewey-20170629-151440 DELETE_FAILED
+
+$ bin/cluster --profile nuodb_profile list --exclude 152634
+interactive-demo-dewey-20170629-152626 CREATE_COMPLETE http://interacti-Storefro-4B7NMPD6W5RV-1221034874.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-152609 CREATE_COMPLETE http://interacti-Storefro-7YBVA3P9NB9L-1791407450.us-east-2.elb.amazonaws.com/StorefrontWeb/
+interactive-demo-dewey-20170629-151448 DELETE_FAILED
+interactive-demo-dewey-20170629-151440 DELETE_FAILED
+
+$ bin/cluster --profile nuodb_profile delete --exclude 152634
+Deleting cluster interactive-demo-dewey-20170629-152626
+...interactive-demo-dewey-20170629-152626: deleting stack
+Deleting cluster interactive-demo-dewey-20170629-152609
+...interactive-demo-dewey-20170629-152609: deleting stack
+Deleting cluster interactive-demo-dewey-20170629-151448
+...interactive-demo-dewey-20170629-151448: deleting stack
+Deleting cluster interactive-demo-dewey-20170629-151440
+...interactive-demo-dewey-20170629-151440: deleting stack
+...interactive-demo-dewey-20170629-151440: SUCCESS deleting stack
+SUCCESS deleting cluster interactive-demo-dewey-20170629-151440
+...interactive-demo-dewey-20170629-151448: SUCCESS deleting stack
+SUCCESS deleting cluster interactive-demo-dewey-20170629-151448
+...interactive-demo-dewey-20170629-152609: deletion blocked by undeleted resources
+...interactive-demo-dewey-20170629-152609: deleting ECS cluster
+...interactive-demo-dewey-20170629-152609: downscaling services
+...interactive-demo-dewey-20170629-152609: deleting services
+...interactive-demo-dewey-20170629-152609: deleting ecs cluster
+...interactive-demo-dewey-20170629-152609: deleting stack
+SUCCESS deleting interactive-demo-dewey-20170629-152609
+...interactive-demo-dewey-20170629-152626: deletion blocked by undeleted resources
+...interactive-demo-dewey-20170629-152626: deleting ECS cluster
+...interactive-demo-dewey-20170629-152626: downscaling services
+...interactive-demo-dewey-20170629-152626: deleting services
+...interactive-demo-dewey-20170629-152626: deleting ecs cluster
+...interactive-demo-dewey-20170629-152626: deleting stack
+SUCCESS deleting interactive-demo-dewey-20170629-152626
+
+$ bin/cluster --profile nuodb_profile  list
+interactive-demo-dewey-20170629-152634 CREATE_COMPLETE http://interacti-Storefro-1C7H76P7HVOZB-1318389021.us-east-2.elb.amazonaws.com/StorefrontWeb/
+```

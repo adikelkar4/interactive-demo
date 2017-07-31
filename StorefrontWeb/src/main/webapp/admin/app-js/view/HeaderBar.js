@@ -29,6 +29,9 @@ Ext.define('App.view.HeaderBar', {
             metric: 'workloadStats.all.activeWorkerCount',
             itemId: 'metrics-users',
             input: 'spinner',
+            spinnerUpTip: 'Increase simulated users by 2100',
+            spinnerDownTip: 'Decrease simulated users by 2100',
+            spinnerStopTip: 'Stop all simulated users',
             flex: 0.7,
             listeners: {
                 click: clickHandler,
@@ -36,11 +39,15 @@ Ext.define('App.view.HeaderBar', {
             }
         }, {
             xtype: 'metricwell',
-            text: '<b>Processes</b>',
+            text: '<b>Transaction Engines</b>',
             icon: 'ico-process.png',
-            metric: 'dbStats.usedHostCount',
+            metric: 'dbStats.usedTeHostCount',
             itemId: 'metrics-hosts',
             inputMaxMetric: 'dbStats.hostCount',
+            input: 'spinner',
+            spinnerUpTip: 'Add another TE process',
+            spinnerDownTip: 'Remove a TE process',
+            spinnerStopTip: 'Reset to 1 TE process',
             flex: 0.7,
             href: '/control-panel-processes',
             listeners: {
@@ -105,6 +112,9 @@ Ext.define('App.view.HeaderBar', {
                 break;
 
             case 'metrics-hosts':
+                me.adjustHostCount(value);
+
+                break;
             case 'metrics-regions':
                 if (btn.activeRequest) {
                     Ext.Ajax.abort(btn.activeRequest);
@@ -139,9 +149,48 @@ Ext.define('App.view.HeaderBar', {
         }
     },
 
+    adjustHostCount: function (value) {
+        try {
+            var url;
+
+            if (value == 0) {
+                url = 'resetHostCount';
+            } else if (value > 0) {
+                url = 'increaseHostCount';
+            } else {
+                url = 'decreaseHostCount';
+            }
+
+            Ext.Ajax.request({
+                url: App.app.apiBaseUrl + "/api/processes/" + url,
+                method: 'POST',
+                scope: this
+            });
+
+            return true;
+        } catch (e) {
+            return false;
+        }
+    },
+
     adjustUserLoad: function(value) {
         try {
-            var url = (value == 0) ? 'zeroUserCount' : ((value > 0) ? 'increaseUserCount' : 'decreaseUserCount');
+            var url;
+            var alog = $('#activity-log');
+            var prefix = (alog.text()) ? "\n" : "";
+
+            if (value == 0) {
+                url = 'zeroUserCount';
+                alog.append(prefix + "All user workloads have had a stop requested, should show shortly");
+            } else if (value > 0) {
+                url = 'increaseUserCount';
+                alog.append(prefix + "An increase in the user workload count has been requested, should appear within 3 minutes");
+            } else {
+                url = 'decreaseUserCount';
+                alog.append(prefix + "A decrease in the user workload count has been requested, show show shortly");
+            }
+
+            document.getElementById('activity-log').scrollTop = document.getElementById('activity-log').scrollHeight;
 
             Ext.Ajax.request({
                 url: App.app.apiBaseUrl + "/api/simulator/" + url,

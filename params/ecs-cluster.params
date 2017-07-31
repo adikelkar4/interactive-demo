@@ -9,16 +9,18 @@ EcsInstanceType: r4.8xlarge
 
 KeyName: interactive-demo
 
-EcsClusterName: interactive-demo-8
+EcsClusterName: interactive-demo-dewey-20170629-152634
 
 
 #docker container images
 
 storeFrontWebDocker: docker.io/nuodb/storefrontweb-demo:master
 storeFrontUserDocker: docker.io/nuodb/storefrontuser-demo:master
-nuodbDocker: 248317454512.dkr.ecr.us-east-1.amazonaws.com/nuodb:latest
+nuodbDocker: 248317454512.dkr.ecr.us-east-1.amazonaws.com/nuodb:2.6.1-35-8-1576
 
 
 dbuser: StorefrontUser
 dbpassword: StorefrontUser
 dbname: Storefront
+
+Hostname: nuodb.io

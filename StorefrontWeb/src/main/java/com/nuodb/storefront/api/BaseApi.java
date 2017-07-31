@@ -22,11 +22,12 @@ import com.nuodb.storefront.util.PerformanceUtil;
 public abstract class BaseApi {
     public static final String NUODB_MAP_KEY = "nuodb";
 
-    private static Map<String, Map<String, WorkloadStats>> workloadStatHeap = new HashMap<>();
-    protected final Object heapLock = new Object();
+    protected static Map<String, Map<String, WorkloadStats>> workloadStatHeap = new HashMap<>();
+    public static final Object heapLock = new Object();
 
     protected static final Map<String, String> workloadDistribution;
     protected static int userContainerCount = 0;
+    protected static int hostContainerCount = 1;
 
 	private static Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
 
@@ -62,15 +63,18 @@ public abstract class BaseApi {
 	}
 
 	public static StorefrontStatsReport buildBaseStatsReport(HttpServletRequest req) {
+    	String dbType = req.getParameter("dbType") == null ? NUODB_MAP_KEY : req.getParameter("dbType");
+
 		StorefrontStatsReport rpt = new StorefrontStatsReport();
 	    DbFootprint footprint = getDbApi(req).getDbFootprint();
 	    getTenant(req).getAppInstance().setCpuUtilization(PerformanceUtil.getAvgCpuUtilization());
 	    rpt.setAppInstance(getTenant(req).getAppInstance());
 	    rpt.setTimestamp(Calendar.getInstance());
 	    rpt.setDbStats(footprint);
-	    rpt.setWorkloadStats(getWorkloadStatHeap().getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
-	    rpt.setTransactionStats(getTransactionStatHeap().getOrDefault(NUODB_MAP_KEY, new HashMap<>()));
-	    rpt.setWorkloadStepStats(new HashMap<>());
+	    rpt.setWorkloadStats(getWorkloadStatHeap().getOrDefault(dbType, new HashMap<>()));
+	    rpt.setTransactionStats(getTransactionStatHeap().getOrDefault(dbType, new HashMap<>()));
+	    rpt.setWorkloadStats(new HashMap<>());
+
 		return rpt;
 	}
 

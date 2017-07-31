@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
@@ -43,7 +44,53 @@ public class StorefrontApp {
 	// Storefront timings
 	public static final int HEARTBEAT_INTERVAL_SEC = 10;
 	public static final int MAX_HEARTBEAT_AGE_SEC = 20;
-	
+	public static final int CPU_SAMPLING_INTERVAL_SEC = 1;
+	public static final int PURGE_FREQUENCY_SEC = 60 * 30; // 30 min
+	public static final int STOP_USERS_AFTER_IDLE_UI_SEC = 60 * 10; // 10 min
+	public static final int MIN_INSTANCE_PURGE_AGE_SEC = 60 * 60; // 1 hour
+	public static final int DEFAULT_SESSION_TIMEOUT_SEC = 60 * 20;// 20 min
+	public static final int DEFAULT_ANALYTIC_MAX_AGE = 60 * 30;// 30 min
+	public static final int BENCHMARK_DURATION_MS = 10000;
+	public static final int SIMULATOR_STATS_DISPLAY_INTERVAL_MS = 5000;
+	public static final int GC_CUMULATIVE_TIME_LOG_MS = 500; // every 0.5 sec of
+																// cumulative GC
+																// time logged
+
+	// Database properties
+	public static final String DB_NAME = System.getProperty("storefront.db.name");
+	public static final String DB_USER = System.getProperty("storefront.db.user");
+	public static final String DB_PASSWORD = System.getProperty("storefront.db.password");
+	public static final String DB_OPTIONS = System.getProperty("storefront.db.options");
+	public static final int DB_PING_TIMEOUT_SEC = Integer
+			.valueOf(System.getProperty("storefront.db.pingTimeoutSec", "0")); // 0=disabled
+	public static final int DB_MAX_INIT_WAIT_TIME_SEC = Integer
+			.valueOf(System.getProperty("storefront.db.initWaitTimeSec", "5"));
+	public static final String DB_DOMAIN_BROKER = System.getProperty("domain.broker", "localhost");
+	public static final String DB_PROCESS_TAG = System.getProperty("storefront.db.processTag", "demo_${db.name}");
+
+	// Database API properties
+	public static final int DBAPI_READ_TIMEOUT_SEC = Integer
+			.valueOf(System.getProperty("storefront.dbapi.readTimeoutSec", "10"));
+	public static final int DBAPI_CONNECT_TIMEOUT_SEC = Integer
+			.valueOf(System.getProperty("storefront.dbapi.connectTimeoutSec", "10"));
+	public static final int DBAPI_MAX_UNAVAILABLE_RETRY_TIME_SEC = Integer
+			.valueOf(System.getProperty("storefront.dbapi.unavailableRetryTimeSec", "3"));
+	public static final String DBAPI_HOST = System.getProperty("storefront.dbapi.host");
+	public static final int DBAPI_PORT = Integer.valueOf(System.getProperty("storefront.dbapi.port", "8888"));
+	public static final String DBAPI_USERNAME = System.getProperty("storefront.dbapi.user", "domain");
+	public static final String DBAPI_PASSWORD = System.getProperty("storefront.dbapi.password", "bird");
+
+	// Other properties
+	public static final int SQLEXPLORER_PORT = Integer
+			.valueOf(System.getProperty("storefront.sqlexplorer.port", "9001"));
+
+	// Default names
+	public static final String DEFAULT_DB_NAME = "Storefront";
+	public static final String DEFAULT_DB_HOST = "localhost";
+	public static final String DEFAULT_REGION_NAME = "Unknown region";
+	public static final String DEFAULT_TENANT_NAME = "Default";
+	public static final UUID INSTANCE_UID = UUID.randomUUID();
+
 	public static void main(String[] args) throws Exception {
 		List<String> argsList = Arrays.asList(args);
 		List<String> dbArgs = argsList.stream().filter(string -> string.contains("db.")).collect(Collectors.toList());
@@ -57,7 +104,8 @@ public class StorefrontApp {
 		dbArgs.forEach(setting -> dbSettings.put(setting.split("=")[0], setting.split("=")[1]));
 		workloadArgs.forEach(setting -> workloadSettings.put(setting.split("=")[0], setting.split("=")[1]));
 		appArgs.forEach(setting -> appSettings.put(setting.split("=")[0], setting.split("=")[1]));
-		IStorefrontTenant tenant = StorefrontTenantManager.createTenant(dbSettings.get("db.name").split("@")[0], dbSettings);
+		String dbName = dbSettings.containsKey("db.name") ? dbSettings.get("db.name") : dbSettings.get("db.url");
+		IStorefrontTenant tenant = StorefrontTenantManager.createTenant(dbName.split("@")[0], dbSettings);
 		tenant.setAppSettings(appSettings);
 		ISimulatorService simulator = tenant.getSimulatorService();
 		executeTasks(simulator, workloadSettings);

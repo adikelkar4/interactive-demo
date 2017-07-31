@@ -10,14 +10,14 @@
 }
 
 #messagebar {
-    background-color: #e3e7a7;
+    background-color: #c1cd23;
     background-image: none;
     padding: 5px 10px;
     z-index: 100;
     padding: 3px 15px;
 
 	.x-toolbar-text {
-	    color: #666;
+	    color: #566f7b;
 	    padding: 8px 0 8px 0;    
 	    overflow: hidden;
 	    text-overflow: ellipsis;
@@ -55,10 +55,10 @@
 }
 
 #headerbar {
-    background-image: url('../img/bg-header.png') !important;
+    background-color: #E4E4E4 !important;
     background-repeat: repeat;
     background-position: top;
-    color: #e6e6e6;
+    color: #E4E4E4;
     box-shadow: 0 0 10px #888;
     z-index: 99;
     padding: 10px;
@@ -73,12 +73,12 @@
 		cursor: pointer;		
 		
 		&.hover {
-			background-color: #fafafa;
+			background-color: #F4F4F4;
 		}
 	}
 	
 	.label-metric {
-	    color: #958979;
+	    color: #98a0ad;
 	    font-size: 12px;
 	    font-family: museo-sans-rounded, "Open Sans", Tahoma;
 	    padding: 4px 2px 2px 25px;
@@ -88,7 +88,7 @@
 	    > b {
 			font-size: 14px;	    
 		    text-transform: uppercase;
-		    color: #444;
+		    color: #566f7b;
 		    font-weight: bold;
 	    }
 	    
@@ -99,7 +99,7 @@
 	}
 	
 	.label-value {
-	    color: #363d45;
+	    color: #566f7b;
 		cursor: pointer;
 	    font-size: 35px;
 	    font-family: museo-sans-rounded, "Open Sans", Tahoma;
@@ -170,16 +170,28 @@
 }
 
 #navbar {
-	background-color: #f8f8f8;
+	background-color: #F4F4F4;
 	font-family: museo-sans-rounded, "Open Sans", Tahoma;
 	font-size: 14px;
-	font-weight: normal;
+	font-weight: 400;
 	padding-top: 20px;
+
+	div {
+		text-align: center;
+	}
+
+	textarea {
+		width: 90%;
+		height: 125px;
+		margin-bottom: 15px;
+		resize: none;
+		padding: 2px;
+	}
 	
 	ul {
 		> li {
 			&.section-title {
-				color: #aaa;
+				color: #566f7b;
 				font-weight: bold;
 				padding: 25px 15px 5px 15px;
 				text-transform: uppercase;
@@ -191,10 +203,10 @@
 			padding: 5px 0 5px 40px;
 			position: relative;
 			text-decoration: none;
-			color: #777;
+			color: #566f7b;
 			
 			&.active {
-				background-color: #e6e6e6;
+				background-color: #E4E4E4;
 			}
 			
 			> span {
@@ -209,7 +221,7 @@
 			}
 			
 			&:hover {
-				color: #5e5e5e;
+				color: #98A0AD;
 				
 				> img {
 					opacity: 1;
