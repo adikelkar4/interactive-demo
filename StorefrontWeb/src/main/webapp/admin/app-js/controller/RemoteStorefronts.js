@@ -30,9 +30,6 @@ Ext.define('App.controller.RemoteStorefronts', {
         // Get a reference to the controller we'll be feeding data
         me.storefrontController = me.application.getController('Storefront');
 
-        // Refresh stats periodically
-        me.refreshInterval = setInterval(Ext.bind(me.onRefreshStats, me), App.app.refreshFrequencyMs);
-
         // Refresh instance list now and periodically
         me.instanceRefreshInterval = setInterval(Ext.bind(me.onRefreshInstanceList, me), App.app.instanceListRefreshFrequencyMs);
         me.onRefreshInstanceList();
@@ -93,80 +90,5 @@ Ext.define('App.controller.RemoteStorefronts', {
         }
         
         return map;
-    },
-
-    /** @private interval handler */
-    onRefreshStats: function() {
-        var me = this;
-
-        for ( var uuid in me.appInstanceMap) {
-            var instance = me.appInstanceMap[uuid];
-            if (!instance.local && instance.outstandingRequestCount < App.app.maxOutstandingRequestCount) {
-                me.refreshInstanceStats(instance);
-            }
-        }
-    },
-
-    refreshInstanceStats: function(instance) {
-        var me = this;
-        instance.outstandingRequestCount++;
-
-        try {
-            Ext.Ajax.request({
-                url: instance.url + '/api/stats',
-                method: 'GET',
-                params: {
-                    tenant: App.app.tenant
-                },
-                callback: function(options, success, response) {
-                    // Ensure instance is still valid
-                    instance = me.appInstanceMap[instance.uuid];
-                    if (!instance) {
-                        return;
-                    }
-                    instance.outstandingRequestCount--;
-
-                    // Ensure result was successful
-                    if (!success) {
-                        me.application.fireEvent('statsfail', response, instance);
-                        return;
-                    }
-
-                    // Ensure JSON is valid
-                    var stats;
-                    try {
-                        stats = Ext.decode(response.responseText);
-                    } catch (e) {
-                        return;
-                    }
-
-                    // Apply latest region stats
-                    var regionStats = me.storefrontController.regionStats[instance.region];
-                    if (!regionStats) {
-                        me.storefrontController.regionStats[instance.region] = regionStats = {};
-                    } else if (!regionStats[instance.uuid]) {
-                        // We received stats after we marked this instance as dead, or this instance has switched regions.  
-                    } else {
-                        var lastTimestamp = regionStats[instance.uuid].timestamp;
-                        if (lastTimestamp && stats.timestamp < lastTimestamp) {
-                            // We received a response out-of-sequence.  Ignore it since deltas were already calculated.
-                            return;
-                        }
-                    }
-                    regionStats[instance.uuid] = stats;
-
-                    // Warn if this instance is under heavy load
-                    me.storefrontController.checkForHeavyLoad(stats.appInstance);
-                }
-            });
-        } catch (e) {
-            instance.outstandingRequestCount--;
-            me.application.fireEvent('statsfail', {
-                status: 500,
-                responseJson: {
-                    message: "Your browser does not support CORS, which is required to collect statistics from this instance."
-                }
-            }, instance);
-        }
     }
 });

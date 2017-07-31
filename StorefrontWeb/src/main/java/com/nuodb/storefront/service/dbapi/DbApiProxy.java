@@ -100,7 +100,7 @@ public class DbApiProxy implements IDbApi {
     @Override
     public void testConnection() {
         try {
-            buildClient("/templates").get(Object.class);
+            buildClient("/processes").get(Object.class);
         } catch (Exception e) {
             throw ApiException.toApiException(e);
         }
