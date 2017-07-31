@@ -938,6 +938,10 @@
               {
                 "Name": "ARG_apphost",
                 "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
+              },
+              {
+                "Name" : "POPUlATE_NUODB",
+                "Value" : "true"
               }
             ]
           }
