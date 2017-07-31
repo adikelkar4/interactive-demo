@@ -940,7 +940,7 @@
                 "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
               },
               {
-                "Name" : "POPUlATE_NUODB",
+                "Name" : "POPULATE_NUODB",
                 "Value" : "true"
               }
             ]
