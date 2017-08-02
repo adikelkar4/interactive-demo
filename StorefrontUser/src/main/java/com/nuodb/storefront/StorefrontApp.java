@@ -108,14 +108,14 @@ public class StorefrontApp {
 		IStorefrontTenant tenant = StorefrontTenantManager.createTenant(dbName.split("@")[0], dbSettings);
 		tenant.setAppSettings(appSettings);
 		ISimulatorService simulator = tenant.getSimulatorService();
-		executeTasks(simulator, workloadSettings);
+		executeTasks(tenant, simulator, workloadSettings);
 		while(true) {
 			Thread.sleep(HEARTBEAT_INTERVAL_SEC * 1000);
 			printSimulatorStats(simulator, System.out);
 		}
 	}
 
-	public static void executeTasks(ISimulatorService simulator, Map<String, String> workloadSettings)
+	public static void executeTasks(IStorefrontTenant tenant, ISimulatorService simulator, Map<String, String> workloadSettings)
 			throws InterruptedException {
 		for (String setting : workloadSettings.keySet()) {
 			Thread taskThread = new Thread(new Runnable() {
@@ -129,6 +129,7 @@ public class StorefrontApp {
 			});
 			taskThread.start();
 		}
+		tenant.startStatsService();
 	}
 	
     private static void printSimulatorStats(ISimulatorService simulator, PrintStream out) {

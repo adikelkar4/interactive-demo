@@ -88,8 +88,6 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 		while (info.getActiveWorkerCount() < minActiveWorkers) {
 			SimulatedUser user = new SimulatedUser(this, workload);
 			threadPool.scheduleAtFixedRate(user, workload.calcNextThinkTimeMs(), 5000, TimeUnit.MILLISECONDS);
-			// threadPool.schedule(user, workload.calcNextThinkTimeMs(),
-			// TimeUnit.MILLISECONDS);
 			this.updateWorkloadStats(workload, "ACTIVE", 0);
 		}
 	}

@@ -135,8 +135,6 @@ public class StorefrontTenant implements IStorefrontTenant {
 				if (sampler != null) {
 					executor.scheduleAtFixedRate(sampler, 0, StorefrontApp.CPU_SAMPLING_INTERVAL_SEC, TimeUnit.SECONDS);
 				}
-
-				executor.scheduleAtFixedRate(getStatsSvc(), 0, 500, TimeUnit.MILLISECONDS);
 			}
 		}
 	}
@@ -301,6 +299,10 @@ public class StorefrontTenant implements IStorefrontTenant {
 		StorefrontDao dao = new StorefrontDao(transactionStatsMap);
 		dao.setSessionFactory(sf);
 		return dao;
+	}
+	
+	public void startStatsService() {		
+		executor.scheduleAtFixedRate(getStatsSvc(), 0, 500, TimeUnit.MILLISECONDS);
 	}
 
 	protected String getDbApiHost() {

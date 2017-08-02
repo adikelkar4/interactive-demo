@@ -59,4 +59,6 @@ public interface IStorefrontTenant {
     public Map<String, String> getAppSettings();
     
     public void setAppSettings(Map<String, String> newValue);
+    
+    public void startStatsService();
 }
