@@ -3,6 +3,7 @@
 # Purpose:  manage demo clusters
 
 import os
+import datetime
 import functools
 import collections
 import sys
@@ -13,6 +14,26 @@ import argparse
 import boto3
 import concurrent.futures
 import re
+
+# from https://stackoverflow.com/questions/2331592/why-does-datetime-datetime-utcnow-not-contain-timezone-information
+
+# What kind of idiot 'standard library' can't even natively represent
+# UTC when it requires you to deal with timezones to compare dates?
+
+ZERO = datetime.timedelta(0)
+class UTC(datetime.tzinfo):
+    """UTC"""
+
+    def utcoffset(self, dt):
+        return ZERO
+
+    def tzname(self, dt):
+        return "UTC"
+
+    def dst(self, dt):
+        return ZERO
+
+utc = UTC()
 
 def cache(f):
     '''Cache the funciton call arguments'''
@@ -75,7 +96,43 @@ This should be used by any function selecting clusters to implement --include an
         filter = args.exclude[0]
         stacks = [x for x in stacks if not filter in x['StackName']]
 
+    if args.expired:
+        now = datetime.datetime.now(utc)
+        stacks = [x for x in stacks if is_stack_expired(cf, x, now)]
+
     return stacks
+
+def is_stack_expired(cf, stack, now):
+    '''If the stack has a DeleteAfter and that time has passed, return True'''
+
+    ret  = cf.describe_stacks(StackName=stack['StackName'])
+
+    try:
+        details = ret['Stacks'][0] 
+        tag = [x['Value'] for x in details['Tags'] if x['Key'] == "DeleteAfter"]
+        if tag:
+            delete_after = tag[0]
+            match = re.search("(\\d+)h", delete_after, flags=re.IGNORECASE)
+            if not match:
+                return False
+
+#            print "delay is {}".format(delete_after)
+
+            delta = datetime.timedelta(hours=int(match.group(1)))
+            created = details['CreationTime']
+            end = created + delta
+#            print "Created on {} with expriation {}".format(created, delta)
+#            print "Now is {}".format(now)
+#            print "Expires at {}".format(end)
+
+            if now > end:
+                return True
+    except Exception as e:
+        print "Exception! {}".format(e)
+        # Ignore any errors in looking up tags
+        pass
+
+    return False
 
 def delete_clusters(session, args):
     '''main 'delete' command
@@ -294,6 +351,9 @@ the command to return successfully.
              Value=os.environ['USER'])
         ]
 
+    if args.delete_after:
+        tags.append(dict(Key='DeleteAfter',
+                         Value=args.delete_after + "h"))
 
     cfn = session.client("cloudformation")
 
@@ -368,6 +428,7 @@ def main():
     parse_create.add_argument("--dry-run", help="Do not actually create the stack", action='store_true')
     parse_create.add_argument("--params-file", help="Parameters file", default="params/ecs-cluster.params")
     parse_create.add_argument("--template", help="CFN Template file", default="cfn/ecs-cluster.cfn.json")
+    parse_create.add_argument("--delete-after", help="Hours until the cluster should be deleted")
 
     group = parse_create.add_mutually_exclusive_group()
     group.add_argument("--count", help="number of clusters to create", type=int,  default=1)
@@ -378,6 +439,7 @@ def main():
     for p in [parse_list, parse_delete]:
         p.add_argument("--include", help="include clusters containing", nargs=1)
         p.add_argument("--exclude", help="exclude clusters containing", nargs=1)
+        p.add_argument("--expired", help="include only expired stacks", action='store_true', default=False)
 
     args = parser.parse_args()
 
