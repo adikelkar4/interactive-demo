@@ -15,7 +15,7 @@ node('aml') {
         withEnv(["AWS_DEFAULT_REGION=${aws_region}", "USER=${env.USER}"]) {
 	  withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: aws_credentials, secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
             sh "virtualenv py27 && . py27/bin/activate && pip install -r requirements.txt"
- 	    sh ". py27/bin/activate && bin/cluster create"
+ 	    sh ". py27/bin/activate && bin/cluster create --delete-after ${env.EXPIRATION} && bin/cluster list"
           }
         }
       }
