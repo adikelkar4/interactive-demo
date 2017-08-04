@@ -1335,6 +1335,12 @@
             "import cfnresponse\n",
             "client = boto3.client('ecs')\n",
             "def handler(event, context):\n",
+
+            "    event['ResponseURL'] = \"", { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/api/app-instances/log" ]]}, "\"\n",
+            "    event['StackId'] = \"NOTHING\"\n",
+            "    event['RequestId'] = \"NOTHING\"\n",
+            "    event['LogicalResourceId'] = \"NOTHING\"\n",
+
             "    responseData = {}\n",
             "    print(event)\n",
 
