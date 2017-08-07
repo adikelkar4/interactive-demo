@@ -1052,7 +1052,12 @@
         "DesiredCount" : "0",
         "ServiceName" : "storefrontuser-service",
         "PlacementStrategies" : [{ "Type": "random"}],
-        "TaskDefinition" : { "Ref" : "StorefrontUserTaskDefinition"}
+        "TaskDefinition" : { "Ref" : "StorefrontUserTaskDefinition"},
+        "DeploymentConfiguration" :
+        {
+          "MaximumPercent" : 200,
+          "MinimumHealthyPercent" : 100
+        }
       }
     },
 
