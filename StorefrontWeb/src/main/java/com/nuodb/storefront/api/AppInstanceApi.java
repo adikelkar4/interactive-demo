@@ -2,6 +2,7 @@
 
 package com.nuodb.storefront.api;
 
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -10,9 +11,11 @@ import java.util.Map;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -24,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.nuodb.storefront.StorefrontTenantManager;
 import com.nuodb.storefront.model.dto.DbConnInfo;
+import com.nuodb.storefront.model.dto.LogEntry;
 import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.model.type.Currency;
 import com.nuodb.storefront.service.IStorefrontTenant;
@@ -31,7 +35,8 @@ import com.nuodb.storefront.servlet.StorefrontWebApp;
 
 @Path("/app-instances")
 public class AppInstanceApi extends BaseApi {
-    public static Map<Long, String> activityLog = new LinkedHashMap<>();
+	public static List<LogEntry> activityLog = new ArrayList<>();
+//    public static Map<Long, String> activityLog = new LinkedHashMap<>();
 
     public AppInstanceApi() {
     }
@@ -112,10 +117,10 @@ public class AppInstanceApi extends BaseApi {
 
     @PUT
     @Path("/log")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response putLog(@Context HttpServletRequest req, @FormParam("message") String message) {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response putLog(Map<String, String> event) {
         synchronized (activityLog) {
-            activityLog.put(System.nanoTime(), message);
+            activityLog.add(new LogEntry(System.nanoTime(), event.get("Data")));
         }
 
         return Response.ok().build();
@@ -124,17 +129,34 @@ public class AppInstanceApi extends BaseApi {
     @GET
     @Path("/log")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<Long, String> getLog(@Context HttpServletRequest req, @QueryParam("lasttime") Long lastTime) {
-        Map<Long, String> ret = new HashMap<>();
-
+    public List<LogEntry> getLog(@Context HttpServletRequest req, @QueryParam("lastTime") Long lastTime) {
+        long filterTime = lastTime == null ? 0 : lastTime;
         synchronized (activityLog) {
-            for (Map.Entry<Long, String> entry : activityLog.entrySet()) {
-                if (entry.getKey() > lastTime) {
-                    ret.put(entry.getKey(), entry.getValue());
-                }
-            }
+        	int subListStart = firstUnreportedEntry(activityLog, filterTime, 0, activityLog.size());
+        	if (subListStart == -1) {
+        		return new ArrayList<>();
+        	}
+        	return activityLog.subList(subListStart, activityLog.size());
         }
-
-        return ret;
+    }
+    
+    protected int firstUnreportedEntry(List<LogEntry> sortedList, long filterTime, int start, int end) {
+    	if (sortedList.size() == 0) {
+    		return -1;
+    	}
+    	int mid = start + (end-start)/2;
+    	if (sortedList.get(mid).getTime() > filterTime) {
+    		if (mid == 0 || mid == sortedList.size() - 1) {
+    			return mid;
+    		} else if (sortedList.get(mid-1).getTime() <= filterTime) {
+    			return mid;
+    		} else {
+    			return firstUnreportedEntry(sortedList, filterTime, start, mid);
+    		}
+    	} else if (mid == sortedList.size() -1) {
+    		return -1;
+    	} else {
+    		return firstUnreportedEntry(sortedList, filterTime, mid, end);
+    	}
     }
 }
