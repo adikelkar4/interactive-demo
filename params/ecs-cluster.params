@@ -1,11 +1,15 @@
 #deployment buckets
-Buckets: nuodb-oa-cloud-deployment,nuodb-data
+Bucket: nuodb-oa-cloud-deployment
+BucketRegion: us-east-1
 
 #amzn-ami-2016.09.g-amazon-ecs-optimized with ecs agent installed
 #us-east-1EcsAmiId: ami-275ffe31
-EcsAmiId: ami-62745007
 
+EcsAmiId: ami-62745007
 EcsInstanceType: r4.8xlarge
+
+NuoDBInstanceAMI: ami-8a7859ef
+
 
 KeyName: interactive-demo
 
