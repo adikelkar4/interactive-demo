@@ -1221,7 +1221,7 @@
 
             "    responseData = {}\n",
             "    count = event['count']\n",
-            "    event['ResponseURL'] = \"", { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/api/app-instances/log" ]]}, "\"\n",
+            "    event['ResponseURL'] = \"", { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb/api/app-instances/log" ]]}, "\"\n",
             "    event['StackId'] = \"NOTHING\"\n",
             "    event['RequestId'] = \"NOTHING\"\n",
             "    event['LogicalResourceId'] = \"NOTHING\"\n",
@@ -1336,7 +1336,7 @@
             "client = boto3.client('ecs')\n",
             "def handler(event, context):\n",
 
-            "    event['ResponseURL'] = \"", { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/api/app-instances/log" ]]}, "\"\n",
+            "    event['ResponseURL'] = \"", { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb/api/app-instances/log" ]]}, "\"\n",
             "    event['StackId'] = \"NOTHING\"\n",
             "    event['RequestId'] = \"NOTHING\"\n",
             "    event['LogicalResourceId'] = \"NOTHING\"\n",
