@@ -26,37 +26,43 @@ public class AppInstanceApiTest {
 	@Test
 	public void testMiddleAsListCutoff() {
 		LogEntry midEntry = testLog.get(testLog.size()/2);
-		Assert.assertEquals(50, testApi.firstUnreportedEntry(testLog, midEntry.getTime(), 0, testLog.size()));
+		Assert.assertEquals(51, testApi.firstUnreportedEntry(testLog, midEntry.getTime(), 0, testLog.size()));
 	}
 	
 	@Test
 	public void testQuarterAsListCutoff() {
 		LogEntry quarterEntry = testLog.get(testLog.size()/4);
-		Assert.assertEquals(25, testApi.firstUnreportedEntry(testLog, quarterEntry.getTime(), 0, testLog.size()));
+		Assert.assertEquals(26, testApi.firstUnreportedEntry(testLog, quarterEntry.getTime(), 0, testLog.size()));
 	}
 	
 	@Test
 	public void testSeventyFifthAsListCutoff() {
 		LogEntry seventyFifth = testLog.get(3 * testLog.size()/4);
-		Assert.assertEquals(75, testApi.firstUnreportedEntry(testLog, seventyFifth.getTime(), 0, testLog.size()));
+		Assert.assertEquals(76, testApi.firstUnreportedEntry(testLog, seventyFifth.getTime(), 0, testLog.size()));
 	}
 	
 	@Test
 	public void testBeginningAsListCutoff() {
 		LogEntry beginning = testLog.get(0);
-		Assert.assertEquals(0, testApi.firstUnreportedEntry(testLog, beginning.getTime(), 0, testLog.size()));
+		Assert.assertEquals(1, testApi.firstUnreportedEntry(testLog, beginning.getTime(), 0, testLog.size()));
 	}
 	
 	@Test
 	public void testEndAsListCutoff() {
 		LogEntry end = testLog.get(testLog.size() - 1);
-		Assert.assertEquals(99, testApi.firstUnreportedEntry(testLog, end.getTime(), 0, testLog.size()));
+		Assert.assertEquals(-1, testApi.firstUnreportedEntry(testLog, end.getTime(), 0, testLog.size()));
 	}
 	
 	@Test
 	public void testFilterTimeBeforeFirstEntry() {
 		LogEntry beginning = testLog.get(0);
 		Assert.assertEquals(0, testApi.firstUnreportedEntry(testLog, beginning.getTime() - 10000, 0, testLog.size()));
+	}
+	
+	@Test
+	public void testFilterTimeBeforeLastEntry() {
+		LogEntry end = testLog.get(testLog.size() - 1);
+		Assert.assertEquals(testLog.size() -1, testApi.firstUnreportedEntry(testLog, end.getTime() - 10000, 0, testLog.size()));
 	}
 	
 	@Test

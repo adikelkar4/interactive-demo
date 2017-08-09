@@ -129,7 +129,7 @@ public class AppInstanceApi extends BaseApi {
     @GET
     @Path("/log")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<LogEntry> getLog(@Context HttpServletRequest req, @QueryParam("lasttime") Long lastTime) {
+    public List<LogEntry> getLog(@Context HttpServletRequest req, @QueryParam("lastTime") Long lastTime) {
         long filterTime = lastTime == null ? 0 : lastTime;
         synchronized (activityLog) {
         	int subListStart = firstUnreportedEntry(activityLog, filterTime, 0, activityLog.size());
@@ -145,10 +145,10 @@ public class AppInstanceApi extends BaseApi {
     		return -1;
     	}
     	int mid = start + (end-start)/2;
-    	if (sortedList.get(mid).getTime() >= filterTime) {
+    	if (sortedList.get(mid).getTime() > filterTime) {
     		if (mid == 0 || mid == sortedList.size() - 1) {
     			return mid;
-    		} else if (sortedList.get(mid-1).getTime() < filterTime) {
+    		} else if (sortedList.get(mid-1).getTime() <= filterTime) {
     			return mid;
     		} else {
     			return firstUnreportedEntry(sortedList, filterTime, start, mid);
