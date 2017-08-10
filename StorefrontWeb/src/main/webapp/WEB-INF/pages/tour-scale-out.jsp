@@ -9,7 +9,7 @@
         <div class="span2">
             <h3>When user workload increases...</h3>
             <div class="thumbnail">
-                <div class="caption">Workload</div>
+                <div class="caption" style="color:black;">Workload</div>
                 <img src="img/tour-up.png" height="80" />
             </div>
         </div>
@@ -17,7 +17,7 @@
         <div class="span2">
             <h3><br />...scale out by adding hosts</h3>
             <div class="thumbnail">
-                <div class="caption">Hosts</div>
+                <div class="caption" style="color:black;">Hosts</div>
                 <img src="img/tour-up.png" height="100" />
             </div>        
         </div>
@@ -25,14 +25,14 @@
         <div class="span2">
             <h3><br />Throughput increases</h3>
             <div class="thumbnail">
-                <div class="caption">Throughput</div>
+                <div class="caption" style="color:black;">Throughput</div>
                 <img src="img/tour-up.png" height="100" />
             </div>        
         </div>
         <div class="span2">
             <h3><br />...and latency decreases</h3>
             <div class="thumbnail">
-                <div class="caption text-right">Latency</div>
+                <div class="caption text-right" style="color:black;">Latency</div>
                 <img src="img/tour-down.png" height="100" />
             </div>        
         </div>

@@ -330,7 +330,7 @@ textarea.no-resize-x{
 .tour-figure .thumbnail{
 	position:relative}
 .tour-figure .thumbnail>.caption{
-	text-transform:uppercase;color:#769fc3;font-weight:700;font-size:12px;position:absolute;left:0;top:-5px}
+	text-transform:uppercase;color:black;font-weight:700;font-size:12px;position:absolute;left:0;top:-5px}
 .tour-figure .thumbnail>.caption.text-right{
 	right:0;left:auto}
 .tour-figure .thumbnail>.caption.text-center{

@@ -6,8 +6,8 @@
     <h1>CONTINUOUS AVAILABILITY</h1>
     <p>NuoDB’s architecture consists of a peer-to-peer network of transaction and storage process nodes. Create a redundant, resilient, continuously database by simply adding additional process nodes. If any of these nodes fails, overall database throughput will be impacted. However, NuoDB will continue to process transactions as long as it has at least one surviving transaction node and at least one storage node.</p>
 
-    <img src="img/continuous-availability-diagram.png" style="width: 33%;"/>
-    
+    <img src="img/continuous-availability-diagram.png" style="width: 100%;"/>
+    <br><br>
     <p>When integrated with orchestration and management technologies, losing a node will trigger another process node to be spun up and automatically added back to the database. This allows the database to once again provide high levels of throughput for the application.</p>
     <h3>Try it yourself:</h3>
     <t:messages />
