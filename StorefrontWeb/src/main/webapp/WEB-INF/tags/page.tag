@@ -1,4 +1,4 @@
-<%-- Copyright (c) 2013-2015 NuoDB, Inc. --%>
+<%-- Copyright (c) 2013-2017 NuoDB, Inc. --%>
 <%@tag import="com.sun.jersey.api.uri.UriComponent"%>
 <%@tag import="com.nuodb.storefront.servlet.StorefrontWebApp"%>
 <%@tag import="com.nuodb.storefront.model.dto.PageConfig"%>
@@ -27,6 +27,7 @@
     <link href="css/rateit.css" rel="stylesheet" />
     <link href="css/Storefront.css?v=2.1.3" rel="stylesheet" />
     <link rel="icon" type="image/png" href="favicon.ico" />
+    <link href='http://fonts.googleapis.com/css?family=Josefin+Sans&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
 </head>
 <body>
     <div class="container">
@@ -63,7 +64,7 @@
 
         <% if (showHeader == null || showHeader == true) { %>
         <!-- Footer  -->
-        <div class="footer">Copyright &copy; 2013-2015 NuoDB, Inc. All rights reserved.</div>
+        <div class="footer">Copyright &copy; 2013-2017 NuoDB, Inc. All rights reserved.</div>
         <% } %>
     </div>
     

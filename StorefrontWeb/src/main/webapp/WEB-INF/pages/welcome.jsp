@@ -1,9 +1,9 @@
-<%-- Copyright (c) 2013-2015 NuoDB, Inc. --%>
+<%-- Copyright (c) 2013-2017 NuoDB, Inc. --%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
 <t:page showHeader="false">
-    <h1>NuoDB INTERACTIVE DEMO</h1>
+    <h1>NUODB INTERACTIVE DEMO</h1>
     <t:messages />
     <div class="alert alert-block alert-info hide" id="api-box">
         <p>Before you can use this demo, you must specify domain credentials to connect to NuoDB.<br> &nbsp;</p>
@@ -70,24 +70,39 @@
     </div>
 
     <div id="welcome">
-        <div class="row">
-            <h2>Select a tour to get started</h2>
+        <p> Welcome to the NuoDB Interactive Online Demo!  In this demo, you control the applications to learn how NuoDB reacts to various scenarios. <br><br>For example, increase the workload and watch NuoDB automatically scale out to maintain high performance.  Simulate a datacenter failure and experience how NuoDB provides continuous availability to the application.  Learn how NuoDB compares to a traditional, monolithic database. <br><br> We hope you enjoy this interactive demo!  When you’ve finished exploring and are ready to dive deeper, build and test the demo in your own environment or try out our free Community Edition.</p>
+
+        <h2>Select a tour to get started</h2>
+        <div class="home-tour-links">
             <div class="home-page-btn">
-                <a href=""><img src="img/scale-btn.png"/></a>
-                <h5 style="text-align: center;">Scale-Out Performance</h5>
-                <p style="text-align: center;">Brief description of what the scale-out demo is</p>
+                <a href="/tour-scale-out"><img src="img/scale-btn.png"/></a>
+            </div>
+            <div class="home-page-btn-text">
+                <h5>Scale-Out Performance</h5>
+                <p>Increase the workload on the database and watch the effects on performance as NuoDB scales out.</p>
             </div>
             <div class="home-page-btn">
-                <a href=""><img src="img/db-comparison-btn.png" /></a>
-                <h5 style="text-align: center;">[COMING SOON]</h5>
+                <a href="/tour-database-comparison"><img src="img/db-comparison-btn.png" /></a>
+            </div>
+            <div class="home-page-btn-text">    
+                <h5 style="color:#98a0ad;">Database Comparison [COMING SOON]</h5>
+                <p style="color:#98a0ad;">Compare how NuoDB performs and scales out compared to mySQL, PostgreSQL and, and Microsoft SQL Server.</p>
+            </div>
+        </div>    
+        <div class="home-tour-links">
+            <div class="home-page-btn">
+                <a href="/tour-active-active"><img src="img/active-active-btn.png" /></a>
+            </div>
+            <div class="home-page-btn-text">
+                <h5 style="color:#98a0ad;">Active-Active [COMING SOON]</h5>
+                <p style="color:#98a0ad;">Watch how NuoDB provides active-active capabilities within and across multiple deployment environments without needing any additional technology or configuration.</p>
             </div>
             <div class="home-page-btn">
-                <a href=""><img src="img/active-active-btn.png" /></a>
-                <h5 style="text-align: center;">[COMING SOON]</h5>
+                <a href="/tour-continuous-availability"><img src="img/ca-btn.png" /></a>
             </div>
-             <div class="home-page-btn">
-                <a href=""><img src="img/ca-btn.png" /></a>
-                <h5 style="text-align: center;">[COMING SOON]</h5>
+            <div class="home-page-btn-text">                    
+                <h5 style="color:#98a0ad;">Continuous Availability [COMING SOON]</h5>
+                <p style="color:#98a0ad;">Deploy NuoDB across multiple environments, simulate an outage scenario, and watch how NuoDB continues to provide uninterrupted service to the application.</p>
             </div>
         </div>
     </div>
