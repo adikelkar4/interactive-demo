@@ -49,6 +49,7 @@ public class TenantStatisticsService implements Runnable {
 			this.tenant.getTransactionStats().clear();
 		}
 		synchronized (this.tenant.getSimulatorService()) {
+			StorefrontApp.printSimulatorStats(this.tenant.getSimulatorService(), System.out);
 			workloadStats = new HashMap<>(this.tenant.getSimulatorService().getWorkloadStats());
 			stepStats = new HashMap<>(this.tenant.getSimulatorService().getWorkloadStepStats());
 			this.tenant.getSimulatorService().getWorkloadStats().clear();
