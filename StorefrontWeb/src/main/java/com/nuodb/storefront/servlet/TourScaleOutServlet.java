@@ -25,10 +25,8 @@ public class TourScaleOutServlet extends BaseServlet {
                                 + "NuoDB automatically provisions everything you need in the cloud.")
                                 .setLink(new MessageLink("Get the kit", "https://github.com/nuodb/nuodbTools"));
             }
+        } catch (Exception ex) { }
 
-            showPage(req, resp, "Scale-Out Performance", "tour-scale-out", null, new Customer());
-        } catch (Exception ex) {
-            showCriticalErrorPage(req, resp, ex);
-        }
+        showPage(req, resp, "Scale-Out Performance", "tour-scale-out", null, new Customer());
     }
 }
