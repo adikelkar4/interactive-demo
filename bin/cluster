@@ -185,14 +185,13 @@ def delete_cluster(stack, session, args):
         return False
 
 
-def sync_to_s3(target_dir, aws_region=AWS_REGION, bucket_name=BUCKET_NAME):
-    if not os.path.isdir(target_dir):
-        raise ValueError('target_dir %r not found.' % target_dir)
+def sync_to_s3(aws_region, bucket_naame):
+    target_dir = os.path.dirname(__file__) + "/../cfn/"
 
     s3 = boto3.resource('s3', region_name=aws_region)
 
     for filename in os.listdir(target_dir):
-        s3.Object(bucket_name, key_name + "/" + filename).put(Body=open(os.path.join(target_dir, filename), 'rb'))
+        s3.Object(bucket_name, filename).put(Body=open(os.path.join(target_dir, filename), 'rb'))
 
 
 def create_cluster_name(number, args):
@@ -306,7 +305,16 @@ the command to return successfully.
         ]
 
     # Upload cfn templates to s3 bucket
-    sync_to_s3(target_dir,args.BucketRegion, args.bucket)
+
+    print 'bucket region: ', params['BucketRegion']
+
+    aws_region = params['BucketRegion']
+    bucket_name = params['Bucket']
+
+    return aws_region
+    return bucket_name
+
+    sync_to_s3(aws_region, bucket_name)
 
 
     cfn = session.client("cloudformation")
