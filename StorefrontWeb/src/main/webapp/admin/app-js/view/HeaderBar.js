@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2015 NuoDB, Inc. */
+/* Copyright (c) 2013-2017 NuoDB, Inc. */
 
 /**
  * @class App.view.HeaderBar
@@ -24,7 +24,7 @@ Ext.define('App.view.HeaderBar', {
 
         me.items = [{
             xtype: 'metricwell',
-            text: '<b>Users</b>',
+            text: '<b>Workload</b>',
             icon: 'ico-users.png',
             metric: 'workloadStats.all.activeWorkerCount',
             itemId: 'metrics-users',

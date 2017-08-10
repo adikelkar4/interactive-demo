@@ -1,46 +1,23 @@
-<%-- Copyright (c) 2013-2015 NuoDB, Inc. --%>
+<%-- Copyright (c) 2013-2017 NuoDB, Inc. --%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
 <t:page showHeader="false">
-    <h1>Continuous Availability</h1>
+    <h1>CONTINUOUS AVAILABILITY</h1>
+    <p>NuoDB’s architecture consists of a peer-to-peer network of transaction and storage process nodes. Create a redundant, resilient, continuously database by simply adding additional process nodes. If any of these nodes fails, overall database throughput will be impacted. However, NuoDB will continue to process transactions as long as it has at least one surviving transaction node and at least one storage node.</p>
 
-    <div class="row-fluid tour-figure tall">
-        <div class="span4">
-            <h3><br />When one or more processes<br />go down...</h3>
-            <div class="row-fluid">
-                <div class="span6 offset3">
-                    <div class="thumbnail">
-                        <div class="caption text-right">Processes</div>
-                        <img src="img/tour-remove.png" height="80" />
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="span1"></div>
-        <div class="span4">
-            <h3>...NuoDB automatically restarts processes as required, and shopping continues uninterrupted</h3>
-            <div class="row-fluid">
-                <div class="span6 offset3">
-                    <div class="thumbnail">
-                        <div class="caption text-center">Throughput</div>
-                        <img src="img/tour-sawtooth.png" height="100" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <img src="img/continuous-availability-diagram.png" style="width: 33%;"/>
+    
+    <p>When integrated with orchestration and management technologies, losing a node will trigger another process node to be spun up and automatically added back to the database. This allows the database to once again provide high levels of throughput for the application.</p>
     <h3>Try it yourself:</h3>
     <t:messages />
-
+    <p>Add and shutdown processes to watch how the database provides continuous availability to the application.</p>
     <ol class="tour-steps">
-        <li>Shut down one or more Transaction Engine (TE) processes using the <a href="control-panel-processes${qs}">Hosts &amp; Processes page</a>. Alternatively, you can connect to one of your hosts (via SSH, Remote Desktop, etc.) and terminate a TE process directly.
-        </li>
-        <li>Observe how NuoDB detects the loss and automatically starts new TEs as necessary to maintain the workload.</li>
+        <li>In the TE Processes box, click on the &ldquo;up&rdquo; arrow to increase the number of NuoDB transaction nodes. Watch as throughput increases and latency decreases </li>
+        <li>{add other steps and descriptions, pending information about what the user will do to experience CA}</li>
     </ol>
 
-    <h3>To learn more:</h3>
+    <h3>Learn More:</h3>
     <ul class="tour-links">
         <li>See <a href="http://doc.nuodb.com/display/21V/Start+and+Stop+NuoDB+Services" target="_blank">NuoDB documentation</a> to learn how to increase the number of available hosts
         </li>

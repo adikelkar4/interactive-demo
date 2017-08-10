@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2015 NuoDB, Inc. */
+/* Copyright (c) 2013-2017 NuoDB, Inc. */
 
 /**
  * @class App.view.NavBar
@@ -24,21 +24,21 @@ Ext.define('App.view.NavBar', {
         href: '/tour-scale-out'
     }, {
         title: 'Database Comparison (Coming Soon)',
-        href: '/welcome'
+        href: '/tour-database-comparison'
     }, {
         title: 'Active-Active (Coming Soon)',
-        href: '/welcome'
+        href: '/tour-active-active'
     }, {
         title: 'Continuous Availability (Coming Soon)',
-        href: '/welcome'
+        href: '/tour-continuous-availability'
     }, {
         title: 'Learn More',
     }, {
         title: 'About This Demo',
-        href: '/tour-scale-out'
+        href: '/about'
     }, {
         title: 'Resources',
-        href: '/welcome'
+        href: '/resources'
     }, {
         title: 'Download CE',
         href: 'http://www.nuodb.com/product/evaluate-nuodb'
