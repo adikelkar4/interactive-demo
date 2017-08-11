@@ -106,16 +106,18 @@ public class StatsApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response putContainerStats(@Context HttpServletRequest req, StatsPayload stats) {
-        Map<String, Map> payload = stats.getPayload();
-        if (payload.size() < 1) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
-        } else if (lastStatUpdate.containsKey(stats.getUid())) {
-            if (!lastStatUpdate.get(stats.getUid()).before(stats.getTimestamp())) {
-                return Response.ok().build();
-            }
-        }
-
-        lastStatUpdate.put(stats.getUid(), stats.getTimestamp());
+    	Map<String, Map> payload = stats.getPayload();
+    	synchronized (lastStatUpdate) {			
+    		if (payload.size() < 1) {
+    			return Response.status(Response.Status.BAD_REQUEST).build();
+    		} else if (lastStatUpdate.containsKey(stats.getUid())) {
+    			if (!lastStatUpdate.get(stats.getUid()).before(stats.getTimestamp())) {
+    				return Response.ok().build();
+    			}
+    		}
+    		
+    		lastStatUpdate.put(stats.getUid(), stats.getTimestamp());
+		}
         String databaseType = stats.getDatabaseType();
 
         @SuppressWarnings("unchecked")

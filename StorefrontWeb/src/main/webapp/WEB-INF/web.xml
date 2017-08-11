@@ -69,6 +69,26 @@
         <servlet-name>storefront-tour-scaleout</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.TourScaleOutServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>storefront-tour-active-active</servlet-name>
+        <servlet-class>com.nuodb.storefront.servlet.TourActiveActiveServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>storefront-tour-database-comparison</servlet-name>
+        <servlet-class>com.nuodb.storefront.servlet.TourDatabaseComparisonServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>storefront-resources</servlet-name>
+        <servlet-class>com.nuodb.storefront.servlet.ResourcesServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>storefront-about</servlet-name>
+        <servlet-class>com.nuodb.storefront.servlet.AboutServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>storefront-tour-continuous-availability</servlet-name>
+        <servlet-class>com.nuodb.storefront.servlet.TourContinuousAvailabilityServlet</servlet-class>
+    </servlet>
 
     <!-- URL mappings -->
     <servlet-mapping>
@@ -90,5 +110,25 @@
     <servlet-mapping>
         <servlet-name>storefront-tour-scaleout</servlet-name>
         <url-pattern>/tour-scale-out</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>storefront-tour-active-active</servlet-name>
+        <url-pattern>/tour-active-active</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>storefront-tour-database-comparison</servlet-name>
+        <url-pattern>/tour-database-comparison</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>storefront-resources</servlet-name>
+        <url-pattern>/resources</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>storefront-about</servlet-name>
+        <url-pattern>/about</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>storefront-tour-continuous-availability</servlet-name>
+        <url-pattern>/tour-continuous-availability</url-pattern>
     </servlet-mapping>
 </web-app>

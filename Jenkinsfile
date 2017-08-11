@@ -15,9 +15,6 @@ node('aml') {
    // so all dependencies are solved in the maven build area.
 
    docker.image("maven:3.3.9").inside {
-     stage('Downloading Dependencies') {
-       sh 'mvn dependency:resolve -Dmaven.repo.local=./maven-local'
-     }
      stage('Maven Build') {
        sh 'mvn clean install -Dmaven.repo.local=./maven-local'
      }

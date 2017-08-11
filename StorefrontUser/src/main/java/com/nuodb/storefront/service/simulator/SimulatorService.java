@@ -30,8 +30,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 	private ScheduledThreadPoolExecutor threadPool;
 	private final IStorefrontService svc;
 	private final Map<String, WorkloadStats> workloadStatsMap = new HashMap<String, WorkloadStats>();
-	private final Map<String, WorkloadStats> aggregateWorkloadStats = new HashMap<>();
-	private final Map<WorkloadStep, AtomicInteger> stepCompletionCounts = new TreeMap<WorkloadStep, AtomicInteger>();
+	private final Map<WorkloadStep, AtomicInteger> stepCompletionCounts = new HashMap<WorkloadStep, AtomicInteger>();
 
 	public SimulatorService(IStorefrontService svc) {
 		this.logger = svc.getLogger(getClass());
@@ -178,18 +177,6 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 		}
 	}
 
-	public Map<String, WorkloadStats> getAggregateWorkloadStats() {
-		return aggregateWorkloadStats;
-	}
-
-	public void aggregateWorkerStats(Workload workload, WorkloadStats stats) {
-		if (!aggregateWorkloadStats.containsKey(workload.getName())) {
-			aggregateWorkloadStats.put(workload.getName(), new WorkloadStats(workload));
-		}
-		WorkloadStats workloadStats = aggregateWorkloadStats.get(workload.getName());
-		workloadStats.applyDeltas(stats);
-	}
-
 	public Map<WorkloadStep, AtomicInteger> getStepCompletionCounts() {
 		return stepCompletionCounts;
 	}
@@ -215,6 +202,5 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 				break;
 			}
 		}
-		aggregateWorkerStats(type, stats);
 	}
 }

@@ -207,7 +207,7 @@ Ext.define('App.controller.Storefront', {
             }
         });
 
-        /*if (me.outstandingRequestCount >= App.app.maxOutstandingRequestCount) {
+        if (me.outstandingRequestCount >= App.app.maxOutstandingRequestCount) {
             return;
         }
 
@@ -233,18 +233,18 @@ Ext.define('App.controller.Storefront', {
                 }
 
                 var alog = $('#activity-log');
-
-                for (var l in logs) {
-                    me.lastLogTimestamp = l[0];
-                    alog.append(l[1]);
-                }
+                
+                logs.forEach(function(log) {
+                	me.lastLogTimestamp = log.time;
+                	alog.append(log.message + "\n");
+                });
 
                 alog.scrollTop = alog.scrollHeight;
             },
             failure: function (response) {
             me.application.fireEvent('statsfail', response, null);
             }
-        });*/
+        });
     },
 
     processStats: function(stats) {

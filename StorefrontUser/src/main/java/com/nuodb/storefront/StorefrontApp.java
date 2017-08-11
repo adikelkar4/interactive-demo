@@ -111,7 +111,6 @@ public class StorefrontApp {
 		executeTasks(tenant, simulator, workloadSettings);
 		while(true) {
 			Thread.sleep(HEARTBEAT_INTERVAL_SEC * 1000);
-			printSimulatorStats(simulator, System.out);
 		}
 	}
 
@@ -132,11 +131,11 @@ public class StorefrontApp {
 		tenant.startStatsService();
 	}
 	
-    private static void printSimulatorStats(ISimulatorService simulator, PrintStream out) {
+    public static void printSimulatorStats(ISimulatorService simulator, PrintStream out) {
         out.println();
         out.println(String.format("%-30s %8s %8s %8s %8s | %7s %9s %7s %9s", "Workload", "Active", "Failed", "Killed", "Complete", "Steps",
                 "Avg (s)", "Work", "Avg (s)"));
-        for (Map.Entry<String, WorkloadStats> statsEntry : simulator.getAggregateWorkloadStats().entrySet()) {
+        for (Map.Entry<String, WorkloadStats> statsEntry : simulator.getWorkloadStats().entrySet()) {
             String workloadName = statsEntry.getKey();
             WorkloadStats stats = statsEntry.getValue();
 

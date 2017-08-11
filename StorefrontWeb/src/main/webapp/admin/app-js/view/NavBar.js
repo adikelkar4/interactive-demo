@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2015 NuoDB, Inc. */
+/* Copyright (c) 2013-2017 NuoDB, Inc. */
 
 /**
  * @class App.view.NavBar
@@ -24,21 +24,21 @@ Ext.define('App.view.NavBar', {
         href: '/tour-scale-out'
     }, {
         title: 'Database Comparison (Coming Soon)',
-        href: '/welcome'
+        href: '/tour-database-comparison'
     }, {
         title: 'Active-Active (Coming Soon)',
-        href: '/welcome'
+        href: '/tour-active-active'
     }, {
         title: 'Continuous Availability (Coming Soon)',
-        href: '/welcome'
+        href: '/tour-continuous-availability'
     }, {
         title: 'Learn More',
     }, {
         title: 'About This Demo',
-        href: '/tour-scale-out'
+        href: '/about'
     }, {
         title: 'Resources',
-        href: '/welcome'
+        href: '/resources'
     }, {
         title: 'Download CE',
         href: 'http://www.nuodb.com/product/evaluate-nuodb'
@@ -50,30 +50,38 @@ Ext.define('App.view.NavBar', {
         var me = this;
 
         var html = ['<div id="activity-log-container"><textarea id="activity-log" disabled="disabled"></textarea></div>', '<ul id="nav-links">'];
-        for ( var i = 0; i < me.links.length; i++) {
+
+        for (var i = 0; i < me.links.length; i++) {
             var link = me.links[i];
             html.push('<li');
+
             if (!link.href) {
                 html.push(' class="section-title"');
             }
+
             html.push('>');
+
             if (link.href) {
                 html.push('<a href="', link.href, '">');
             }
+
             if (link.icon) {
                 html.push('<img src="img/', link.icon, '" width="16" height="16" />');
             } else if (link.prefix) {
                 html.push('<span>', link.prefix, '</span>');
             }
+
             html.push(link.title);
+
             if (link.href) {
                 html.push('</a>');
             }
+
             html.push('</li>');
         }
+
         html.push('</ul>');
         me.html = html.join('');
-
         me.callParent(arguments);
 
         App.app.on('viewchange', function(href, userInitiated, loadEvent) {
@@ -88,7 +96,14 @@ Ext.define('App.view.NavBar', {
         var me = this;
         me.callParent(arguments);
         $('a', me.el.dom).click(function(e) {
+            if ($(this).attr('href').startsWith('http')) {
+                window.open($(this).attr('href'), '_blank');
+
+                return false;
+            }
+
             App.app.fireEvent('viewchange', $(this).attr('href'), true, null);
+
             return false;
         });
     }

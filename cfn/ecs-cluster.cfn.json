@@ -1224,7 +1224,12 @@
             "def handler(event, context):\n",
             "    print(event)\n",
 
+            "    responseData = {}\n",
             "    count = event['count']\n",
+            "    event['ResponseURL'] = \"", { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb/api/app-instances/log" ]]}, "\"\n",
+            "    event['StackId'] = \"NOTHING\"\n",
+            "    event['RequestId'] = \"NOTHING\"\n",
+            "    event['LogicalResourceId'] = \"NOTHING\"\n",
             "    try:\n",
             "        response = client.register_task_definition(\n",
             "            family='storefrontuser-family',\n",
@@ -1279,6 +1284,9 @@
             "           ]\n",
             "        )\n",
             "        print(response)\n",
+            "        responseData['Data'] = 'StorefrontUser Task Definition successfully update.'\n",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, \"\")\n",
+
             "    except Exception as e:\n",
             "        print(e)\n",
 
@@ -1305,7 +1313,9 @@
             "            #taskDefinition=familyArn['taskDefinitionArns'][0],\n",
             "            desiredCount=count\n",
             "        )\n",
-            "        print(response)\n"
+            "        print(response)\n",
+            "        responseData['Data'] = 'StorefrontUser service successfully updated'\n",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, \"\")\n"
 
           ]]}
         },
@@ -1330,6 +1340,13 @@
             "import cfnresponse\n",
             "client = boto3.client('ecs')\n",
             "def handler(event, context):\n",
+
+            "    event['ResponseURL'] = \"", { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb/api/app-instances/log" ]]}, "\"\n",
+            "    event['StackId'] = \"NOTHING\"\n",
+            "    event['RequestId'] = \"NOTHING\"\n",
+            "    event['LogicalResourceId'] = \"NOTHING\"\n",
+
+            "    responseData = {}\n",
             "    print(event)\n",
 
             "    count = event['count']\n",
@@ -1340,8 +1357,12 @@
             "            desiredCount=count,\n",
             "        )\n",
             "        print(response)\n",
+            "        responseData['Data'] = 'TE Service was successfully updated.'\n",
+            "        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, \"\")\n",
             "    except Exception as e:\n",
-            "        print(e)\n"
+            "        print(e)\n",
+            "        responseData['Data'] = 'TE Service failed to update with error: ' + e\n",
+            "        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, \"\")\n"
           ]]}
         },
         "Runtime": "python2.7",
