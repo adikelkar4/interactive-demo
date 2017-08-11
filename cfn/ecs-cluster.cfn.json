@@ -1024,11 +1024,11 @@
               },
               {
                 "Name" : "ARG_workloadmulti_browseusers",
-                "Value" : "0"
+                "Value" : "700"
               },
               {
                 "Name" : "ARG_workloadmulti_shopusers",
-                "Value" : "0"
+                "Value" : "700"
               },
               {
                 "Name" : "ARG_workloadadmin_run_reportusers",
@@ -1036,7 +1036,7 @@
               },
               {
                 "Name" : "ARG_workloadmulti_browse_and_reviewusers",
-                "Value" : "0"
+                "Value" : "700"
               }
             ]
           }
@@ -1052,7 +1052,12 @@
         "DesiredCount" : "0",
         "ServiceName" : "storefrontuser-service",
         "PlacementStrategies" : [{ "Type": "random"}],
-        "TaskDefinition" : { "Ref" : "StorefrontUserTaskDefinition"}
+        "TaskDefinition" : { "Ref" : "StorefrontUserTaskDefinition"},
+        "DeploymentConfiguration" :
+        {
+          "MaximumPercent" : 200,
+          "MinimumHealthyPercent" : 100
+        }
       }
     },
 
@@ -1305,7 +1310,7 @@
             "        response = client.update_service(\n",
             "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
             "            service='storefrontuser-service',\n",
-            "            taskDefinition=familyArn['taskDefinitionArns'][0],\n",
+            "            #taskDefinition=familyArn['taskDefinitionArns'][0],\n",
             "            desiredCount=count\n",
             "        )\n",
             "        print(response)\n",
