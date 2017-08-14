@@ -65,7 +65,9 @@ Getting Started (command line)
 
 3. Run the Storefront web app:
 
-        cd interactive-demo\StorefrontWeb
+        cd interactive-demo
+        mvn clean install
+        cd StorefrontWeb
         mvn tomcat7:run [args]
 
    The following (optional) Storefront environment settings may be provided:
