@@ -34,8 +34,9 @@ Prerequisites
 Getting Started (AWS)
 ---------------
 
-1. [AWS CLI](https://aws.amazon.com/cli/).  Install this in order to execute code against an AWS account.  Must be
-   configured with an existing AWS account using `aws configure`.
+1. [AWS CLI](https://aws.amazon.com/cli/) and configure with credentials using:
+
+        aws configure
 
 2. Grab the source code from [Git](https://github.com/nuodb/interactive-demo).
 
