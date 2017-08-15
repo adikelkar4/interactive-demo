@@ -25,24 +25,18 @@ for further information on this tool.
 Prerequisites
 -------------
 
-1. NuoDB 2.1 or higher.  Earlier versions of Storefront supported MySQL and other RDBMSs, which you can find in the [rel/2.0.6 branch](https://github.com/nuodb/nuodb-samples/tree/rel/2.0.6/StorefrontDemo) (or earlier).
+1. [Python 2.7](https://www.python.org/downloads/).  This allows us to run scripts for cloud deployment.
 
-2. NuoDB Rest Service.  This exposes the NuoDB API used by the Storefront its Control Panel features.
-
-3. [Apache Maven 3](http://maven.apache.org/download.cgi) or higher.  This tool is used to build the Storefront
-   from source and run it using a Tomcat web server.  Maven fetches all the other dependencies you need automatically.
-
-4. [Python 2.7](https://www.python.org/downloads/).  This allows us to run scripts for cloud deployment.
-
-5. [PIP](https://pip.pypa.io/en/stable/installing/).  This will bring all dependencies for our Python scripts together
+2. [PIP](https://pip.pypa.io/en/stable/installing/).  This will bring all dependencies for our Python scripts together
    automatically for you.
 
 
 Getting Started (AWS)
 ---------------
 
-1. [AWS CLI](https://aws.amazon.com/cli/).  Install this in order to execute code against an AWS account.  Must be
-   configured with an existing AWS account using `aws configure`.
+1. [AWS CLI](https://aws.amazon.com/cli/) and configure with credentials using:
+
+        aws configure
 
 2. Grab the source code from [Git](https://github.com/nuodb/interactive-demo).
 
@@ -58,12 +52,17 @@ Getting Started (AWS)
 Getting Started (command line)
 ---------------
 
-1. Grab the source code from [Git](https://github.com/nuodb/interactive-demo).
+1. [NuoDB 2.1 or higher](https://www.nuodb.com/product/evaluate-nuodb).  Earlier versions of Storefront supported MySQL and other RDBMSs, which you can find in the [rel/2.0.6 branch](https://github.com/nuodb/nuodb-samples/tree/rel/2.0.6/StorefrontDemo) (or earlier).
 
-2. Download and install [Apache Maven 3](http://maven.apache.org/download.cgi) or higher.  This tool is used to build the Storefront
+2. Grab the source code from [Git](https://github.com/nuodb/interactive-demo).
+
+3. [Apache Maven 3](http://maven.apache.org/download.cgi) or higher.  This tool is used to build the Storefront
    from source and run it using a Tomcat web server.  Maven fetches all the other dependencies you need automatically.
 
-3. Run the Storefront web app:
+4. Download and install [Apache Maven 3](http://maven.apache.org/download.cgi) or higher.  This tool is used to build the Storefront
+   from source and run it using a Tomcat web server.  Maven fetches all the other dependencies you need automatically.
+
+5. Run the Storefront web app:
 
         cd interactive-demo
         mvn clean install
@@ -118,7 +117,7 @@ Getting Started (command line)
 		-Dmaven.tomcat.port=8080
 
 
-4. Explore the web app at `http://localhost:8080/StorefrontDemo` (or whichever port you've chosen).
+6. Explore the web app at `http://localhost:8080/StorefrontDemo` (or whichever port you've chosen).
 
 
 Getting Started (Eclipse)
