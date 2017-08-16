@@ -305,14 +305,11 @@ the command to return successfully.
         ]
 
     # Upload cfn templates to s3 bucket
-
-    print 'bucket region: ', params['BucketRegion']
+    global aws_region
+    global bucket_name
 
     aws_region = params['BucketRegion']
     bucket_name = params['Bucket']
-
-    return aws_region
-    return bucket_name
 
     sync_to_s3(aws_region, bucket_name)
 
