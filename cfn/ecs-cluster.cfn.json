@@ -1279,7 +1279,7 @@
             "           ]\n",
             "        )\n",
             "        print(response)\n",
-            "        data = urllib.urlencode(response)\n",
+            "        data = urllib.urlencode({'Data' : '(task-definition storefrontuser-definition) has been sucessfully updated.'})\n",
 
             "        req = urllib2.Request(responseURL, data)\n",
             "        response = urllib2.urlopen(req)\n",
@@ -1313,7 +1313,7 @@
             "            desiredCount=event['count']\n",
             "        )\n",
             "        print(response)\n",
-            "        data = urllib.urlencode(response)\n",
+            "        data = urllib.urlencode({'Data' : '(service storefrontuser-service) has reached a steady state.'})\n",
 
             "        req = urllib2.Request(responseURL, data)\n",
             "        response = urllib2.urlopen(req)\n",
@@ -1355,7 +1355,7 @@
             "            desiredCount=event['count'],\n",
             "        )\n",
             "        print(response)\n",
-            "        data = urllib.urlencode(response)\n",
+            "        data = urllib.urlencode({'Data' : '(service TE-service) has reached a steady state.'})\n",
 
             "        req = urllib2.Request(responseURL, data)\n",
             "        response = urllib2.urlopen(req)\n",
@@ -1364,7 +1364,7 @@
 
             "    except Exception as e:\n",
             "        print(e)\n",
-            "        data = urllib.urlencode({'error': e})\n",
+            "        data = urllib.urlencode({'Data': e})\n",
 
             "        req = urllib2.Request(responseURL, data)\n",
             "        response = urllib2.urlopen(req)\n",
