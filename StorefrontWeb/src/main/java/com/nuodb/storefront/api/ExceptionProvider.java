@@ -2,17 +2,22 @@
 
 package com.nuodb.storefront.api;
 
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nuodb.storefront.exception.StorefrontException;
 import com.nuodb.storefront.model.dto.Message;
 import com.sun.jersey.api.NotFoundException;
 import com.sun.jersey.api.ParamException;
 
 @Provider
+@Produces(MediaType.APPLICATION_JSON)
 public class ExceptionProvider implements ExceptionMapper<RuntimeException> {
     public ExceptionProvider() {
     }
@@ -31,6 +36,13 @@ public class ExceptionProvider implements ExceptionMapper<RuntimeException> {
             errorCode = Status.INTERNAL_SERVER_ERROR;
         }
 
-        return Response.status(errorCode).entity(new Message(exception)).build();
+        String jsonString = "";
+		try {
+			jsonString = new ObjectMapper().writeValueAsString(new Message(exception));
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return Response.status(errorCode).entity(jsonString).build();
     }
 }

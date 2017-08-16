@@ -28,6 +28,10 @@
 			<artifactId>jersey-servlet</artifactId>
 		</dependency>
 		<dependency>
+				<groupId>com.sun.jersey</groupId>
+				<artifactId>jersey-json</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk</artifactId>
 		</dependency>
