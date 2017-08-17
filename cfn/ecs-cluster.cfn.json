@@ -1218,7 +1218,7 @@
         },
         "Code": {
           "ZipFile" : { "Fn::Join" : ["", [
-            "import boto3, urllib, urllib2\n",
+            "import boto3, urllib2, json\n",
 
             "client = boto3.client('ecs')\n",
             "def handler(event, context):\n",
@@ -1279,7 +1279,7 @@
             "           ]\n",
             "        )\n",
             "        print(response)\n",
-            "        data = urllib.urlencode({'Data' : '(task-definition storefrontuser-definition) has been sucessfully updated.'})\n",
+            "        data = json.dumps({'Data' : '(task-definition storefrontuser-definition) has been sucessfully updated.'})\n",
 
             "        req = urllib2.Request(responseURL, data)\n",
             "        req.add_header('Content-Type', 'application/json')\n",
@@ -1314,7 +1314,7 @@
             "            desiredCount=event['count']\n",
             "        )\n",
             "        print(response)\n",
-            "        data = urllib.urlencode({'Data' : '(service storefrontuser-service) has reached a steady state.'})\n",
+            "        data = json.dumps({'Data' : '(service storefrontuser-service) has reached a steady state.'})\n",
 
             "        req = urllib2.Request(responseURL, data)\n",
             "        req.add_header('Content-Type', 'application/json')\n",
@@ -1341,7 +1341,7 @@
         },
         "Code": {
           "ZipFile" : { "Fn::Join" : ["", [
-            "import boto3, urllib, urllib2\n",
+            "import boto3, urllib, urllib2, json\n",
 
             "client = boto3.client('ecs')\n",
             "def handler(event, context):\n",
@@ -1349,7 +1349,6 @@
             "    responseURL = \"", { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb/api/app-instances/log" ]]}, "\"\n",
             "    print(event)\n",
 
-            "    count = event['count']\n",
             "    try:\n",
             "        response = client.update_service(\n",
             "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
@@ -1357,7 +1356,7 @@
             "            desiredCount=event['count'],\n",
             "        )\n",
             "        print(response)\n",
-            "        data = urllib.urlencode({'Data' : '(service TE-service) has reached a steady state.'})\n",
+            "        data = json.dumps({'Data' : '(service TE-service) has reached a steady state.'})\n",
 
             "        req = urllib2.Request(responseURL, data)\n",
             "        req.add_header('Content-Type', 'application/json')\n",
@@ -1367,7 +1366,7 @@
 
             "    except Exception as e:\n",
             "        print(e)\n",
-            "        data = urllib.urlencode({'Data': e})\n",
+            "        data = json.dumps({'Data': e})\n",
 
             "        req = urllib2.Request(responseURL, data)\n",
             "        req.add_header('Content-Type', 'application/json')\n",
