@@ -115,7 +115,7 @@ public class AppInstanceApi extends BaseApi {
         return dbConfig;
     }
 
-    @PUT
+    @POST
     @Path("/log")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response putLog(Map<String, String> event) {
