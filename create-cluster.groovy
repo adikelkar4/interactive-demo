@@ -3,11 +3,12 @@
 branch=env.BRANCH
 aws_credentials='interactive-demo-manager'
 aws_region='us-east-2'
+git_repo=env.REPO
 
 node('aml') {
     stage('checkout') {
        checkout([$class: 'GitSCM', branches: [[name: "*/${branch}"]], 
-       			  userRemoteConfigs: [[credentialsId: 'nuodb-jenkins.github.com', url: 'https://github.com/AlignedSoftware/interactive-demo.git']]])
+       			  userRemoteConfigs: [[credentialsId: 'nuodb-jenkins.github.com', url: git_repo]]])
     }
 
     stage('Create') {
