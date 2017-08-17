@@ -17,6 +17,7 @@ node('aml') {
 	  withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: aws_credentials, secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
             sh "virtualenv py27 && . py27/bin/activate && pip install -r requirements.txt"
  	    sh ". py27/bin/activate && bin/cluster create --delete-after ${env.EXPIRATION} && bin/cluster list"
+            emailext body: 'Visit ${env.URL} to begin exploring all NuoDB has to offer!', subject: 'Your NuoShowcase Cluster is Ready', to: '${env.EMAIL}'
           }
         }
       }
