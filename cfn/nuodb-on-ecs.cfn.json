@@ -1,0 +1,411 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "AWS CloudFormation template to create a new VPC or use an existing VPC for ECS deployment",
+  "Mappings": {
+    "VpcCidrs": {
+      "eu-central-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "sa-east-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "ap-northeast-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "eu-west-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "us-east-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "us-east-2": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "us-west-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "us-west-2": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "ap-southeast-2": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "ap-southeast-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      }
+    },
+    "ARNNamespace": {
+      "us-east-1": {
+        "Partition": "aws"
+      },
+      "us-east-2": {
+        "Partition": "aws"
+      },
+      "us-west-2": {
+        "Partition": "aws"
+      },
+      "us-west-1": {
+        "Partition": "aws"
+      },
+      "eu-west-1": {
+        "Partition": "aws"
+      },
+      "eu-central-1": {
+        "Partition": "aws"
+      },
+      "ap-southeast-1": {
+        "Partition": "aws"
+      },
+      "ap-northeast-1": {
+        "Partition": "aws"
+      },
+      "ap-southeast-2": {
+        "Partition": "aws"
+      },
+      "sa-east-1": {
+        "Partition": "aws"
+      },
+      "us-gov-west-1": {
+        "Partition": "aws-us-gov"
+      }
+    },
+    "S3Region": {
+      "us-east-1": {
+        "Region": "us-east-1"
+      },
+      "us-east-2": {
+        "Region": "us-east-2"
+      },
+      "us-west-2": {
+        "Region": "us-east-1"
+      },
+      "us-west-1": {
+        "Region": "us-east-1"
+      },
+      "eu-west-1": {
+        "Region": "us-east-1"
+      },
+      "eu-central-1": {
+        "Region": "us-east-1"
+      },
+      "ap-southeast-1": {
+        "Region": "us-east-1"
+      },
+      "ap-northeast-1": {
+        "Region": "us-east-1"
+      },
+      "ap-southeast-2": {
+        "Region": "us-east-1"
+      },
+      "sa-east-1": {
+        "Region": "us-east-1"
+      },
+      "us-gov-west-1": {
+        "Region": "us-gov-west-1"
+      }
+    }
+  },
+  "Parameters": {
+  },
+  "Resources" : {
+    "NuoDBBrokerTaskDefinitions": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "BROKER-family",
+        "ContainerDefinitions": [
+          {
+            "Name": "BROKER-definition",
+            "Image": {
+              "Ref": "nuodbDocker"
+            },
+            "Cpu": "2",
+            "MemoryReservation": "4096",
+            "ReadonlyRootFilesystem": "false",
+            "PortMappings": [
+              {
+                "ContainerPort": "8888",
+                "HostPort": "8888"
+              },
+              {
+                "ContainerPort": "48004",
+                "HostPort": "48004"
+              }
+            ],
+            "Environment": [
+              {
+                "Name": "NODE_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "DOMAIN_PASSWORD",
+                "Value": {
+                  "Ref": "DomainPassword"
+                }
+              },
+              {
+                "Name": "ENV_TYPE",
+                "Value": {
+                  "Ref": "EnvironmentType"
+                }
+              },
+              {
+                "Name": "AGENT_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "BROKER_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "NODE_PORT",
+                "Value": "48010"
+              },
+              {
+                "Name": "NODE_TYPE",
+                "Value": "BROKER"
+              },
+              {
+                "Name": "PEER_ADDRESS",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "brokerELB",
+                    "DNSName"
+                  ]
+                }
+              },
+              {
+                "Name": "DB_NAME",
+                "Value": {
+                  "Ref": "dbname"
+                }
+              },
+              {
+                "Name": "DB_USER",
+                "Value": {
+                  "Ref": "dbuser"
+                }
+              },
+              {
+                "Name": "DB_PASSWORD",
+                "Value": {
+                  "Ref": "dbpassword"
+                }
+              },
+              {
+                "Name": "ARG_apphost",
+                "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+
+    "NuoDBSMTaskDefinitions": {
+      "DependsOn": [ "brokerELB" ],
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family" : "SM-family",
+        "ContainerDefinitions": [
+          {
+            "Name": "SM-definition",
+            "Image": {
+              "Ref": "nuodbDocker"
+            },
+            "Cpu": "2",
+            "MemoryReservation": "4096",
+            "ReadonlyRootFilesystem": "false",
+            "Environment": [
+              {
+                "Name": "NODE_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "DOMAIN_PASSWORD",
+                "Value": { "Ref": "DomainPassword" }
+              },
+              {
+                "Name": "ENV_TYPE",
+                "Value": { "Ref": "EnvironmentType" }
+              },
+              {
+                "Name": "AGENT_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "BROKER_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "NODE_PORT",
+                "Value": "48010"
+              },
+              {
+                "Name": "NODE_TYPE",
+                "Value": "SM"
+              },
+              {
+                "Name": "PEER_ADDRESS",
+                "Value": { "Fn::GetAtt": [ "brokerELB",  "DNSName" ] }
+              },
+              {
+                "Name": "DB_NAME",
+                "Value": { "Ref": "dbname" }
+              },
+              {
+                "Name": "DB_USER",
+                "Value": { "Ref": "dbuser" }
+              },
+              {
+                "Name": "DB_PASSWORD",
+                "Value": { "Ref": "dbpassword" }
+              },
+              {
+                "Name": "ARG_apphost",
+                "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    "NuoDBTETaskDefinitions": {
+      "DependsOn": [ "brokerELB" ],
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family" : "TE-family",
+        "ContainerDefinitions": [
+          {
+            "Name": "TE-definition",
+            "Image": {
+              "Ref": "nuodbDocker"
+            },
+            "Cpu": "2",
+            "MemoryReservation": "4096",
+            "ReadonlyRootFilesystem": "false",
+            "Environment": [
+              {
+                "Name": "NODE_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "DOMAIN_PASSWORD",
+                "Value": { "Ref": "DomainPassword" }
+              },
+              {
+                "Name": "ENV_TYPE",
+                "Value": { "Ref": "EnvironmentType" }
+              },
+              {
+                "Name": "AGENT_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "BROKER_PORT",
+                "Value": "48004"
+              },
+              {
+                "Name": "NODE_PORT",
+                "Value": "48010"
+              },
+              {
+                "Name": "NODE_TYPE",
+                "Value": "TE"
+              },
+              {
+                "Name": "PEER_ADDRESS",
+                "Value": { "Fn::GetAtt": [ "brokerELB",  "DNSName" ] }
+              },
+              {
+                "Name": "DB_NAME",
+                "Value": { "Ref": "dbname" }
+              },
+              {
+                "Name": "DB_USER",
+                "Value": { "Ref": "dbuser" }
+              },
+              {
+                "Name": "DB_PASSWORD",
+                "Value": { "Ref": "dbpassword" }
+              },
+              {
+                "Name": "ARG_apphost",
+                "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
+              },
+              {
+                "Name" : "POPULATE_NUODB",
+                "Value" : "true"
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    "BrokerService": {
+      "DependsOn" : ["NuoDBBrokerTaskDefinitions"],
+      "Type" : "AWS::ECS::Service",
+      "Properties" : {
+        "Cluster" : { "Ref" : "EcsClusterName" },
+        "DesiredCount" : "1",
+        "ServiceName" : "BROKER-service",
+        "PlacementStrategies" : [{ "Type": "random"}],
+        "TaskDefinition" : { "Ref" : "NuoDBBrokerTaskDefinitions" }
+      }
+    },
+
+    "TEService": {
+      "DependsOn" : ["BrokerService"],
+      "Type" : "AWS::ECS::Service",
+      "Properties" : {
+        "Cluster" : { "Ref" : "EcsClusterName" },
+        "DesiredCount" : "1",
+        "ServiceName" : "TE-service",
+        "PlacementStrategies" : [{ "Type": "random"}],
+        "TaskDefinition" : { "Ref" : "NuoDBTETaskDefinitions" }
+      }
+    },
+
+    "SMService": {
+      "DependsOn" : ["BrokerService"],
+      "Type" : "AWS::ECS::Service",
+      "Properties" : {
+        "Cluster" : { "Ref" : "EcsClusterName" },
+        "DesiredCount" : "1",
+        "ServiceName" : "SM-service",
+        "PlacementStrategies" : [{ "Type": "random"}],
+        "TaskDefinition" : { "Ref" : "NuoDBSMTaskDefinitions" }
+      }
+    },
+
+
+  }
+}

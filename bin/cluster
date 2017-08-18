@@ -241,6 +241,16 @@ def delete_cluster(stack, session, args):
         print "FAILED to delete cluster %s" % stack_name
         return False
 
+
+def sync_to_s3(aws_region, bucket_naame):
+    target_dir = os.path.dirname(__file__) + "/../cfn/"
+
+    s3 = boto3.resource('s3', region_name=aws_region)
+
+    for filename in os.listdir(target_dir):
+        s3.Object(bucket_name, filename).put(Body=open(os.path.join(target_dir, filename), 'rb'))
+
+
 def create_cluster_name(number, args):
     '''Create a cluster name from the number on which we're working and the given command line args'''
     if args.suffix:
@@ -350,6 +360,15 @@ the command to return successfully.
         dict(Key='Owner',
              Value=os.environ['USER'])
         ]
+
+    # Upload cfn templates to s3 bucket
+    global aws_region
+    global bucket_name
+
+    aws_region = params['BucketRegion']
+    bucket_name = params['Bucket']
+
+    sync_to_s3(aws_region, bucket_name)
 
     if args.delete_after:
         tags.append(dict(Key='DeleteAfter',

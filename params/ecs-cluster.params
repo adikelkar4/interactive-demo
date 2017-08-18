@@ -1,11 +1,15 @@
 #deployment buckets
-Buckets: nuodb-oa-cloud-deployment,nuodb-data
+Bucket: nuodb-oa-cloud-deployment
+BucketRegion: us-east-1
 
 #amzn-ami-2016.09.g-amazon-ecs-optimized with ecs agent installed
 #us-east-1EcsAmiId: ami-275ffe31
-EcsAmiId: ami-62745007
 
+EcsAmiId: ami-62745007
 EcsInstanceType: r4.8xlarge
+
+NuoDBInstanceAMI: ami-8a7859ef
+
 
 KeyName: interactive-demo
 
@@ -16,7 +20,7 @@ EcsClusterName: interactive-demo-dewey-20170629-152634
 
 storeFrontWebDocker: docker.io/nuodb/storefrontweb-demo:master
 storeFrontUserDocker: docker.io/nuodb/storefrontuser-demo:master
-nuodbDocker: 248317454512.dkr.ecr.us-east-1.amazonaws.com/nuodb:2.6.1-35-8-1591
+nuodbDocker: 248317454512.dkr.ecr.us-east-1.amazonaws.com/nuodb:2.6.1-35-8-1683
 
 
 dbuser: StorefrontUser
