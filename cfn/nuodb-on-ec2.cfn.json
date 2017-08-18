@@ -534,8 +534,8 @@
         }
       },
       "Properties" : {
-        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }, { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
-        "VPCZoneIdentifier" : [ { "Fn::Select" : [ "0", { "Ref" : "SubnetIds" }]}, { "Fn::Select" : [ "1", { "Ref" : "SubnetIds" }]}  ],
+        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
+        "VPCZoneIdentifier" : [ { "Fn::Select" : [ "0", { "Ref" : "SubnetIds" }]} ],
         "LaunchConfigurationName" : { "Ref" : "NuoDBBrokerLaunchConfig" },
         "MinSize" : "1",
         "MaxSize" : "2",
@@ -814,6 +814,7 @@
           "   -e \"ARG_apphost=${ARG_apphost}\" ",
           "   -p 48010:48010 ",
           "   -p 48004:48004 ",
+          "   -p 48005:48005 ",
           "   ${NUODB_DOCKER} \n",
 
           "/opt/aws/bin/cfn-init ",
@@ -832,7 +833,7 @@
       }
     },
 
-    "NuoDBBSMASG" : {
+    "NuoDBSMASG" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "CreationPolicy": { "ResourceSignal": { "Count" : "1", "Timeout": "PT45M" } },
       "UpdatePolicy" : {
@@ -845,13 +846,14 @@
         }
       },
       "Properties" : {
-        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }, { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
-        "VPCZoneIdentifier" : [ { "Fn::Select" : [ "0", { "Ref" : "SubnetIds" }]}, { "Fn::Select" : [ "1", { "Ref" : "SubnetIds" }]}  ],
+        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
+        "VPCZoneIdentifier" : [ { "Fn::Select" : [ "0", { "Ref" : "SubnetIds" }]} ],
         "LaunchConfigurationName" : { "Ref" : "NuoDBSMLaunchConfig" },
         "MinSize" : "1",
         "MaxSize" : "2",
         "DesiredCapacity" : "1",
         "HealthCheckGracePeriod" : "600",
+        "HealthCheckType" : "EC2",
         "Tags": [
           {
             "Key": "Name",
@@ -1123,6 +1125,7 @@
           "   -e \"ARG_apphost=${ARG_apphost}\" ",
           "   -p 48010:48010 ",
           "   -p 48004:48004 ",
+          "   -p 48005:48005 ",
           "   ${NUODB_DOCKER} \n",
 
           "/opt/aws/bin/cfn-init ",
@@ -1141,7 +1144,7 @@
       }
     },
 
-    "NuoDBBTEASG" : {
+    "NuoDBTEASG" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "CreationPolicy": { "ResourceSignal": { "Count" : "1", "Timeout": "PT45M" } },
       "UpdatePolicy" : {
@@ -1154,13 +1157,14 @@
         }
       },
       "Properties" : {
-        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }, { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
-        "VPCZoneIdentifier" : [ { "Fn::Select" : [ "0", { "Ref" : "SubnetIds" }]}, { "Fn::Select" : [ "1", { "Ref" : "SubnetIds" }]}  ],
+        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
+        "VPCZoneIdentifier" : [ { "Fn::Select" : [ "0", { "Ref" : "SubnetIds" }]} ],
         "LaunchConfigurationName" : { "Ref" : "NuoDBTELaunchConfig" },
         "MinSize" : "1",
         "MaxSize" : "5",
         "DesiredCapacity" : "1",
         "HealthCheckGracePeriod" : "600",
+        "HealthCheckType" : "EC2",
         "Tags": [
           {
             "Key": "Name",
