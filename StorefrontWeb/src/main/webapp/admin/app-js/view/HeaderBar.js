@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2015 NuoDB, Inc. */
+/* Copyright (c) 2013-2017 NuoDB, Inc. */
 
 /**
  * @class App.view.HeaderBar
@@ -24,7 +24,7 @@ Ext.define('App.view.HeaderBar', {
 
         me.items = [{
             xtype: 'metricwell',
-            text: '<b>Users</b>',
+            text: '<b>Workload</b>',
             icon: 'ico-users.png',
             metric: 'workloadStats.all.activeWorkerCount',
             itemId: 'metrics-users',
@@ -181,13 +181,13 @@ Ext.define('App.view.HeaderBar', {
 
             if (value == 0) {
                 url = 'zeroUserCount';
-                alog.append(prefix + "All user workloads have had a stop requested, should show shortly");
+                alog.append(prefix + "All user workloads have had a stop requested, should show shortly\n");
             } else if (value > 0) {
                 url = 'increaseUserCount';
-                alog.append(prefix + "An increase in the user workload count has been requested, should appear within 3 minutes");
+                alog.append(prefix + "An increase in the user workload count has been requested, should appear within 3 minutes\n");
             } else {
                 url = 'decreaseUserCount';
-                alog.append(prefix + "A decrease in the user workload count has been requested, show show shortly");
+                alog.append(prefix + "A decrease in the user workload count has been requested, show show shortly\n");
             }
 
             document.getElementById('activity-log').scrollTop = document.getElementById('activity-log').scrollHeight;

@@ -1,4 +1,4 @@
-<%-- Copyright (c) 2013-2015 NuoDB, Inc. --%>
+<%-- Copyright (c) 2013-2017 NuoDB, Inc. --%>
 <%@tag import="com.sun.jersey.api.uri.UriComponent"%>
 <%@tag import="com.nuodb.storefront.servlet.StorefrontWebApp"%>
 <%@tag import="com.nuodb.storefront.model.dto.PageConfig"%>
@@ -27,6 +27,14 @@
     <link href="css/rateit.css" rel="stylesheet" />
     <link href="css/Storefront.css?v=2.1.3" rel="stylesheet" />
     <link rel="icon" type="image/png" href="favicon.ico" />
+    <link href='http://fonts.googleapis.com/css?family=Josefin+Sans&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-55V2FK9');</script>
+    <!-- End Google Tag Manager -->
 </head>
 <body>
     <div class="container">
@@ -63,7 +71,7 @@
 
         <% if (showHeader == null || showHeader == true) { %>
         <!-- Footer  -->
-        <div class="footer">Copyright &copy; 2013-2015 NuoDB, Inc. All rights reserved.</div>
+        <div class="footer">Copyright &copy; 2013-2017 NuoDB, Inc. All rights reserved.</div>
         <% } %>
     </div>
     

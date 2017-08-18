@@ -12,6 +12,7 @@ Ext.define('App.controller.Storefront', {
     lastTimestamp: null,
     outstandingRequestCount: 0,
     lastLogTimestamp: null,
+    myUuid: null,
 
     /** @Override */
     init: function() {
@@ -32,6 +33,7 @@ Ext.define('App.controller.Storefront', {
     /** @Override */
     onLaunch: function() {
         var me = this;
+        me.getUuid();
 
         // Refresh stats periodically
         me.refreshInterval = setInterval(Ext.bind(me.onRefreshStats, me), App.app.refreshFrequencyMs);
@@ -156,6 +158,33 @@ Ext.define('App.controller.Storefront', {
         me.lastTimestamp = null;
     },
 
+    getUuid: function () {
+        var me = this;
+
+        if (me.outstandingRequestCount >= App.app.maxOutstandingRequestCount) {
+            return;
+        }
+
+        me.outstandingRequestCount++;
+
+        Ext.Ajax.request({
+            url: App.app.apiBaseUrl + '/api/stats/getUuid',
+            method: 'GET',
+            scope: this,
+            callback: function() {
+                me.outstandingRequestCount--;
+            },
+            success: function (response) {
+                me.myUuid = response.responseText;
+            },
+            failure: function (response) {
+                me.myUuid = '00000000-0000-0000-0000-000000000001'
+            }
+        });
+
+        return;
+    },
+
     /** @private interval handler */
     onRefreshStats: function() {
         var me = this;
@@ -169,7 +198,8 @@ Ext.define('App.controller.Storefront', {
             url: App.app.apiBaseUrl + '/api/stats',
             method: 'GET',
             params: {
-                tenant: App.app.tenant
+                tenant: App.app.tenant,
+                uuid: me.myUuid
             },
             scope: this,
             callback: function() {
@@ -207,7 +237,7 @@ Ext.define('App.controller.Storefront', {
             }
         });
 
-        /*if (me.outstandingRequestCount >= App.app.maxOutstandingRequestCount) {
+        if (me.outstandingRequestCount >= App.app.maxOutstandingRequestCount) {
             return;
         }
 
@@ -233,18 +263,18 @@ Ext.define('App.controller.Storefront', {
                 }
 
                 var alog = $('#activity-log');
-
-                for (var l in logs) {
-                    me.lastLogTimestamp = l[0];
-                    alog.append(l[1]);
-                }
+                
+                logs.forEach(function(log) {
+                	me.lastLogTimestamp = log.time;
+                	alog.append(log.message + "\n");
+                });
 
                 alog.scrollTop = alog.scrollHeight;
             },
             failure: function (response) {
             me.application.fireEvent('statsfail', response, null);
             }
-        });*/
+        });
     },
 
     processStats: function(stats) {

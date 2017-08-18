@@ -25,32 +25,54 @@ for further information on this tool.
 Prerequisites
 -------------
 
-1. NuoDB 2.1 or higher.  Earlier versions of Storefront supported MySQL and other RDBMSs, which you can find in the [rel/2.0.6 branch](https://github.com/nuodb/nuodb-samples/tree/rel/2.0.6/StorefrontDemo) (or earlier).
+1. [Python 2.7](https://www.python.org/downloads/).  This allows us to run scripts for cloud deployment.
 
-2. NuoDB Rest Service.  This exposes the NuoDB API used by the Storefront its Control Panel features.
+2. [PIP](https://pip.pypa.io/en/stable/installing/).  This will bring all dependencies for our Python scripts together
+   automatically for you.
 
-3. [Apache Maven 3](http://maven.apache.org/download.cgi) or higher.  This tool is used to build the Storefront
-   from source and run it using a Tomcat web server.  Maven fetches all the other dependencies you need automatically.
+
+Getting Started (AWS)
+---------------
+
+1. [AWS CLI](https://aws.amazon.com/cli/) and configure with credentials using:
+
+        aws configure
+
+2. Grab the source code from [Git](https://github.com/nuodb/interactive-demo).
+
+3. From the root directory (interactive-demo), run the following PIP command to download all dependencies:
+
+        pip install -r requirements.txt
+
+4. Run the following command to create a new cluster:
+
+        bin/cluster create
+
 
 Getting Started (command line)
 ---------------
 
-1. Grab the source code from Git:
+1. [NuoDB 2.1 or higher](https://www.nuodb.com/product/evaluate-nuodb).  Earlier versions of Storefront supported MySQL and other RDBMSs, which you can find in the [rel/2.0.6 branch](https://github.com/nuodb/nuodb-samples/tree/rel/2.0.6/StorefrontDemo) (or earlier).
 
-        git clone git://github.com/nuodb/nuodb-samples.git
+2. Grab the source code from [Git](https://github.com/nuodb/interactive-demo).
 
-2. Download and install [Apache Maven 3](http://maven.apache.org/download.cgi) or higher.  This tool is used to build the Storefront
+3. [Apache Maven 3](http://maven.apache.org/download.cgi) or higher.  This tool is used to build the Storefront
    from source and run it using a Tomcat web server.  Maven fetches all the other dependencies you need automatically.
-   
-3. Run the Storefront web app:
 
-        cd nuodb-samples\StorefrontDemo
+4. Download and install [Apache Maven 3](http://maven.apache.org/download.cgi) or higher.  This tool is used to build the Storefront
+   from source and run it using a Tomcat web server.  Maven fetches all the other dependencies you need automatically.
+
+5. Run the Storefront web app:
+
+        cd interactive-demo
+        mvn clean install
+        cd StorefrontWeb
         mvn tomcat7:run [args]
-        
+
    The following (optional) Storefront environment settings may be provided:
-   
+
         -Dstorefront.url={protocol}://{host}:{port}/{context} 
-        
+
       >	The externally-accessible URL of the Storefront.  Web browsers should be able to access the Storefront
       >	web app using this URL.  The URL is used by the Storefront front-end for communication and switching among instances.
       > You may use leave any or all of the `{protocol}`, `{host}`, `{port}`, and `{context}` placeholders verbatim for auto-detected values, 
@@ -59,48 +81,50 @@ Getting Started (command line)
       > If you do not specify a command line value, the default is pulled from the `public-url` context param of web.xml.
       > The default is `{protocol}://{host}:{port}/{context}`.  You may use the `{domain.broker}` placeholder, which will be replaced
       > with the system property `domain.broker` (defaulting to `localhost`). 
-                                                              
+
 		-Dstorefront.db.name=dbname@host[:port]
-		
+
 	  > The database name (dbname) and NuoDB broker hostname or IP address (host).  The Storefront creates its database and schema automatically at startup,
 	  > so you need not create the database in advance. 
-	  
+
 		-Dstorefront.db.user=StorefrontUser
-		
+
 	  > The username of the database account to use when connecting.  If the database does not yet exist, Storefront will add this user when creating the database.
 
 		-Dstorefront.db.password=StorefrontUser
-		
+
 	  > The password of the database account to use when connecting. 
 
 		-Dstorefront.db.options=
-		
+
 	  > Querystring parameters to include as part of the JDBC connection string.  
 
 		-Dstorefront.dbapi.user=domain
 		-Dstorefront.dbapi.password=bird
 		-Dstorefront.dbapi.host=localhost
 		-Dstorefront.dbapi.port=8888
-		
+
 	  > Credentials and endpoint information for connecting to NuoDB's AutoConsole API (with defaults shown above).  The API is used for Control Panel tasks, such
 	  > as creating the database, adding/removing hosts and regions, shutting down nodes on demand, etc.  
 
    You may bundle these Storefront settings in a properties file containing the key=value pairs to use instead of, or as overrides to, 
    the above command line arguments.
-   
+
 		-Dproperties={filename}
 
    The Maven Tomcat plugin also supports [some settings](http://tomcat.apache.org/maven-plugin-2.1/tomcat7-maven-plugin/run-mojo.html), including:
-   
-		-Dmaven.tomcat.port=8888
-                                                               
-   
-4. Explore the web app at `http://localhost:8888/StorefrontDemo` (or whichever port you've chosen).
+
+		-Dmaven.tomcat.port=8080
+
+
+6. Explore the web app at `http://localhost:8080/StorefrontDemo` (or whichever port you've chosen).
+
 
 Getting Started (Eclipse)
 ---------------
 
 See the [Storefront Demo Developer Setup Guide](doc/NuoDB-Storefront.ppt) for step-by-step instructions with screenshots.
+
 
 StorefrontApp Command Line Utility
 -----------------------------------
@@ -163,7 +187,6 @@ Client-side libraries:
 Admin client-side libraries:
 - **Sencha Ext JS** -- look & feel
 - **jQuery Sparkline plug-in** -- sparklines in the header
-
 
 
 
