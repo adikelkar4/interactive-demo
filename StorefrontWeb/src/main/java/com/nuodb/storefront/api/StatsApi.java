@@ -2,11 +2,8 @@
 
 package com.nuodb.storefront.api;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -52,7 +49,34 @@ public class StatsApi extends BaseApi {
         rpt.setWorkloadStepStats(stepStatsHeap.getOrDefault(dbType, new HashMap<>()));
         clearWorkloadProperty(rpt.getWorkloadStats());
 
+        if (req.getParameter("uuid") != null) {
+            synchronized (heapLock) {
+                userPingHeap.put(UUID.fromString(req.getParameter("uuid")), System.nanoTime());
+            }
+        }
+
         return rpt;
+    }
+
+    @GET
+    @Path("/activeUsers")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Integer getActiveUsers(@Context HttpServletRequest req) {
+        Integer ret = 0;
+
+        synchronized (heapLock) {
+            long current = System.nanoTime();
+
+            for (Map.Entry<UUID, Long> usr : userPingHeap.entrySet()) {
+                long last = current - usr.getValue();
+
+                if (TimeUnit.NANOSECONDS.toSeconds(last) < 30) {
+                    ret++;
+                }
+            }
+        }
+
+        return ret;
     }
 
     @GET
@@ -84,6 +108,13 @@ public class StatsApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public DbFootprint getDbStats(@Context HttpServletRequest req) {
         return getDbApi(req).getDbFootprint();
+    }
+
+    @GET
+    @Path("/getUuid")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getUuid(@Context HttpServletRequest req) {
+        return UUID.randomUUID().toString();
     }
 
     @PUT
@@ -190,8 +221,7 @@ public class StatsApi extends BaseApi {
         return transactionStatHeap;
     }
 
-    protected Map<String, WorkloadStats> clearWorkloadProperty(Map<String, WorkloadStats> statsMap)
-    {
+    protected Map<String, WorkloadStats> clearWorkloadProperty(Map<String, WorkloadStats> statsMap) {
         // Clear unnecessary workload property to reduce payload size by ~25%
         for (WorkloadStats stats : statsMap.values()) {
             stats.setWorkload(null);

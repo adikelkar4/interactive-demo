@@ -5,6 +5,7 @@ package com.nuodb.storefront.api;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -30,6 +31,8 @@ public abstract class BaseApi {
     protected static int hostContainerCount = 1;
 
 	private static Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
+
+	protected static Map<UUID, Long> userPingHeap = new HashMap<>();
 
     static {
         workloadDistribution = new HashMap<>();
