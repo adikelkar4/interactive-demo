@@ -1,6 +1,6 @@
 { "AWSTemplateFormatVersion" : "2010-09-09",
 
-  "Description" : "AWS CloudFormation template to create a new VPC or use an existing VPC for ECS deployment",
+  "Description" : "AWS CloudFormation Composite template to deploy Interactive Demo ",
 
   "Mappings" : {
 
@@ -236,91 +236,27 @@
 
   "Resources" : {
 
-    "Vpc" : {
+    "VPC" : {
+      "Type" : "AWS::CloudFormation::Stack",
       "Condition" : "CreateVpcResources",
-      "Type" : "AWS::EC2::VPC",
       "Properties" : {
-        "CidrBlock" : { "Fn::FindInMap" : [ "VpcCidrs", { "Ref" : "AWS::Region" }, "vpc" ] },
-        "EnableDnsSupport" : "true",
-        "EnableDnsHostnames" : "true"
+        "TemplateURL" : { "Fn::Join" : ["", [
+          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
+          {"Ref" : "Bucket"},
+          "/vpc.cfn.json"
+        ]]},
+        "Parameters" : {
+          "Name" : { "Ref" : "EcsClusterName" }
+        }
       }
     },
 
-    "PubSubnetAz1" : {
-      "Condition" : "CreateVpcResources",
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "Vpc" },
-        "CidrBlock" : { "Fn::FindInMap" : [ "VpcCidrs", { "Ref" : "AWS::Region" }, "pubsubnet1" ] },
-        "AvailabilityZone" : { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
-      }
-    },
-
-    "PubSubnetAz2" : {
-      "Condition" : "CreateVpcResources",
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "VpcId" : { "Ref" : "Vpc" },
-        "CidrBlock" : { "Fn::FindInMap" : [ "VpcCidrs", { "Ref" : "AWS::Region" }, "pubsubnet2" ] },
-        "AvailabilityZone" : { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
-      }
-    },
-
-    "InternetGateway" : {
-      "Condition" : "CreateVpcResources",
-      "Type" : "AWS::EC2::InternetGateway"
-    },
-
-    "AttachGateway" : {
-      "Condition" : "CreateVpcResources",
-      "Type" : "AWS::EC2::VPCGatewayAttachment",
-      "Properties" : {
-        "VpcId" : { "Ref" : "Vpc" },
-        "InternetGatewayId" : { "Ref" : "InternetGateway" }
-      }
-    },
-
-    "RouteViaIgw" : {
-      "Condition" : "CreateVpcResources",
-      "Type" : "AWS::EC2::RouteTable",
-      "Properties" : {
-        "VpcId" : {"Ref" : "Vpc"}
-      }
-    },
-
-    "PublicRouteViaIgw" : {
-      "Condition" : "CreateVpcResources",
-      "Type" : "AWS::EC2::Route",
-      "Properties" : {
-        "RouteTableId" : { "Ref" : "RouteViaIgw" },
-        "DestinationCidrBlock" : "0.0.0.0/0",
-        "GatewayId" : { "Ref" : "InternetGateway" }
-      }
-    },
-
-    "PubSubnet1RouteTableAssociation" : {
-      "Condition" : "CreateVpcResources",
-      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties" : {
-        "SubnetId" : { "Ref" : "PubSubnetAz1" },
-        "RouteTableId" : { "Ref" : "RouteViaIgw" }
-      }
-    },
-
-    "PubSubnet2RouteTableAssociation" : {
-      "Condition" : "CreateVpcResources",
-      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties" : {
-        "SubnetId" : { "Ref" : "PubSubnetAz2" },
-        "RouteTableId" : { "Ref" : "RouteViaIgw" }
-      }
-    },
 
     "ElbSecurityGroup" : {
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
         "GroupDescription" : "ELB Allowed Ports",
-        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
+        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
         "SecurityGroupIngress" : [
           { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "ElbPort" }, "ToPort" : { "Ref" : "ElbPort" },
             "CidrIp" : { "Ref" : "SourceCidr" } }
@@ -332,7 +268,7 @@
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
         "GroupDescription" : "ELB Allowed Ports",
-        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
+        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
         "SecurityGroupIngress" : [
           { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "CidrIp" : { "Ref" : "SourceCidr" } },
           { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "CidrIp" : { "Ref" : "SourceCidr" } },
@@ -345,7 +281,7 @@
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
         "GroupDescription" : "ECS Allowed Ports",
-        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
+        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
         "SecurityGroupIngress" :
           [
             { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "EcsPort" }, "ToPort" : { "Ref" : "EcsPort" }, "CidrIp" : { "Ref" : "SourceCidr" } },
@@ -361,7 +297,7 @@
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
         "GroupDescription" : "Allow access to NuoDB ports",
-        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Ref" : "Vpc" }, { "Ref" : "VpcId" } ] },
+        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
         "SecurityGroupIngress" :
         [
           { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
@@ -377,7 +313,7 @@
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
         "SecurityGroups" : [ { "Ref" : "ElbSecurityGroup" } ],
-        "Subnets" : [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ],
+        "Subnets" : [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }],
         "CrossZone" : "true",
         "Listeners" : [ {
           "LoadBalancerPort" : { "Ref" : "ElbPort" },
@@ -413,7 +349,7 @@
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
         "SecurityGroups" : [ { "Ref" : "BrokerElbSecurityGroup" } ],
-        "Subnets" : [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ],
+        "Subnets" : [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }],
         "CrossZone" : "true",
         "Scheme" : "internal",
         "Listeners" : [
@@ -623,7 +559,7 @@
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
         "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }, { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
-        "VPCZoneIdentifier" : { "Fn::If" : [ "CreateVpcResources", [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ], { "Ref" : "SubnetIds" } ] },
+        "VPCZoneIdentifier" : { "Fn::If" : [ "CreateVpcResources", [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }], { "Ref" : "SubnetIds" } ] },
         "LaunchConfigurationName" : { "Ref" : "EcsInstanceLc" },
         "LoadBalancerNames" : [{ "Ref" : "StorefrontELB" } ],
         "MinSize" : "1",
@@ -1147,7 +1083,7 @@
 
     "NuoDBonEc2" : {
       "Type" : "AWS::CloudFormation::Stack",
-      "DependsOn" : "brokerELB",
+      "DependsOn" : ["brokerELB", "VPC"],
       "Properties" : {
         "TemplateURL" : { "Fn::Join" : ["", [
           { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
@@ -1167,8 +1103,8 @@
           "NuoDBInstanceAMI":   { "Ref" : "NuoDBInstanceAMI" },
           "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
           "KeyName":  { "Ref" : "KeyName" },
-          "VpcId" :  { "Ref" : "VpcId" },
-          "SubnetIds":  { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" }]]},
+          "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
+          "SubnetIds":  { "Fn::Join" : [ ", ", [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }] ]},
           "ECSInstanceProfile" : { "Ref" : "ECSInstanceProfile"},
           "NuoDBSecurityGroup" : { "Ref" : "NuoDBSecurityGroup"},
           "peerAddress" : { "Fn::GetAtt": [ "brokerELB", "DNSName" ]},
