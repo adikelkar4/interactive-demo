@@ -834,6 +834,7 @@
     },
 
     "NuoDBSMASG" : {
+      "DependsOn" : "NuoDBBrokerASG",
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "CreationPolicy": { "ResourceSignal": { "Count" : "1", "Timeout": "PT45M" } },
       "UpdatePolicy" : {
@@ -1145,6 +1146,7 @@
     },
 
     "NuoDBTEASG" : {
+      "DependsOn" : "NuoDBSMASG",
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "CreationPolicy": { "ResourceSignal": { "Count" : "1", "Timeout": "PT45M" } },
       "UpdatePolicy" : {
@@ -1175,5 +1177,11 @@
       }
     }
 
+  },
+  "Outputs" : {
+    "TeASG" : {
+      "Description" : "TE Autoscaling group",
+      "Value" : { "Ref" : "NuoDBTEASG"}
+    }
   }
 }

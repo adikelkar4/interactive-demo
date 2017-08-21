@@ -10,6 +10,7 @@ EcsInstanceType: r4.8xlarge
 
 NuoDBInstanceAMI: ami-8a7859ef
 
+EnvironmentType: AWSEC2
 
 KeyName: interactive-demo
 
