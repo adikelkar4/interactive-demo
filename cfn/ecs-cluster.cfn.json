@@ -217,6 +217,8 @@
   "Conditions" : {
     "CreateVpcResources" : { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] },
     "ExistingVpcResources" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] } ] },
+    "CreateNuoDBonECS" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSECS" ]},
+    "CreateNuoDBonEC2" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSEC2" ]},
     "SetEndpointToECSAgent" : { "Fn::Not" : [ {
       "Fn::Equals" : [ { "Ref" : "EcsEndpoint" }, "" ]
     } ] },
@@ -1051,7 +1053,7 @@
             "        else:\n",
             "            client = boto3.client('autoscaling')\n",
             "            response = client.set_desired_capacity(\n",
-            "                AutoScalingGroupName='", { "Fn::GetAtt": ["NuoDBonEc2", "Outputs.TeASG"] }, "',\n",
+            "                AutoScalingGroupName='", { "Fn::If" : ["CreateNuoDBonEC2", { "Fn::GetAtt": ["NuoDBonEc2", "Outputs.TeASG"] }, "" ]}, "',\n",
             "                DesiredCapacity=event['count'],\n",
             "                HonorCooldown=True\n",
             "            )\n",
@@ -1082,6 +1084,7 @@
     },
 
     "NuoDBonEc2" : {
+      "Condition" : "CreateNuoDBonEC2",
       "Type" : "AWS::CloudFormation::Stack",
       "DependsOn" : ["brokerELB", "VPC"],
       "Properties" : {
@@ -1091,6 +1094,41 @@
           "/nuodb-on-ec2.cfn.json"
         ]]},
         "Parameters" : {
+          "Bucket" :  { "Ref" : "Bucket" },
+          "nuodbDocker" :     { "Ref" : "nuodbDocker" },
+          "VolumeSize" : { "Ref" : "VolumeSize" },
+          "dbuser" : { "Ref" : "dbuser" },
+          "dbpassword" :    { "Ref" : "dbpassword" },
+          "dbname" :    { "Ref" : "dbname" },
+
+          "DomainPassword":   { "Ref" : "DomainPassword" },
+          "EnvironmentType":  { "Ref" : "EnvironmentType" },
+          "NuoDBInstanceAMI":   { "Ref" : "NuoDBInstanceAMI" },
+          "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
+          "KeyName":  { "Ref" : "KeyName" },
+          "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
+          "SubnetIds":  { "Fn::Join" : [ ", ", [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }] ]},
+          "ECSInstanceProfile" : { "Ref" : "ECSInstanceProfile"},
+          "NuoDBSecurityGroup" : { "Ref" : "NuoDBSecurityGroup"},
+          "peerAddress" : { "Fn::GetAtt": [ "brokerELB", "DNSName" ]},
+          "brokerELB" : { "Ref" : "brokerELB" },
+          "StorefrontElb" : { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }
+        }
+      }
+    },
+
+    "NuoDBonEcs" : {
+      "Condition" : "CreateNuoDBonECS",
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : ["brokerELB", "VPC"],
+      "Properties" : {
+        "TemplateURL" : { "Fn::Join" : ["", [
+          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
+          {"Ref" : "Bucket"},
+          "/nuodb-on-ecs.cfn.json"
+        ]]},
+        "Parameters" : {
+          "EcsClusterName" : { "Ref" : "EcsClusterName" },
           "Bucket" :  { "Ref" : "Bucket" },
           "nuodbDocker" :     { "Ref" : "nuodbDocker" },
           "VolumeSize" : { "Ref" : "VolumeSize" },

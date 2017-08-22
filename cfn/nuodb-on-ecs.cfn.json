@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "AWS CloudFormation template to create a new VPC or use an existing VPC for ECS deployment",
+  "Description": "AWS CloudFormation template to create launch NuoDB on ECS cluster",
   "Mappings": {
     "VpcCidrs": {
       "eu-central-1": {
@@ -126,6 +126,110 @@
     }
   },
   "Parameters": {
+    "Bucket" : {
+      "Description" : "Template bucket in s3",
+      "Type" : "String"
+    },
+
+    "EcsClusterName" : {
+      "Type" : "String",
+      "Description" : "ECS Cluster Name",
+      "Default" : "default"
+    },
+
+    "nuodbDocker" : {
+      "Description" : "NuoDB docker container stored in docker.io",
+      "Type" : "String",
+      "Default" : "docker.io/nuodb/nuodb-ce-2.6.1:latest"
+    },
+
+    "VolumeSize" : {
+      "Description" : "EBS Attached volume size",
+      "Type" : "Number",
+      "Default" : "20"
+    },
+
+    "brokerELB" : {
+      "Description" : "Broker ELB",
+      "Type" : "String"
+    },
+
+    "StorefrontElb" : {
+      "Description" : "Storefront ELB address",
+      "Type" : "String"
+    },
+
+    "peerAddress" : {
+      "Description" : "Broker ELB Address",
+      "Type" : "String"
+    },
+
+    "dbuser" : {
+      "Description": "Database user name",
+      "Type": "String"
+    },
+
+    "dbpassword" : {
+      "Description": "Database user password",
+      "Type": "String"
+    },
+
+    "dbname" : {
+      "Description": "Database name",
+      "Type": "String"
+    },
+
+    "DomainPassword" : {
+      "Description" : "NuoDB Domain password",
+      "Type": "String",
+      "Default" : "bird"
+    },
+
+    "EnvironmentType" : {
+      "Description" : "Environment NuoDB container is deployed to",
+      "Type" : "String",
+      "Default" : "AWSECS"
+    },
+
+    "NuoDBInstanceAMI" : {
+      "Type" : "String",
+      "Description" : "Ec2 AMI for NuodB nodes"
+    },
+
+    "NuoDBInstanceType" : {
+      "Type" : "String",
+      "Description" : "EC2 instance type",
+      "Default" : "m4.large"
+    },
+    "KeyName" : {
+      "Type" : "String",
+      "Description" : "Optional - Name of an existing EC2 KeyPair to enable SSH access to the ECS instances",
+      "Default" : ""
+    },
+
+    "VpcId" : {
+      "Type" : "String",
+      "Description" : "Optional - VPC Id of existing VPC. Leave blank to have a new VPC created",
+      "Default" : "",
+      "AllowedPattern" : "^(?:vpc-[0-9a-f]{8}|)$",
+      "ConstraintDescription" : "VPC Id must begin with 'vpc-' or leave blank to have a new VPC created"
+    },
+
+    "SubnetIds" : {
+      "Type" : "CommaDelimitedList",
+      "Description" : "Optional - Comma separated list of existing VPC Subnet Ids where ECS instances will run",
+      "Default" : ""
+    },
+
+    "ECSInstanceProfile" : {
+      "Type" : "String",
+      "Description" : "Profile role for instance"
+    },
+
+    "NuoDBSecurityGroup" : {
+      "Type" : "String",
+      "Description" : "Security group for ec2 instances"
+    }
   },
   "Resources" : {
     "NuoDBBrokerTaskDefinitions": {
@@ -188,12 +292,7 @@
               },
               {
                 "Name": "PEER_ADDRESS",
-                "Value": {
-                  "Fn::GetAtt": [
-                    "brokerELB",
-                    "DNSName"
-                  ]
-                }
+                "Value": { "Ref" : "brokerELB" }
               },
               {
                 "Name": "DB_NAME",
@@ -215,7 +314,7 @@
               },
               {
                 "Name": "ARG_apphost",
-                "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
+                "Value": { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}
               }
             ]
           }
@@ -225,7 +324,6 @@
 
 
     "NuoDBSMTaskDefinitions": {
-      "DependsOn": [ "brokerELB" ],
       "Type": "AWS::ECS::TaskDefinition",
       "Properties": {
         "Family" : "SM-family",
@@ -271,7 +369,7 @@
               },
               {
                 "Name": "PEER_ADDRESS",
-                "Value": { "Fn::GetAtt": [ "brokerELB",  "DNSName" ] }
+                "Value": { "Ref" : "brokerELB" }
               },
               {
                 "Name": "DB_NAME",
@@ -287,7 +385,7 @@
               },
               {
                 "Name": "ARG_apphost",
-                "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
+                "Value": { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb"}, ":80/StorefrontWeb" ]]}
               }
             ]
           }
@@ -296,7 +394,6 @@
     },
 
     "NuoDBTETaskDefinitions": {
-      "DependsOn": [ "brokerELB" ],
       "Type": "AWS::ECS::TaskDefinition",
       "Properties": {
         "Family" : "TE-family",
@@ -342,7 +439,7 @@
               },
               {
                 "Name": "PEER_ADDRESS",
-                "Value": { "Fn::GetAtt": [ "brokerELB",  "DNSName" ] }
+                "Value": { "Ref" : "brokerELB"}
               },
               {
                 "Name": "DB_NAME",
@@ -358,7 +455,7 @@
               },
               {
                 "Name": "ARG_apphost",
-                "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
+                "Value": { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}
               },
               {
                 "Name" : "POPULATE_NUODB",
@@ -404,8 +501,6 @@
         "PlacementStrategies" : [{ "Type": "random"}],
         "TaskDefinition" : { "Ref" : "NuoDBSMTaskDefinitions" }
       }
-    },
-
-
+    }
   }
 }
