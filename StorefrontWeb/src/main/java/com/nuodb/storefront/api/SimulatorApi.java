@@ -58,14 +58,16 @@ public class SimulatorApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public Response increaseUserCount(@Context HttpServletRequest req) {
         if (userContainerCount < 5) {
-        	changeUserCounts(1);
-            moveUserCount(req, ++userContainerCount);
-            return Response.ok().build();
+            if (moveUserCount(req, ++userContainerCount)) {
+            	changeUserCounts(1);            	
+            	getTenant(req).getLogger(this.getClass()).info("User workload was increased by 1");
+            	return Response.ok().build();
+            }
+            return Response.serverError().build();
         }
 
         //AppInstanceApi apiapi = new AppInstanceApi();
         //apiapi.putLog(req, "More user workloads have been requested, should begin within 3 minutes");
-        getTenant(req).getLogger(this.getClass()).info("User workload was increased by 1");
 
         return Response.status(Response.Status.FORBIDDEN).build();
     }
@@ -75,15 +77,16 @@ public class SimulatorApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public Response decreaseUserCount(@Context HttpServletRequest req) {
         if (userContainerCount > 0) {
-        	changeUserCounts(-1);
-            moveUserCount(req, --userContainerCount);
-
-            return Response.ok().build();
+        	if (moveUserCount(req, --userContainerCount)) {
+        		changeUserCounts(-1);				
+        		getTenant(req).getLogger(this.getClass()).info("User workload was decreased by 1");
+        		return Response.ok().build();
+			}
+        	return Response.serverError().build();
         }
 
         //AppInstanceApi apiapi = new AppInstanceApi();
         //apiapi.putLog(req, "A decrease in the user workloads has been requested, should show shortly");
-        getTenant(req).getLogger(this.getClass()).info("User workload was decreased by 1");
 
         return Response.status(Response.Status.FORBIDDEN).build();
     }
@@ -93,26 +96,28 @@ public class SimulatorApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public Response zeroUserCount(@Context HttpServletRequest req) {
         userContainerCount = 0;
-        changeUserCounts(0);
-        moveUserCount(req, userContainerCount);
+        if (moveUserCount(req, userContainerCount)) {
+        	changeUserCounts(0);
+        	getTenant(req).getLogger(this.getClass()).info("User workload was set to 0"); 
+        	return Response.ok().build();
+        }
+        return Response.serverError().build();
 
         //AppInstanceApi apiapi = new AppInstanceApi();
         //apiapi.putLog(req, "All user workloads have been cleared out, should be at 0 workload shortly");
-        getTenant(req).getLogger(this.getClass()).info("User workload was set to 0");
 
-        return Response.ok().build();
     }
 
-    protected void moveUserCount(HttpServletRequest req, int count) {
+    protected boolean moveUserCount(HttpServletRequest req, int count) {
         UserLauncher containerLauncher = this.buildUserLauncher(req);
 
         try {
-            containerLauncher.launchUser(workloadDistribution, count);
+            return containerLauncher.launchUser(workloadDistribution, count);
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
 
-        return;
     }
 
     protected void changeUserCounts(int containerChange) {

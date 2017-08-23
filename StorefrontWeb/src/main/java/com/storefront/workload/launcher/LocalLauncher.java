@@ -11,7 +11,7 @@ public class LocalLauncher implements UserLauncher {
 	private Map<String, String> appOptions;
 	private Map<String, String> dbOptions;
 
-	public void launchUser(Map<String, String> workloadOptions, int count) throws Exception {
+	public boolean launchUser(Map<String, String> workloadOptions, int count) throws Exception {
 		String workloadOptionsString = buildWorkloadOptionsString(workloadOptions);
 		String dbOptionsString = buildDbOptionsString();
 		String appOptionsString = buildAppOptionsString();
@@ -49,6 +49,7 @@ public class LocalLauncher implements UserLauncher {
 			}
 		};
 		new Thread(backgroundProcess).start();
+		return true;
 	}
 
 	private String buildWorkloadOptionsString(Map<String, String> workloadOptions) {
