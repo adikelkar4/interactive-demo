@@ -23,14 +23,14 @@ import com.nuodb.storefront.util.PerformanceUtil;
 public abstract class BaseApi {
     public static final String NUODB_MAP_KEY = "nuodb";
 
-    protected static Map<String, Map<String, WorkloadStats>> workloadStatHeap = new HashMap<>();
     public static final Object heapLock = new Object();
 
     protected static final Map<String, String> workloadDistribution;
+    protected static final Map<String, Map<String, WorkloadStats>> workloadStatHeap;
     protected static int userContainerCount = 0;
     protected static int hostContainerCount = 1;
 
-	private static Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
+	protected static final Map<String, Map<String, TransactionStats>> transactionStatHeap;
 
 	protected static Map<UUID, Long> userPingHeap = new HashMap<>();
 
@@ -40,9 +40,8 @@ public abstract class BaseApi {
         workloadDistribution.put(WorkloadStep.MULTI_BROWSE_AND_REVIEW.name(), "700");
         workloadDistribution.put(WorkloadStep.MULTI_SHOP.name(), "700");
         workloadDistribution.put(WorkloadStep.ADMIN_RUN_REPORT.name(), "0");
-    }
-
-    protected BaseApi() {
+        workloadStatHeap = new HashMap<>();
+        transactionStatHeap = new HashMap<>();
     }
     
     protected static IStorefrontTenant getTenant(HttpServletRequest req) {
@@ -85,15 +84,7 @@ public abstract class BaseApi {
 		return workloadStatHeap;
 	}
 
-	public static void setWorkloadStatHeap(Map<String, Map<String, WorkloadStats>> workloadStatHeap) {
-		BaseApi.workloadStatHeap = workloadStatHeap;
-	}
-
 	public static Map<String, Map<String, TransactionStats>> getTransactionStatHeap() {
 		return transactionStatHeap;
-	}
-
-	public static void setTransactionStatHeap(Map<String, Map<String, TransactionStats>> transactionStatHeap) {
-		BaseApi.transactionStatHeap = transactionStatHeap;
 	}
 }

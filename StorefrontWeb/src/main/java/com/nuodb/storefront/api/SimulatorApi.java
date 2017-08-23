@@ -23,8 +23,6 @@ import com.storefront.workload.launcher.UserLauncher;
 
 @Path("/simulator")
 public class SimulatorApi extends BaseApi {
-    public SimulatorApi() {
-    }
 
     @GET
     @Path("/workloads")
@@ -39,7 +37,7 @@ public class SimulatorApi extends BaseApi {
 
     	if (host.contains("localhost")) {
 			Map<String, String> dbSettings = new HashMap<>();
-			dbSettings.put("db.name", StorefrontWebApp.DB_NAME);
+			dbSettings.put("db.url", StorefrontWebApp.DB_NAME);
 			dbSettings.put("db.user", StorefrontWebApp.DB_USER);
 			dbSettings.put("db.password", StorefrontWebApp.DB_PASSWORD);
 			LocalLauncher local = new LocalLauncher();
@@ -60,8 +58,8 @@ public class SimulatorApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public Response increaseUserCount(@Context HttpServletRequest req) {
         if (userContainerCount < 5) {
+        	changeUserCounts(1);
             moveUserCount(req, ++userContainerCount);
-
             return Response.ok().build();
         }
 
@@ -77,8 +75,8 @@ public class SimulatorApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public Response decreaseUserCount(@Context HttpServletRequest req) {
         if (userContainerCount > 0) {
+        	changeUserCounts(-1);
             moveUserCount(req, --userContainerCount);
-            decreaseWorkloadUserCounts(-1);
 
             return Response.ok().build();
         }
@@ -95,8 +93,8 @@ public class SimulatorApi extends BaseApi {
     @Produces(MediaType.APPLICATION_JSON)
     public Response zeroUserCount(@Context HttpServletRequest req) {
         userContainerCount = 0;
+        changeUserCounts(0);
         moveUserCount(req, userContainerCount);
-        clearWorkloadUserCounts();
 
         //AppInstanceApi apiapi = new AppInstanceApi();
         //apiapi.putLog(req, "All user workloads have been cleared out, should be at 0 workload shortly");
@@ -117,10 +115,14 @@ public class SimulatorApi extends BaseApi {
         return;
     }
 
-    protected void decreaseWorkloadUserCounts(int containerChange) {
+    protected void changeUserCounts(int containerChange) {
         synchronized (this.heapLock) { // Always synchronize on the heapLock so both maps are protected simultaneously
             if (!getWorkloadStatHeap().containsKey(NUODB_MAP_KEY)) {
-                getWorkloadStatHeap().put(NUODB_MAP_KEY, new HashMap<>());
+                HashMap<String, WorkloadStats> nuodbWorkloadStats = new HashMap<>();
+                for (String key: workloadDistribution.keySet()) {
+					nuodbWorkloadStats.put(key, new WorkloadStats());
+                }
+                getWorkloadStatHeap().put(NUODB_MAP_KEY, nuodbWorkloadStats);
             }
 
             Map<String, WorkloadStats> wTmp = getWorkloadStatHeap().get(NUODB_MAP_KEY);
@@ -133,26 +135,14 @@ public class SimulatorApi extends BaseApi {
                 } catch (NumberFormatException e) {
                     continue;
                 }
-
-                stat.getValue().setActiveWorkerLimit(stat.getValue().getActiveWorkerLimit() + (containerChange * distributionCount));
-                stat.getValue().setActiveWorkerCount(stat.getValue().getActiveWorkerCount() + (containerChange * distributionCount));
-            }
-        }
-
-        return;
-    }
-
-    protected void clearWorkloadUserCounts() {
-        synchronized (this.heapLock) { // Always synchronize on the heapLock so both maps are protected simultaneously
-            if (!getWorkloadStatHeap().containsKey(NUODB_MAP_KEY)) {
-                getWorkloadStatHeap().put(NUODB_MAP_KEY, new HashMap<>());
-            }
-
-            Map<String, WorkloadStats> wTmp = getWorkloadStatHeap().get(NUODB_MAP_KEY);
-
-            for (Map.Entry<String, WorkloadStats> stat : wTmp.entrySet()) {
-                stat.getValue().setActiveWorkerLimit(0);
-                stat.getValue().setActiveWorkerCount(0);
+                
+                if (containerChange == 0) {
+                	stat.getValue().setActiveWorkerLimit(0);
+                	stat.getValue().setActiveWorkerCount(0);
+                } else {                	
+                	stat.getValue().setActiveWorkerLimit(stat.getValue().getActiveWorkerLimit() + (containerChange * distributionCount));
+                	stat.getValue().setActiveWorkerCount(stat.getValue().getActiveWorkerCount() + (containerChange * distributionCount));
+                }
             }
         }
 

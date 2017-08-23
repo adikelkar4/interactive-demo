@@ -87,7 +87,6 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 		while (info.getActiveWorkerCount() < minActiveWorkers) {
 			SimulatedUser user = new SimulatedUser(this, workload);
 			threadPool.scheduleAtFixedRate(user, workload.calcNextThinkTimeMs(), 5000, TimeUnit.MILLISECONDS);
-			this.updateWorkloadStats(workload, "ACTIVE", 0);
 		}
 	}
 
@@ -111,9 +110,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 		int limit = 0;
 		synchronized (workloadStatsMap) {
 			for (WorkloadStats workload : workloadStatsMap.values()) {
-				if (workload.getActiveWorkerLimit() != null) {
 					limit += workload.getActiveWorkerLimit();
-				}
 			}
 		}
 		return limit;
@@ -185,9 +182,6 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 		WorkloadStats stats = getOrCreateWorkloadStats(type);
 		synchronized (workloadStatsMap) {
 			switch (state.toUpperCase()) {
-			case "ACTIVE":
-				stats.setActiveWorkerCount(stats.getActiveWorkerCount() + 1);
-				break;
 			case "COMPLETE":
 				stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
 				stats.setWorkCompletionCount(stats.getWorkCompletionCount() + 1);

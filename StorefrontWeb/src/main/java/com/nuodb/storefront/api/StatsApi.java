@@ -33,7 +33,6 @@ public class StatsApi extends BaseApi {
     private static final String TRANSACTION_STATS_MAP_KEY = "transactionStats";
     private static final String WORKLOAD_STATS_MAP_KEY = "workloadStats";
 
-    private static Map<String, Map<String, TransactionStats>> transactionStatHeap = new HashMap<>();
     private static Map<String, Map<WorkloadStep, WorkloadStepStats>> stepStatsHeap = new HashMap<>();
     private static Map<String, Date> lastStatUpdate = new HashMap<>();
 
