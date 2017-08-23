@@ -1,5 +1,6 @@
 package com.storefront.workload.launcher;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Scanner;
@@ -10,22 +11,45 @@ public class LocalLauncher implements UserLauncher {
 	private Map<String, String> appOptions;
 	private Map<String, String> dbOptions;
 
-	public void launchUser(Map<String, String> workloadOptions, int count) throws Exception {
+	public boolean launchUser(Map<String, String> workloadOptions, int count) throws Exception {
 		String workloadOptionsString = buildWorkloadOptionsString(workloadOptions);
 		String dbOptionsString = buildDbOptionsString();
 		String appOptionsString = buildAppOptionsString();
-		Process process = Runtime.getRuntime().exec("java -jar /Users/kwhite/interactive-demo/StorefrontUser/target/StorefrontUser.jar " + dbOptionsString + " " + workloadOptionsString + " " + appOptionsString);
-		Scanner outputScanner = new Scanner(process.getInputStream());
-		Scanner errorScanner = new Scanner(process.getErrorStream());
-		process.waitFor();
-		if (process.exitValue() != 0) {
-			while(outputScanner.hasNextLine()) {
-				System.out.println(errorScanner.nextLine());
+		Runnable backgroundProcess = new Runnable() {
+			
+			@Override
+			public void run() {
+				Process process;
+				Scanner outputScanner = null;
+				Scanner errorScanner = null;
+				try {
+					process = Runtime.getRuntime().exec("java -jar /Users/kwhite/interactive-demo/StorefrontUser/target/StorefrontUser.jar " + dbOptionsString + " " + workloadOptionsString + " " + appOptionsString);
+					outputScanner = new Scanner(process.getInputStream());
+					errorScanner = new Scanner(process.getErrorStream());
+					process.waitFor();
+					if (process.exitValue() != 0) {
+						while(errorScanner.hasNextLine()) {
+							System.out.println(errorScanner.nextLine());
+						}
+					}
+					while (outputScanner.hasNextLine()) {
+						System.out.println(outputScanner.nextLine());
+					}
+				} catch (IOException | InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} finally {
+					if (outputScanner != null) {						
+						outputScanner.close();
+					}
+					if (errorScanner != null) {						
+						errorScanner.close();
+					}
+				}
 			}
-		}
-		while (outputScanner.hasNextLine()) {
-			System.out.println(outputScanner.nextLine());
-		}
+		};
+		new Thread(backgroundProcess).start();
+		return true;
 	}
 
 	private String buildWorkloadOptionsString(Map<String, String> workloadOptions) {

@@ -11,6 +11,7 @@ import java.util.Properties;
 import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
 import com.amazonaws.services.lambda.model.InvokeRequest;
+import com.amazonaws.services.lambda.model.InvokeResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class LambdaLauncher implements UserLauncher {
@@ -39,7 +40,7 @@ public class LambdaLauncher implements UserLauncher {
 	private static String userLoadLambdaArn;
 	
 	@Override
-	public void launchUser(Map<String, String> workloadOptions, int count) throws Exception {
+	public boolean launchUser(Map<String, String> workloadOptions, int count) throws Exception {
 		LambdaInput input = new LambdaInput();
 		input.setCount(count);
 		input.setARG_ecsClusterName(getEcsClusterName());
@@ -67,9 +68,12 @@ public class LambdaLauncher implements UserLauncher {
 
 		req.setFunctionName(userLoadLambdaArn);
 		req.setPayload(mapper.writeValueAsString(input));
-		System.out.println(client.invoke(req).getPayload());
-
-		return;
+		InvokeResult response = client.invoke(req);
+		if (response.getStatusCode() - 200 < 200) { //covers redirects
+			System.out.println(response.getPayload());
+			return true;
+		}
+		return false;
 	}
 	
 	public static String getEcsClusterName() {
