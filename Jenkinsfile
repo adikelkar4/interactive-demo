@@ -7,6 +7,8 @@ aws_credentials='interactive-demo-manager'
 aws_region='us-east-2'
 expiration="2"
 cluster_user="build-${BUILD_NUMBER}"
+def scmUrl = scm.getUserRemoteConfigs()[0].getUrl()
+should_push=scmUrl ==~ /nuodb\/interactive-demo/
 
 // We're currently building all steps on a single node, labeled 'aml'
 
@@ -40,15 +42,18 @@ node('aml') {
          web = docker.build "nuodb/storefrontweb-demo"
        }
      }
-     stage('docker push') {
-       user.push("${tag_prefix}-${BUILD_NUMBER}")
-       web.push("${tag_prefix}-${BUILD_NUMBER}")
-       user.push("${tag_prefix}")
-       web.push("${tag_prefix}")
 
-       if(env.BRANCH_NAME.equals("release")) {
-         user.push("latest")
-         web.push("latest")
+     if(should_push) {
+       stage('docker push') {
+         user.push("${tag_prefix}-${BUILD_NUMBER}")
+         web.push("${tag_prefix}-${BUILD_NUMBER}")
+         user.push("${tag_prefix}")
+         web.push("${tag_prefix}")
+  
+         if(env.BRANCH_NAME.equals("release")) {
+           user.push("latest")
+           web.push("latest")
+         }
        }
      }
   }
@@ -80,5 +85,6 @@ node('aml') {
  	    sh ". py27/bin/activate && bin/cluster delete --include ${cluster_user}-"
           }
         }
-   }
+     }
+  }
 }
