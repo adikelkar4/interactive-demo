@@ -64,9 +64,14 @@ node('aml') {
         withEnv(["AWS_DEFAULT_REGION=${aws_region}", "USER=${cluster_user}"]) {
           withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: aws_credentials, secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
             sh "virtualenv py27 && . py27/bin/activate && pip install -r requirements.txt"
-            sh ". py27/bin/activate && bin/cluster create --delete-after ${expiration} | tee create-output.txt"
-            output=readFile('create-output.txt').trim()
-            url=(output =~ /(http.*)/)[0][1]
+	    success=sh ". py27/bin/activate && bin/cluster create --delete-after ${expiration} | tee create-output.txt"
+	    if(success) {
+ 	       output=readFile('create-output.txt').trim()
+ 	       url=(output =~ /(http.*)/)[0][1]
+	    }
+	    else {
+	       error("Cluster failed to create")
+	    }
           }
         }
       }
