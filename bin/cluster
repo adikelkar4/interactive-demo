@@ -69,9 +69,15 @@ def print_stack_info(session, args, stacks):
         else:
             stack=None
         if stack:
-            url = [y['OutputValue'] 
-                   for y in stack.outputs 
-                   if y['OutputKey'] == args.url_property]
+            # done this way because https://hynek.me/articles/hasattr/
+            try:
+                outputs = stack.outputs
+                if outputs:
+                    url = [y['OutputValue'] 
+                           for y in outputs
+                           if y['OutputKey'] == args.url_property]
+            except AttributeError:
+                pass
 
         if len(url)<1:
             url=[""]
@@ -425,7 +431,7 @@ args -- command line arguments
         url = [y['OutputValue'] 
                for y in stack.outputs 
                if y['OutputKey'] == "StorefrontElbURL"]
-        print "{}: SUCCESS -- {}".format(name, url[0])
+        print "{}: SUCCESS {}".format(name, url[0])
 
         return True
                  
