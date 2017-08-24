@@ -98,9 +98,14 @@ This should be used by any function selecting clusters to implement --include an
 
     stacks = result['StackSummaries']
 
-    if not args.include and not args.exclude and not args.all:
+    if args.all:
+        pass
+    elif not args.include and not args.exclude:
         filter = os.environ['USER']
         stacks = [x for x in stacks if filter in x['StackName']]
+
+    if args.status:
+        stacks = [x for x in stacks if args.status in x['StackStatus']]
 
     if args.include:
         filter = args.include[0]
@@ -479,6 +484,7 @@ def main():
         p.add_argument("--exclude", help="exclude clusters containing", nargs=1)
         p.add_argument("--expired", help="include only expired stacks", action='store_true', default=False)
         p.add_argument("--failed", help="include only stacks with failed operations", action='store_true', default=False)
+        p.add_argument("--status", help="include only stacks with the given word in the status")
 
     args = parser.parse_args()
 
