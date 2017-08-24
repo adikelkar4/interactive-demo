@@ -1,22 +1,7 @@
 { "AWSTemplateFormatVersion" : "2010-09-09",
 
-  "Description" : "AWS CloudFormation Composite template to deploy Interactive Demo ",
-
+  "Description" : "ECS Cluster",
   "Mappings" : {
-
-    "VpcCidrs" : {
-      "eu-central-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
-      "sa-east-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
-      "ap-northeast-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
-      "eu-west-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
-      "us-east-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
-      "us-east-2" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
-      "us-west-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
-      "us-west-2" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
-      "ap-southeast-2" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
-      "ap-southeast-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" }
-    },
-
     "ARNNamespace": {
       "us-east-1":      { "Partition": "aws" },
       "us-east-2":      { "Partition": "aws" },
@@ -29,355 +14,116 @@
       "ap-southeast-2": { "Partition": "aws" },
       "sa-east-1":      { "Partition": "aws" },
       "us-gov-west-1":  { "Partition": "aws-us-gov" }
-    },
-
-    "S3Endpoints" : {
-      "us-east-1":      { "Endpoint": "https://s3.amazonaws.com/" },
-      "us-east-2":      { "Endpoint": "https://s3.amazonaws.com/" },
-      "us-west-2":      { "Endpoint": "https://s3.amazonaws.com/" },
-      "us-west-1":      { "Endpoint": "https://s3.amazonaws.com/" },
-      "eu-west-1":      { "Endpoint": "https://s3.amazonaws.com/" },
-      "eu-central-1":   { "Endpoint": "https://s3.amazonaws.com/" },
-      "ap-southeast-1": { "Endpoint": "https://s3.amazonaws.com/" },
-      "ap-northeast-1": { "Endpoint": "https://s3.amazonaws.com/" },
-      "ap-southeast-2": { "Endpoint": "https://s3.amazonaws.com/" },
-      "sa-east-1":      { "Endpoint": "https://s3.amazonaws.com/" },
-      "us-gov-west-1":  { "Endpoint": "https://s3-fips-us-gov-west-1.amazonaws.com/" }
     }
-
   },
-
   "Parameters" : {
     "Bucket": {
-      "Description": "Cloudformtion template deployment bucket",
       "Type": "String"
     },
 
-    "BucketRegion" : {
-      "Description" : "not used anymore",
-      "Type" : "String",
-      "Default" : "blank"
-    },
-
     "storeFrontWebDocker" : {
-      "Description" : "Storefront Web docker container address in docker.io",
-      "Type": "String",
-      "Default": "docker.io/nuodb/storefrontweb-demo:latest"
+      "Type": "String"
     },
 
     "storeFrontUserDocker" : {
-      "Description" : "Storefront User work load container address in docker.io",
-      "Type" : "String",
-      "Default" : "docker.io/nuodb/storefrontuser-demo:latest"
-    },
-
-    "nuodbDocker" : {
-      "Description" : "NuoDB docker container stored in docker.io",
-      "Type" : "String",
-      "Default" : "docker.io/nuodb/nuodb-ce-2.6.1:latest"
+      "Type" : "String"
     },
 
     "VolumeSize" : {
-      "Description" : "EBS Attached volume size",
-      "Type" : "Number",
-      "Default" : "20"
+      "Type" : "Number"
     },
 
     "dbuser" : {
-      "Description": "Database user name",
       "Type": "String"
     },
 
     "dbpassword" : {
-      "Description": "Database user password",
       "Type": "String"
     },
 
     "dbname" : {
-      "Description": "Database name",
       "Type": "String"
     },
 
     "DomainPassword" : {
-      "Description" : "NuoDB Domain password",
-      "Type": "String",
-      "Default" : "bird"
+      "Type": "String"
     },
 
     "EnvironmentType" : {
-      "Description" : "Environment NuoDB container is deployed to",
-      "Type" : "String",
-      "Default" : "AWSECS"
-    },
-
-    "Hostname" : {
-      "Description" : "Customer Route 53 host name used for Web UI.",
-      "Type" : "String",
-      "Default" : "NONE"
-    },
-
-    "NuoDBInstanceAMI" : {
-      "Type" : "String",
-      "Description" : "Ec2 AMI for NuodB nodes"
+      "Type" : "String"
     },
 
     "NuoDBInstanceType" : {
-      "Type" : "String",
-      "Description" : "EC2 instance type",
-      "Default" : "m4.large"
+      "Type" : "String"
     },
 
     "EcsAmiId" : {
-      "Type" : "String",
-      "Description" : "ECS AMI Id"
+      "Type" : "String"
     },
 
     "EcsInstanceType" : {
-      "Type" : "String",
-      "Description" : "ECS EC2 instance type",
-      "Default" : "m4.large"
+      "Type" : "String"
     },
 
     "KeyName" : {
-      "Type" : "String",
-      "Description" : "Optional - Name of an existing EC2 KeyPair to enable SSH access to the ECS instances",
-      "Default" : ""
+      "Type" : "String"
     },
 
     "VpcId" : {
-      "Type" : "String",
-      "Description" : "Optional - VPC Id of existing VPC. Leave blank to have a new VPC created",
-      "Default" : "",
-      "AllowedPattern" : "^(?:vpc-[0-9a-f]{8}|)$",
-      "ConstraintDescription" : "VPC Id must begin with 'vpc-' or leave blank to have a new VPC created"
+      "Type" : "String"
     },
 
     "SubnetIds" : {
-      "Type" : "CommaDelimitedList",
-      "Description" : "Optional - Comma separated list of existing VPC Subnet Ids where ECS instances will run",
-      "Default" : ""
-    },
-
-    "AsgMaxSize" : {
-      "Type" : "Number",
-      "Description" : "Maximum size and initial Desired Capacity of ECS Auto Scaling Group",
-      "Default" : "1"
+      "Type" : "CommaDelimitedList"
     },
 
     "EcsClusterName" : {
-      "Type" : "String",
-      "Description" : "ECS Cluster Name",
-      "Default" : "default"
+      "Type" : "String"
     },
-
     "EcsPort" : {
-      "Type" : "String",
-      "Description" : "Optional - Security Group port to open on ECS instances - defaults to port 80",
-      "Default" : "8080"
+      "Type" : "String"
     },
-
-    "ElbPort" : {
-      "Type" : "String",
-      "Description" : "Optional - Security Group port to open on ELB - port 80 will be open by default",
-      "Default" : "80"
-    },
-
-    "ElbProtocol" : {
-      "Type" : "String",
-      "Description" : "Optional - ELB Protocol - defaults to HTTP",
-      "Default" : "HTTP"
-    },
-
-    "ElbHealthCheckTarget" : {
-      "Type" : "String",
-      "Description" : "Optional - Health Check Target for ELB - defaults to TCP:48004",
-      "Default" : "HTTP:8080/StorefrontWeb/keep_alive.html"
-    },
-
     "SourceCidr" : {
-      "Type" : "String",
-      "Description" : "Optional - CIDR/IP range for EcsPort and ElbPort - defaults to 0.0.0.0/0",
-      "Default" : "10.0.0.0/0"
+      "Type" : "String"
     },
-
-    "EcsEndpoint" : {
-      "Type" : "String",
-      "Description" : "Optional : ECS Endpoint for the ECS Agent to connect to",
-      "Default" : ""
+    "ElbSecurityGroup" : {
+      "Type" : "String"
     },
-
-    "CreateElasticLoadBalancer" : {
-      "Type" : "String",
-      "Description" : "Optional : When set to true, creates a ELB for ECS Service",
-      "Default" : "true"
+    "BrokerElbSecurityGroup" : {
+      "Type" : "String"
+    },
+    "StorefrontELB" : {
+      "Type" : "String"
+    },
+    "StorefrontURL" : {
+      "Type" : "String"
+    },
+    "BrokerElbURL" : {
+      "Type" : "String"
+    },
+    "LambdaUserContinerArn" : {
+      "Type" : "String"
+    },
+    "ScaleTEService" : {
+      "Type" : "String"
     }
-
-  },
-
-  "Conditions" : {
-    "CreateVpcResources" : { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] },
-    "ExistingVpcResources" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] } ] },
-    "CreateNuoDBonECS" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSECS" ]},
-    "CreateNuoDBonEC2" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSEC2" ]},
-    "SetEndpointToECSAgent" : { "Fn::Not" : [ {
-      "Fn::Equals" : [ { "Ref" : "EcsEndpoint" }, "" ]
-    } ] },
-    "CreateELBForExistingVpc" : { "Fn::And" : [
-      { "Fn::Equals" : [ { "Ref" : "CreateElasticLoadBalancer" }, "true" ] },
-      { "Condition" : "ExistingVpcResources" }
-    ] },
-    "CreateELBForNewVpc" : { "Fn::And" : [
-      { "Fn::Equals" : [ { "Ref" : "CreateElasticLoadBalancer" }, "true" ] },
-      { "Condition" : "CreateVpcResources" }
-    ] },
-    "CreateELB" : { "Fn::Or": [ { "Condition" : "CreateELBForExistingVpc" }, { "Condition" : "CreateELBForNewVpc" } ] },
-    "CreateEC2LCWithKeyPair" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "KeyName" }, "" ] } ] },
-    "CreateEC2LCWithoutKeyPair" : { "Fn::Equals" : [ { "Ref" : "KeyName" }, "" ] },
-    "HasHostedZone" : { "Fn::Not": [{"Fn::Equals" : [{ "Ref" : "Hostname" },   "NONE"]}]}
   },
 
   "Resources" : {
-
-    "VPC" : {
-      "Type" : "AWS::CloudFormation::Stack",
-      "Condition" : "CreateVpcResources",
-      "Properties" : {
-        "TemplateURL" : { "Fn::Join" : ["", [
-          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
-          {"Ref" : "Bucket"},
-          "/vpc.cfn.json"
-        ]]},
-        "Parameters" : {
-          "Name" : { "Ref" : "EcsClusterName" }
-        }
-      }
-    },
-
-
-    "ElbSecurityGroup" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "GroupDescription" : "ELB Allowed Ports",
-        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
-        "SecurityGroupIngress" : [
-          { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "ElbPort" }, "ToPort" : { "Ref" : "ElbPort" },
-            "CidrIp" : { "Ref" : "SourceCidr" } }
-        ]
-      }
-    },
-
-    "BrokerElbSecurityGroup" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "GroupDescription" : "ELB Allowed Ports",
-        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
-        "SecurityGroupIngress" : [
-          { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "CidrIp" : { "Ref" : "SourceCidr" } },
-          { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "CidrIp" : { "Ref" : "SourceCidr" } },
-          { "IpProtocol" : "tcp", "FromPort" : "3306", "ToPort" : "3306", "CidrIp" : { "Ref" : "SourceCidr" } }
-        ]
-      }
-    },
 
     "EcsSecurityGroup" : {
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
         "GroupDescription" : "ECS Allowed Ports",
-        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
-        "SecurityGroupIngress" :
-          [
-            { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "EcsPort" }, "ToPort" : { "Ref" : "EcsPort" }, "CidrIp" : { "Ref" : "SourceCidr" } },
-            { "IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "SourceSecurityGroupId" :  { "Ref" : "ElbSecurityGroup" } },
-            { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
-            { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
-            { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp": "0.0.0.0/0" }
-          ]
-      }
-    },
-
-    "NuoDBSecurityGroup" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "GroupDescription" : "Allow access to NuoDB ports",
-        "VpcId" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
+        "VpcId" : { "Ref" : "VpcId" },
         "SecurityGroupIngress" :
         [
+          { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "EcsPort" }, "ToPort" : { "Ref" : "EcsPort" }, "CidrIp" : { "Ref" : "SourceCidr" } },
+          { "IpProtocol" : "tcp", "FromPort" : "1", "ToPort" : "65535", "SourceSecurityGroupId" :  { "Ref" : "ElbSecurityGroup" } },
           { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
           { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
-          { "IpProtocol" : "tcp", "FromPort" : "48010", "ToPort" : "48010",  "CidrIp": "10.0.0.0/16" },
-          { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48005",  "CidrIp": "10.0.0.0/16" },
           { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp": "0.0.0.0/0" }
         ]
-      }
-    },
-
-    "StorefrontELB" : {
-      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-      "Properties" : {
-        "SecurityGroups" : [ { "Ref" : "ElbSecurityGroup" } ],
-        "Subnets" : [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }],
-        "CrossZone" : "true",
-        "Listeners" : [ {
-          "LoadBalancerPort" : { "Ref" : "ElbPort" },
-          "InstancePort" : { "Ref" : "EcsPort" },
-          "Protocol" : { "Ref" : "ElbProtocol" }
-        } ],
-        "HealthCheck" : {
-          "Target" : { "Ref" : "ElbHealthCheckTarget" },
-          "HealthyThreshold" : "2",
-          "UnhealthyThreshold" : "10",
-          "Interval" : "30",
-          "Timeout" : "5"
-        }
-      }
-    },
-
-    "StorefrontCNAME" : {
-      "Condition" : "HasHostedZone",
-      "DependsOn" : "StorefrontELB",
-      "Type" : "AWS::Route53::RecordSet",
-      "Properties" : {
-        "HostedZoneName" : { "Fn::Join" : [ "", [ { "Ref" : "Hostname" }, "." ] ]
-        },
-        "Comment" : "CNAME for Storefront ELB.",
-        "Name" : { "Fn::Join": ["", [{"Ref" : "EcsClusterName"}, ".", { "Ref" : "Hostname" }, "." ]]},
-        "Type" : "CNAME",
-        "TTL" : "300",
-        "ResourceRecords" : [ { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] } ]
-      }
-    },
-
-    "brokerELB" : {
-      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-      "Properties" : {
-        "SecurityGroups" : [ { "Ref" : "BrokerElbSecurityGroup" } ],
-        "Subnets" : [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }],
-        "CrossZone" : "true",
-        "Scheme" : "internal",
-        "Listeners" : [
-          {
-            "LoadBalancerPort" : "48004",
-            "InstancePort" : "48004",
-            "Protocol" : "TCP"
-          },
-          {
-            "LoadBalancerPort" : "8888",
-            "InstancePort" : "8888",
-            "Protocol" : "HTTP"
-          },
-          {
-            "LoadBalancerPort" : "3306",
-            "InstancePort" : "3306",
-            "Protocol" : "TCP"
-          }
-        ],
-        "HealthCheck" : {
-          "Target" : "tcp:48004",
-          "HealthyThreshold" : "2",
-          "UnhealthyThreshold" : "10",
-          "Interval" : "10",
-          "Timeout" : "5"
-        }
       }
     },
 
@@ -523,7 +269,6 @@
 
     "EcsInstanceLc" : {
       "DependsOn" : "EcsCluster",
-      "Condition" : "CreateEC2LCWithKeyPair",
       "Type" : "AWS::AutoScaling::LaunchConfiguration",
       "Properties" : {
         "ImageId": {
@@ -548,8 +293,7 @@
               "",
               [
                 "#!/bin/bash\n",
-                "echo ECS_CLUSTER=", {"Ref": "EcsClusterName"}, " >> /etc/ecs/ecs.config\n",
-                "echo ECS_BACKEND_HOST=", {"Ref": "EcsEndpoint"}, " >> /etc/ecs/ecs.config\n"
+                "echo ECS_CLUSTER=", {"Ref": "EcsClusterName"}, " >> /etc/ecs/ecs.config\n"
               ]
             ]
           }
@@ -561,77 +305,13 @@
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
         "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }, { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
-        "VPCZoneIdentifier" : { "Fn::If" : [ "CreateVpcResources", [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }], { "Ref" : "SubnetIds" } ] },
+        "VPCZoneIdentifier" : { "Ref" : "SubnetIds" },
         "LaunchConfigurationName" : { "Ref" : "EcsInstanceLc" },
         "LoadBalancerNames" : [{ "Ref" : "StorefrontELB" } ],
         "MinSize" : "1",
-        "MaxSize" : { "Ref" : "AsgMaxSize" },
+        "MaxSize" : "2",
         "DesiredCapacity" : "1",
         "Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : ["", [ "ECS Instance - ", { "Ref" : "AWS::StackName" } ] ] }, "PropagateAtLaunch" : "true" } ]
-      }
-    },
-
-    "ScaleUpPolicy" : {
-      "Type" : "AWS::AutoScaling::ScalingPolicy",
-      "Properties" : {
-        "AdjustmentType" : "ChangeInCapacity",
-        "AutoScalingGroupName" : { "Ref" : "EcsInstanceAsg" },
-        "Cooldown" : "1",
-        "ScalingAdjustment" : "1"
-      }
-    },
-    "CPUAlarmHigh": {
-      "Type": "AWS::CloudWatch::Alarm",
-      "Properties": {
-        "EvaluationPeriods": "1",
-        "Statistic": "Average",
-        "Threshold": "50",
-        "AlarmDescription": "Alarm if CPU too high or metric disappears indicating instance is down",
-        "Period": "60",
-        "AlarmActions": [ { "Ref": "ScaleUpPolicy" } ],
-        "Namespace": "AWS/EC2",
-        "Dimensions": [ {
-          "Name": "AutoScalingGroupName",
-          "Value": { "Ref": "EcsInstanceAsg" }
-        } ],
-        "ComparisonOperator": "GreaterThanThreshold",
-        "MetricName": "CPUUtilization"
-      }
-    },
-
-    "LatencyAlarmHigh": {
-      "Type": "AWS::CloudWatch::Alarm",
-      "Properties": {
-        "EvaluationPeriods": "1",
-        "Statistic": "Average",
-        "Threshold": "200",
-        "AlarmDescription": "Alarm if transaction latency too high",
-        "Period": "60",
-        "Namespace": "INSTANCE/METRICS",
-        "Dimensions": [ {
-          "Name": "ClusterName",
-          "Value": { "Ref": "EcsClusterName" }
-        } ],
-        "ComparisonOperator": "GreaterThanThreshold",
-        "MetricName": "AverageLatency"
-      }
-    },
-
-    "LatencyAlarmLow": {
-      "Type": "AWS::CloudWatch::Alarm",
-      "Properties": {
-        "EvaluationPeriods": "1",
-        "Statistic": "Average",
-        "Threshold": "50",
-        "AlarmDescription": "Alarm if transaction latency too high",
-        "Period": "60",
-        "Namespace": "INSTANCE/METRICS",
-        "Dimensions": [ {
-          "Name": "ClusterName",
-          "Value": { "Ref": "EcsClusterName" }
-        } ],
-        "ComparisonOperator": "LessThanThreshold",
-        "MetricName": "AverageLatency"
       }
     },
 
@@ -642,43 +322,7 @@
       }
     },
 
-    "LambdaInstanceRole": {
-      "Type": "AWS::IAM::Role",
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement":
-          [
-            {
-              "Effect": "Allow",
-              "Principal" : { "Service": [ "lambda.amazonaws.com" ] },
-              "Action": [ "sts:AssumeRole" ]
-            }
-          ]
-        },
-        "Path": "/",
-        "Policies":
-        [
-          {
-            "PolicyName": "ec2ContainerServices",
-            "PolicyDocument":{
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Effect": "Allow",
-                  "Action": [
-                    "*"
-                  ],
-                  "Resource": "*"
-                }
-              ]
-            }
-          }
-        ]
-      }
-    },
-
     "StorefrontUserTaskDefinition": {
-      "DependsOn" : "brokerELB",
       "Type": "AWS::ECS::TaskDefinition",
       "Properties": {
         "Family" : "storefrontuser-family",
@@ -696,11 +340,11 @@
               },
               {
                 "Name": "ARG_dburl",
-                "Value": { "Fn::Join" : [ "", [ { "Ref" : "dbname"}, "@", { "Fn::GetAtt" : ["brokerELB", "DNSName"] }, ":48004" ]]}
+                "Value": { "Fn::Join" : [ "", [ { "Ref" : "dbname"}, "@", { "Ref" : "BrokerElbURL" }, ":48004" ]]}
               },
               {
                 "Name": "ARG_apphost",
-                "Value": { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}
+                "Value": { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontURL" }, ":80/StorefrontWeb" ]]}
               },
               {
                 "Name": "ARG_dbname",
@@ -753,73 +397,7 @@
       }
     },
 
-    "MySQLTaskDefinitions": {
-      "Type": "AWS::ECS::TaskDefinition",
-      "Properties": {
-        "Family": "mysql-family",
-        "ContainerDefinitions": [
-          {
-            "Name": "mysql-definition",
-            "Image": "mysql",
-            "Cpu": "2",
-            "MemoryReservation": "4096",
-            "ReadonlyRootFilesystem": "false",
-            "PortMappings": [
-              {
-                "ContainerPort": "3306",
-                "HostPort": "3306"
-              }
-            ],
-            "Environment": [
-              {
-                "Name": "NODE_REGION",
-                "Value": {
-                  "Ref": "AWS::Region"
-                }
-              },
-              {
-                "Name": "MYSQL_ROOT_PASSWORD",
-                "Value": {
-                  "Ref": "DomainPassword"
-                }
-              },
-              {
-                "Name": "MYSQL_DATABASE",
-                "Value": {
-                  "Ref": "dbname"
-                }
-              },
-              {
-                "Name": "MYSQL_USER",
-                "Value": {
-                  "Ref": "dbuser"
-                }
-              },
-              {
-                "Name": "MYSQL_PASSWORD",
-                "Value": {
-                  "Ref": "dbpassword"
-                }
-              }
-            ]
-          }
-        ]
-      }
-    },
-
-    "MySQLService": {
-      "Type" : "AWS::ECS::Service",
-      "Properties" : {
-        "Cluster" : { "Ref" : "EcsClusterName" },
-        "DesiredCount" : "0",
-        "ServiceName" : "mysql-service",
-        "PlacementStrategies" : [{ "Type": "random"}],
-        "TaskDefinition" : { "Ref" : "MySQLTaskDefinitions"}
-      }
-    },
-
     "StorefrontTaskDefinition": {
-      "DependsOn": [ "brokerELB", "deployUserContainer", "ScaleTEService"],
       "Type": "AWS::ECS::TaskDefinition",
       "Properties": {
         "Family" : "storefront-family",
@@ -847,15 +425,15 @@
               },
               {
                 "Name": "ARG_JDBC_URL",
-                "Value": { "Fn::GetAtt" : ["brokerELB", "DNSName"] }
+                "Value": { "Ref" : "BrokerElbURL" }
               },
               {
                 "Name": "ARG_userLoadLambdaArn",
-                "Value": { "Fn::GetAtt" : [ "deployUserContainer", "Arn"] }
+                "Value": { "Ref" : "LambdaUserContinerArn"}
               },
               {
                 "Name" : "ARG_teScalingLambdaArn",
-                "Value" : { "Fn::GetAtt" : [ "ScaleTEService", "Arn" ]}
+                "Value" : { "Ref" : "ScaleTEService" }
               },
               {
                 "Name": "ARG_ecsClusterName",
@@ -863,7 +441,7 @@
               },
               {
                 "Name": "ARG_storefronturl",
-                "Value": { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/" ]]}
+                "Value": { "Fn::Join": [ "", [ "http://", { "Ref" : "StorefrontURL" }, ":80/" ]]}
               },
               {
                 "Name": "ARG_dbname",
@@ -893,283 +471,14 @@
         "PlacementStrategies" : [{ "Type": "random"}],
         "TaskDefinition" : { "Ref" : "StorefrontTaskDefinition" }
       }
-    },
-
-    "deployUserContainer": {
-      "DependsOn": [
-        "brokerELB", "StorefrontELB"
-      ],
-      "Type": "AWS::Lambda::Function",
-      "Properties": {
-        "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "LambdaInstanceRole",
-            "Arn"
-          ]
-        },
-        "Code": {
-          "ZipFile" : { "Fn::Join" : ["", [
-            "import boto3, urllib2, json\n",
-
-            "client = boto3.client('ecs')\n",
-            "def handler(event, context):\n",
-            "    print(event)\n",
-
-            "    responseURL = \"", { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb/api/app-instances/log" ]]}, "\"\n",
-            "    try:\n",
-            "        response = client.register_task_definition(\n",
-            "            family='storefrontuser-family',\n",
-            "            taskRoleArn='", { "Ref" : "ECSInstanceRole" }, "',\n",
-            "            containerDefinitions=[\n",
-            "             {\n",
-            "               'name': 'storefrontuser-definition',\n",
-            "               'image': '", { "Ref" : "storeFrontUserDocker" }, "',\n",
-            "               'cpu': 2,\n",
-            "               'memoryReservation': 4096,\n",
-            "               'readonlyRootFilesystem': False,\n",
-            "               'privileged': True,\n",
-            "               'environment': [\n",
-            "                 {\n",
-            "                   'name': 'ENV_TYPE',\n",
-            "                   'value': 'AWSECS'\n",
-            "                 },\n",
-            "                 {\n",
-            "                   'name': 'ARG_dburl',\n",
-            "                   'value': '", { "Fn::Join" : [ "", [ { "Ref" : "dbname"}, "@", { "Fn::GetAtt" : ["brokerELB", "DNSName"] }, ":48004" ]]}, "'\n",
-            "                 },\n",
-            "                 {\n",
-            "                   'name': 'ARG_dbuser',\n",
-            "                   'value': '", { "Ref" : "dbuser" }, "'\n",
-            "                 },\n",
-            "                 {\n",
-            "                   'name': 'ARG_dbpassword',\n",
-            "                   'value': '", { "Ref" : "dbpassword" }, "'\n",
-            "                 },\n",
-            "                 {\n",
-            "                   'name': 'ARG_workloadmulti_browseusers',\n",
-            "                   'value': event['multi_browse']\n",
-            "                 },\n",
-            "                 {\n",
-            "                   'name': 'ARG_workloadmulti_shopusers',\n",
-            "                   'value': event['multi_shop']\n",
-            "                 },\n",
-            "                 {\n",
-            "                   'name': 'ARG_workloadadmin_run_reportusers',\n",
-            "                   'value': event['admin_run_report']\n",
-            "                 },\n",
-            "                 {\n",
-            "                   'name': 'ARG_workloadmulti_browse_and_reviewusers',\n",
-            "                   'value': event['multi_browse_and_review']\n",
-            "                 },\n",
-            "                 {\n",
-            "                   'name': 'ARG_apphost',\n",
-            "                   'value': '", { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb" ]]}, "'\n",
-            "                 }\n",
-            "               ]\n",
-            "             }\n",
-            "           ]\n",
-            "        )\n",
-            "        print(response)\n",
-            "        data = json.dumps({'Data' : '(task-definition storefrontuser-definition) has been sucessfully updated.'})\n",
-
-            "        req = urllib2.Request(responseURL, data)\n",
-            "        req.add_header('Content-Type', 'application/json')\n",
-            "        response = urllib2.urlopen(req)\n",
-            "        result = response.read()\n",
-            "        print result\n",
-
-            "    except Exception as e:\n",
-            "        print(e)\n",
-
-            "    familyArn = client.list_task_definitions(familyPrefix='storefrontuser-family', sort='DESC', maxResults=1)\n",
-
-            "    try:\n",
-            "        response = client.create_service(\n",
-            "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
-            "            serviceName='storefrontuser-service',\n",
-            "            taskDefinition=familyArn['taskDefinitionArns'][0],\n",
-            "            desiredCount=event['count'],\n",
-            "            placementStrategy=[\n",
-            "              {\n",
-            "                'type': 'random'\n",
-            "              }\n",
-            "            ]\n",
-            "        )\n",
-            "        print(response)\n",
-            "    except Exception as e:\n",
-            "        print(e)\n",
-            "        response = client.update_service(\n",
-            "            cluster='", { "Ref" : "EcsClusterName" }, "',\n",
-            "            service='storefrontuser-service',\n",
-            "            #taskDefinition=familyArn['taskDefinitionArns'][0],\n",
-            "            desiredCount=event['count']\n",
-            "        )\n",
-            "        print(response)\n",
-            "        data = json.dumps({'Data' : '(service storefrontuser-service) has reached a steady state.'})\n",
-
-            "        req = urllib2.Request(responseURL, data)\n",
-            "        req.add_header('Content-Type', 'application/json')\n",
-            "        response = urllib2.urlopen(req)\n",
-            "        result = response.read()\n",
-            "        print result\n"
-
-          ]]}
-        },
-        "Runtime": "python2.7",
-        "Timeout": "300"
-      }
-    },
-
-    "ScaleTEService": {
-      "Type": "AWS::Lambda::Function",
-      "Properties": {
-        "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "LambdaInstanceRole",
-            "Arn"
-          ]
-        },
-        "Code": {
-          "ZipFile" : { "Fn::Join" : ["", [
-            "import boto3, urllib, urllib2, json\n",
-
-            "def handler(event, context):\n",
-
-            "    responseURL = \"", { "Fn::Join" : ["", ["http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, ":80/StorefrontWeb/api/app-instances/log" ]]}, "\"\n",
-            "    print(event)\n",
-
-            "    try:\n",
-            "        if '", { "Ref" : "EnvironmentType"}, "' == 'AWSECS':\n",
-            "            client = boto3.client('ecs')\n",
-            "            response = client.update_service(\n",
-            "                cluster='", { "Ref" : "EcsClusterName" }, "',\n",
-            "                service='TE-service',\n",
-            "                desiredCount=event['count'],\n",
-            "            )\n",
-            "            print(response)\n",
-            "            data = json.dumps({'Data' : '(service TE-service) has reached a steady state.'})\n",
-            "        else:\n",
-            "            client = boto3.client('autoscaling')\n",
-            "            response = client.set_desired_capacity(\n",
-            "                AutoScalingGroupName='", { "Fn::If" : ["CreateNuoDBonEC2", { "Fn::GetAtt": ["NuoDBonEc2", "Outputs.TeASG"] }, "" ]}, "',\n",
-            "                DesiredCapacity=event['count'],\n",
-            "                HonorCooldown=True\n",
-            "            )\n",
-            "            print(response)\n",
-            "            data = json.dumps({'Data' : '(ASG TE) has reached a steady state.'})\n",
-
-            "        req = urllib2.Request(responseURL, data)\n",
-            "        req.add_header('Content-Type', 'application/json')\n",
-            "        response = urllib2.urlopen(req)\n",
-            "        result = response.read()\n",
-            "        print result\n",
-
-            "    except Exception as e:\n",
-            "        print(e)\n",
-            "        data = json.dumps({'Data': e})\n",
-
-            "        req = urllib2.Request(responseURL, data)\n",
-            "        req.add_header('Content-Type', 'application/json')\n",
-            "        response = urllib2.urlopen(req)\n",
-            "        result = response.read()\n",
-            "        print result\n"
-
-          ]]}
-        },
-        "Runtime": "python2.7",
-        "Timeout": "300"
-      }
-    },
-
-    "NuoDBonEc2" : {
-      "Condition" : "CreateNuoDBonEC2",
-      "Type" : "AWS::CloudFormation::Stack",
-      "DependsOn" : ["brokerELB", "VPC"],
-      "Properties" : {
-        "TemplateURL" : { "Fn::Join" : ["", [
-          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
-          {"Ref" : "Bucket"},
-          "/nuodb-on-ec2.cfn.json"
-        ]]},
-        "Parameters" : {
-          "Bucket" :  { "Ref" : "Bucket" },
-          "nuodbDocker" :     { "Ref" : "nuodbDocker" },
-          "VolumeSize" : { "Ref" : "VolumeSize" },
-          "dbuser" : { "Ref" : "dbuser" },
-          "dbpassword" :    { "Ref" : "dbpassword" },
-          "dbname" :    { "Ref" : "dbname" },
-
-          "DomainPassword":   { "Ref" : "DomainPassword" },
-          "EnvironmentType":  { "Ref" : "EnvironmentType" },
-          "NuoDBInstanceAMI":   { "Ref" : "NuoDBInstanceAMI" },
-          "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
-          "KeyName":  { "Ref" : "KeyName" },
-          "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
-          "SubnetIds":  { "Fn::Join" : [ ", ", [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }] ]},
-          "ECSInstanceProfile" : { "Ref" : "ECSInstanceProfile"},
-          "NuoDBSecurityGroup" : { "Ref" : "NuoDBSecurityGroup"},
-          "peerAddress" : { "Fn::GetAtt": [ "brokerELB", "DNSName" ]},
-          "brokerELB" : { "Ref" : "brokerELB" },
-          "StorefrontElb" : { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }
-        }
-      }
-    },
-
-    "NuoDBonEcs" : {
-      "Condition" : "CreateNuoDBonECS",
-      "Type" : "AWS::CloudFormation::Stack",
-      "DependsOn" : ["brokerELB", "VPC"],
-      "Properties" : {
-        "TemplateURL" : { "Fn::Join" : ["", [
-          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
-          {"Ref" : "Bucket"},
-          "/nuodb-on-ecs.cfn.json"
-        ]]},
-        "Parameters" : {
-          "EcsClusterName" : { "Ref" : "EcsClusterName" },
-          "Bucket" :  { "Ref" : "Bucket" },
-          "nuodbDocker" :     { "Ref" : "nuodbDocker" },
-          "VolumeSize" : { "Ref" : "VolumeSize" },
-          "dbuser" : { "Ref" : "dbuser" },
-          "dbpassword" :    { "Ref" : "dbpassword" },
-          "dbname" :    { "Ref" : "dbname" },
-
-          "DomainPassword":   { "Ref" : "DomainPassword" },
-          "EnvironmentType":  { "Ref" : "EnvironmentType" },
-          "NuoDBInstanceAMI":   { "Ref" : "NuoDBInstanceAMI" },
-          "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
-          "KeyName":  { "Ref" : "KeyName" },
-          "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
-          "SubnetIds":  { "Fn::Join" : [ ", ", [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }] ]},
-          "ECSInstanceProfile" : { "Ref" : "ECSInstanceProfile"},
-          "NuoDBSecurityGroup" : { "Ref" : "NuoDBSecurityGroup"},
-          "peerAddress" : { "Fn::GetAtt": [ "brokerELB", "DNSName" ]},
-          "brokerELB" : { "Ref" : "brokerELB" },
-          "StorefrontElb" : { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }
-        }
-      }
     }
-
 
   },
-
   "Outputs" : {
-
-    "EcsInstanceAsgName" : {
-      "Description" : "Auto Scaling Group Name for ECS Instances",
-      "Value" : { "Ref" : "EcsInstanceAsg" }
-    },
-    "StorefrontElbURL" : {
-      "Description" : "Load Balancer for ECS Service",
-      "Value" : { "Fn::If": [ "HasHostedZone",
-        { "Fn::Join": [ "", [ "http://", {"Ref": "StorefrontCNAME"}, "/StorefrontWeb/" ]]},
-      { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, "/StorefrontWeb/" ]]}]
-    }},
-    "BrokerElbURL" : {
-      "Description" : "Load Balancer for Broker Service",
-      "Value" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] }
+    "ECSInstanceRole" : {
+      "Description" : "Instance role logical name",
+      "Value" : { "Ref" : "ECSInstanceRole" }
     }
+
   }
 }

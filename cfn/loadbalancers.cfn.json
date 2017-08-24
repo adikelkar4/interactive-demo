@@ -1,0 +1,170 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "Loadbalancers",
+  "Conditions" : {
+    "HasHostedZone" : { "Fn::Not": [{"Fn::Equals" : [{ "Ref" : "Hostname" },   "NONE"]}]}
+  },
+
+  "Parameters" : {
+    "VpcID" : {
+      "Type" : "String"
+    },
+    "ElbPort" : {
+      "Type" : "String"
+    },
+    "SourceCidr" : {
+      "Type" : "String"
+    },
+    "PublicSubnetAz1" :{
+      "Type" : "String"
+    },
+    "EcsPort" : {
+      "Type" : "String"
+    },
+    "ElbProtocol" : {
+      "Type" : "String"
+    },
+    "ElbHealthCheckTarget" : {
+      "Type" : "String"
+    },
+    "Hostname" : {
+      "Type" : "String"
+    },
+    "EcsClusterName" : {
+      "Type" : "String"
+    }
+  },
+
+
+  "Resources" : {
+    "ElbSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "ELB Allowed Ports",
+        "VpcId" : { "Ref" : "VpcID" },
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" : { "Ref" : "ElbPort" }, "ToPort" : { "Ref" : "ElbPort" },
+            "CidrIp" : { "Ref" : "SourceCidr" } }
+        ]
+      }
+    },
+
+    "BrokerElbSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "ELB Allowed Ports",
+        "VpcId" : { "Ref" : "VpcID" },
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "CidrIp" : { "Ref" : "SourceCidr" } },
+          { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "CidrIp" : { "Ref" : "SourceCidr" } },
+          { "IpProtocol" : "tcp", "FromPort" : "3306", "ToPort" : "3306", "CidrIp" : { "Ref" : "SourceCidr" } }
+        ]
+      }
+    },
+
+
+    "StorefrontELB" : {
+      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties" : {
+        "SecurityGroups" : [ { "Ref" : "ElbSecurityGroup" } ],
+        "Subnets" : [{ "Ref": "PublicSubnetAz1" }],
+        "CrossZone" : "true",
+        "Listeners" : [ {
+          "LoadBalancerPort" : { "Ref" : "ElbPort" },
+          "InstancePort" : { "Ref" : "EcsPort" },
+          "Protocol" : { "Ref" : "ElbProtocol" }
+        } ],
+        "HealthCheck" : {
+          "Target" : { "Ref" : "ElbHealthCheckTarget" },
+          "HealthyThreshold" : "2",
+          "UnhealthyThreshold" : "10",
+          "Interval" : "30",
+          "Timeout" : "5"
+        }
+      }
+    },
+
+    "StorefrontCNAME" : {
+      "Condition" : "HasHostedZone",
+      "DependsOn" : "StorefrontELB",
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+        "HostedZoneName" : { "Fn::Join" : [ "", [ { "Ref" : "Hostname" }, "." ] ]
+        },
+        "Comment" : "CNAME for Storefront ELB.",
+        "Name" : { "Fn::Join": ["", [{"Ref" : "EcsClusterName"}, ".", { "Ref" : "Hostname" }, "." ]]},
+        "Type" : "CNAME",
+        "TTL" : "300",
+        "ResourceRecords" : [ { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] } ]
+      }
+    },
+
+    "brokerELB" : {
+      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties" : {
+        "SecurityGroups" : [ { "Ref" : "BrokerElbSecurityGroup" } ],
+        "Subnets" : [ { "Ref" : "PublicSubnetAz1" } ],
+        "CrossZone" : "true",
+        "Scheme" : "internal",
+        "Listeners" : [
+          {
+            "LoadBalancerPort" : "48004",
+            "InstancePort" : "48004",
+            "Protocol" : "TCP"
+          },
+          {
+            "LoadBalancerPort" : "8888",
+            "InstancePort" : "8888",
+            "Protocol" : "HTTP"
+          },
+          {
+            "LoadBalancerPort" : "3306",
+            "InstancePort" : "3306",
+            "Protocol" : "TCP"
+          }
+        ],
+        "HealthCheck" : {
+          "Target" : "tcp:48004",
+          "HealthyThreshold" : "2",
+          "UnhealthyThreshold" : "10",
+          "Interval" : "10",
+          "Timeout" : "5"
+        }
+      }
+    }
+  },
+  "Outputs" : {
+    "BrokerElbURL" : {
+      "Description" : "Load Balancer for Broker Service",
+      "Value" : { "Fn::GetAtt" : ["brokerELB", "DNSName"] }
+    },
+    "BrokerELB" : {
+      "Description" : "ELB logical name",
+      "Value" : { "Ref" : "brokerELB" }
+    },
+    "StorefrontURL" : {
+      "Description" : "Storefront ELB URL",
+      "Value" : { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }
+    },
+    "StorefrontELB" : {
+      "Description" : "Storefront ELB logical name",
+      "Value" : { "Ref" : "StorefrontELB"}
+    },
+    "StorefrontCNAME" : {
+      "Description" : "Storefront URL Address",
+      "Value" : { "Fn::If": [ "HasHostedZone",
+        { "Fn::Join": [ "", [ "http://", {"Ref": "StorefrontCNAME"}, "/StorefrontWeb/" ]]},
+        { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["StorefrontELB", "DNSName"] }, "/StorefrontWeb/" ]]}]
+      }
+    },
+    "ElbSecurityGroup" : {
+      "Description" : "Elb Security Group logical name",
+      "Value" : { "Ref" : "ElbSecurityGroup"}
+    },
+    "BrokerElbSecurityGroup" : {
+      "Description" : "Broker ELB Security group logical name",
+      "Value" : { "Ref" : "BrokerElbSecurityGroup" }
+    }
+  }
+}

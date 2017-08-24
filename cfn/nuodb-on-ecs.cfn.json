@@ -1,234 +1,81 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "AWS CloudFormation template to create launch NuoDB on ECS cluster",
-  "Mappings": {
-    "VpcCidrs": {
-      "eu-central-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "sa-east-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "ap-northeast-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "eu-west-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "us-east-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "us-east-2": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "us-west-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "us-west-2": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "ap-southeast-2": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "ap-southeast-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      }
-    },
-    "ARNNamespace": {
-      "us-east-1": {
-        "Partition": "aws"
-      },
-      "us-east-2": {
-        "Partition": "aws"
-      },
-      "us-west-2": {
-        "Partition": "aws"
-      },
-      "us-west-1": {
-        "Partition": "aws"
-      },
-      "eu-west-1": {
-        "Partition": "aws"
-      },
-      "eu-central-1": {
-        "Partition": "aws"
-      },
-      "ap-southeast-1": {
-        "Partition": "aws"
-      },
-      "ap-northeast-1": {
-        "Partition": "aws"
-      },
-      "ap-southeast-2": {
-        "Partition": "aws"
-      },
-      "sa-east-1": {
-        "Partition": "aws"
-      },
-      "us-gov-west-1": {
-        "Partition": "aws-us-gov"
-      }
-    },
-    "S3Region": {
-      "us-east-1": {
-        "Region": "us-east-1"
-      },
-      "us-east-2": {
-        "Region": "us-east-2"
-      },
-      "us-west-2": {
-        "Region": "us-east-1"
-      },
-      "us-west-1": {
-        "Region": "us-east-1"
-      },
-      "eu-west-1": {
-        "Region": "us-east-1"
-      },
-      "eu-central-1": {
-        "Region": "us-east-1"
-      },
-      "ap-southeast-1": {
-        "Region": "us-east-1"
-      },
-      "ap-northeast-1": {
-        "Region": "us-east-1"
-      },
-      "ap-southeast-2": {
-        "Region": "us-east-1"
-      },
-      "sa-east-1": {
-        "Region": "us-east-1"
-      },
-      "us-gov-west-1": {
-        "Region": "us-gov-west-1"
-      }
-    }
-  },
+  "Description": "NuoDB deployed on ECS Cluster",
+
   "Parameters": {
     "Bucket" : {
-      "Description" : "Template bucket in s3",
       "Type" : "String"
     },
 
     "EcsClusterName" : {
-      "Type" : "String",
-      "Description" : "ECS Cluster Name",
-      "Default" : "default"
+      "Type" : "String"
     },
 
     "nuodbDocker" : {
-      "Description" : "NuoDB docker container stored in docker.io",
-      "Type" : "String",
-      "Default" : "docker.io/nuodb/nuodb-ce-2.6.1:latest"
+      "Type" : "String"
     },
 
     "VolumeSize" : {
-      "Description" : "EBS Attached volume size",
-      "Type" : "Number",
-      "Default" : "20"
+      "Type" : "Number"
     },
 
     "brokerELB" : {
-      "Description" : "Broker ELB",
       "Type" : "String"
     },
 
     "StorefrontElb" : {
-      "Description" : "Storefront ELB address",
       "Type" : "String"
     },
 
     "peerAddress" : {
-      "Description" : "Broker ELB Address",
       "Type" : "String"
     },
 
     "dbuser" : {
-      "Description": "Database user name",
       "Type": "String"
     },
 
     "dbpassword" : {
-      "Description": "Database user password",
       "Type": "String"
     },
 
     "dbname" : {
-      "Description": "Database name",
       "Type": "String"
     },
 
     "DomainPassword" : {
-      "Description" : "NuoDB Domain password",
-      "Type": "String",
-      "Default" : "bird"
+      "Type": "String"
     },
 
     "EnvironmentType" : {
-      "Description" : "Environment NuoDB container is deployed to",
-      "Type" : "String",
-      "Default" : "AWSECS"
+      "Type" : "String"
     },
 
     "NuoDBInstanceAMI" : {
-      "Type" : "String",
-      "Description" : "Ec2 AMI for NuodB nodes"
+      "Type" : "String"
     },
 
     "NuoDBInstanceType" : {
-      "Type" : "String",
-      "Description" : "EC2 instance type",
-      "Default" : "m4.large"
+      "Type" : "String"
     },
     "KeyName" : {
-      "Type" : "String",
-      "Description" : "Optional - Name of an existing EC2 KeyPair to enable SSH access to the ECS instances",
-      "Default" : ""
+      "Type" : "String"
     },
 
     "VpcId" : {
-      "Type" : "String",
-      "Description" : "Optional - VPC Id of existing VPC. Leave blank to have a new VPC created",
-      "Default" : "",
-      "AllowedPattern" : "^(?:vpc-[0-9a-f]{8}|)$",
-      "ConstraintDescription" : "VPC Id must begin with 'vpc-' or leave blank to have a new VPC created"
+      "Type" : "String"
     },
 
     "SubnetIds" : {
-      "Type" : "CommaDelimitedList",
-      "Description" : "Optional - Comma separated list of existing VPC Subnet Ids where ECS instances will run",
-      "Default" : ""
+      "Type" : "CommaDelimitedList"
     },
 
     "ECSInstanceProfile" : {
-      "Type" : "String",
-      "Description" : "Profile role for instance"
+      "Type" : "String"
     },
 
     "NuoDBSecurityGroup" : {
-      "Type" : "String",
-      "Description" : "Security group for ec2 instances"
+      "Type" : "String"
     }
   },
   "Resources" : {

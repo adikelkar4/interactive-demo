@@ -1,0 +1,376 @@
+{ "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "Interactive Demo composite stack",
+
+  "Mappings" : {
+
+    "VpcCidrs" : {
+      "eu-central-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "sa-east-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "ap-northeast-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "eu-west-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "us-east-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "us-east-2" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "us-west-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "us-west-2" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "ap-southeast-2" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" },
+      "ap-southeast-1" : { "vpc" : "10.0.0.0/16", "pubsubnet1" : "10.0.0.0/24", "pubsubnet2" : "10.0.1.0/24" }
+    },
+
+
+    "S3Endpoints" : {
+      "us-east-1":      { "Endpoint": "https://s3.amazonaws.com/" },
+      "us-east-2":      { "Endpoint": "https://s3.amazonaws.com/" },
+      "us-west-2":      { "Endpoint": "https://s3.amazonaws.com/" },
+      "us-west-1":      { "Endpoint": "https://s3.amazonaws.com/" },
+      "eu-west-1":      { "Endpoint": "https://s3.amazonaws.com/" },
+      "eu-central-1":   { "Endpoint": "https://s3.amazonaws.com/" },
+      "ap-southeast-1": { "Endpoint": "https://s3.amazonaws.com/" },
+      "ap-northeast-1": { "Endpoint": "https://s3.amazonaws.com/" },
+      "ap-southeast-2": { "Endpoint": "https://s3.amazonaws.com/" },
+      "sa-east-1":      { "Endpoint": "https://s3.amazonaws.com/" },
+      "us-gov-west-1":  { "Endpoint": "https://s3-fips-us-gov-west-1.amazonaws.com/" }
+    }
+
+  },
+
+  "Parameters" : {
+    "Bucket": {
+      "Description": "Cloudformtion template deployment bucket",
+      "Type": "String"
+    },
+    "BucketRegion" : {
+      "Description" : "Place holder",
+      "Type" : "String",
+      "Default" : "Null"
+    },
+
+    "storeFrontWebDocker" : {
+      "Description" : "Storefront Web docker container address in docker.io",
+      "Type": "String",
+      "Default": "docker.io/nuodb/storefrontweb-demo:latest"
+    },
+
+    "storeFrontUserDocker" : {
+      "Description" : "Storefront User work load container address in docker.io",
+      "Type" : "String",
+      "Default" : "docker.io/nuodb/storefrontuser-demo:latest"
+    },
+
+    "nuodbDocker" : {
+      "Description" : "NuoDB docker container stored in docker.io",
+      "Type" : "String",
+      "Default" : "docker.io/nuodb/nuodb-ce-2.6.1:latest"
+    },
+
+    "VolumeSize" : {
+      "Description" : "EBS Attached volume size",
+      "Type" : "Number",
+      "Default" : "20"
+    },
+
+    "dbuser" : {
+      "Description": "Database user name",
+      "Type": "String"
+    },
+
+    "dbpassword" : {
+      "Description": "Database user password",
+      "Type": "String"
+    },
+
+    "dbname" : {
+      "Description": "Database name",
+      "Type": "String"
+    },
+
+    "DomainPassword" : {
+      "Description" : "NuoDB Domain password",
+      "Type": "String",
+      "Default" : "bird"
+    },
+
+    "EnvironmentType" : {
+      "Description" : "Environment NuoDB container is deployed to",
+      "Type" : "String",
+      "Default" : "AWSECS"
+    },
+
+    "Hostname" : {
+      "Description" : "Custom Route 53 host name used for Web UI.",
+      "Type" : "String",
+      "Default" : "NONE"
+    },
+
+    "NuoDBInstanceAMI" : {
+      "Type" : "String",
+      "Description" : "Ec2 AMI for NuodB nodes"
+    },
+
+    "NuoDBInstanceType" : {
+      "Type" : "String",
+      "Description" : "EC2 instance type",
+      "Default" : "m4.large"
+    },
+
+    "EcsAmiId" : {
+      "Type" : "String",
+      "Description" : "ECS AMI Id"
+    },
+
+    "EcsInstanceType" : {
+      "Type" : "String",
+      "Description" : "ECS EC2 instance type",
+      "Default" : "m4.large"
+    },
+
+    "KeyName" : {
+      "Type" : "String",
+      "Description" : "Optional - Name of an existing EC2 KeyPair to enable SSH access to the ECS instances",
+      "Default" : ""
+    },
+
+    "VpcId" : {
+      "Type" : "String",
+      "Description" : "Optional - VPC Id of existing VPC. Leave blank to have a new VPC created",
+      "Default" : "",
+      "AllowedPattern" : "^(?:vpc-[0-9a-f]{8}|)$",
+      "ConstraintDescription" : "VPC Id must begin with 'vpc-' or leave blank to have a new VPC created"
+    },
+
+    "SubnetIds" : {
+      "Type" : "CommaDelimitedList",
+      "Description" : "Optional - Comma separated list of existing VPC Subnet Ids where ECS instances will run",
+      "Default" : ""
+    },
+
+    "EcsClusterName" : {
+      "Type" : "String",
+      "Description" : "ECS Cluster Name",
+      "Default" : "default"
+    },
+
+    "EcsPort" : {
+      "Type" : "String",
+      "Description" : "Optional - Security Group port to open on ECS instances - defaults to port 80",
+      "Default" : "8080"
+    },
+
+    "ElbPort" : {
+      "Type" : "String",
+      "Description" : "Optional - Security Group port to open on ELB - port 80 will be open by default",
+      "Default" : "80"
+    },
+
+    "ElbProtocol" : {
+      "Type" : "String",
+      "Description" : "Optional - ELB Protocol - defaults to HTTP",
+      "Default" : "HTTP"
+    },
+
+    "ElbHealthCheckTarget" : {
+      "Type" : "String",
+      "Description" : "Optional - Health Check Target for ELB - defaults to TCP:48004",
+      "Default" : "HTTP:8080/StorefrontWeb/keep_alive.html"
+    },
+
+    "SourceCidr" : {
+      "Type" : "String",
+      "Description" : "Optional - CIDR/IP range for EcsPort and ElbPort - defaults to 0.0.0.0/0",
+      "Default" : "10.0.0.0/0"
+    }
+
+  },
+
+  "Conditions" : {
+    "CreateVpcResources" : { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] },
+    "ExistingVpcResources" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] } ] },
+    "CreateNuoDBonECS" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSECS" ]},
+    "CreateNuoDBonEC2" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSEC2" ]}
+  },
+
+  "Resources" : {
+
+    "VPC" : {
+      "Type" : "AWS::CloudFormation::Stack",
+      "Condition" : "CreateVpcResources",
+      "Properties" : {
+        "TemplateURL" : { "Fn::Join" : ["", [
+          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
+          {"Ref" : "Bucket"},
+          "/vpc.cfn.json"
+        ]]},
+        "Parameters" : {
+          "Name" : { "Ref" : "EcsClusterName" }
+        }
+      }
+    },
+
+    "Loadbalancers" : {
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : "VPC",
+      "Properties" : {
+        "TemplateURL" : { "Fn::Join" : ["", [
+          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
+          {"Ref" : "Bucket"},
+          "/loadbalancers.cfn.json"
+        ]]},
+        "Parameters" : {
+          "VpcID" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
+          "ElbPort" : { "Ref" : "ElbPort" },
+          "SourceCidr" : { "Ref" : "SourceCidr"},
+          "PublicSubnetAz1" : { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] },
+          "EcsPort" : { "Ref" : "EcsPort" },
+          "ElbProtocol" : { "Ref" : "ElbProtocol" },
+          "ElbHealthCheckTarget" : { "Ref" : "ElbHealthCheckTarget" },
+          "Hostname" : { "Ref" : "Hostname" },
+          "EcsClusterName" : { "Ref" : "EcsClusterName" }
+          }
+      }
+    },
+
+    "LambdaFunctions" : {
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : ["Loadbalancers"],
+      "Properties" : {
+        "TemplateURL" : { "Fn::Join" : ["", [
+          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
+          {"Ref" : "Bucket"},
+          "/lambda-functions.cfn.json"
+        ]]},
+        "Parameters" : {
+          "EnvironmentType" : { "Ref" : "EnvironmentType"},
+          "StorefrontURL" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontURL"]},
+          "EcsClusterName" : { "Ref" : "EcsClusterName" },
+          "storeFrontUserDocker" : { "Ref" : "storeFrontUserDocker" },
+          "dbuser" : { "Ref" : "dbuser" },
+          "dbpassword" :    { "Ref" : "dbpassword" },
+          "dbname" :    { "Ref" : "dbname" },
+          "BrokerElbURL" : { "Fnn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"]},
+          "TeASG" : { "Fn::If" : ["CreateNuoDBonEC2", { "Fn::GetAtt": ["NuoDBonEc2", "Outputs.TeASG"] }, "NONE" ]}
+        }
+      }
+    },
+
+    "EcsCluster" : {
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : "LambdaFunctions",
+      "Properties" : {
+        "TemplateURL" : { "Fn::Join" : ["", [
+          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
+          {"Ref" : "Bucket"},
+          "/ecs-cluster.cfn.json"
+        ]]},
+        "Parameters" : {
+          "EcsClusterName" : { "Ref" : "EcsClusterName" },
+          "Bucket" :  { "Ref" : "Bucket" },
+          "VolumeSize" : { "Ref" : "VolumeSize" },
+          "dbuser" : { "Ref" : "dbuser" },
+          "dbpassword" :    { "Ref" : "dbpassword" },
+          "dbname" :    { "Ref" : "dbname" },
+
+          "DomainPassword":   { "Ref" : "DomainPassword" },
+          "EnvironmentType":  { "Ref" : "EnvironmentType" },
+          "NuoDBInstanceAMI":   { "Ref" : "NuoDBInstanceAMI" },
+          "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
+          "KeyName":  { "Ref" : "KeyName" },
+          "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
+          "SubnetIds":  { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"]},
+          "peerAddress" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] },
+          "brokerELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerELB"] },
+          "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] },
+
+          "SourceCidr" : { "Ref" : "SourceCidr" },
+          "ElbSecurityGroup" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.ElbSecurityGroup"]},
+          "BrokerElbSecurityGroup" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbSecurityGroup"]},
+          "StorefrontELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"]},
+          "StorefrontURL" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontURL"]},
+          "BrokerElbURL" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"]},
+
+          "LambdaUserContinerArn" : { "Fn::GetAtt" : [ "LambdaFunctions", "Outputs.LambdaUserContinerArn"]},
+          "ScaleTEService" : { "Fn::GetAtt" : [ "LambdaFunctions", "Outputs.ScaleTEService"]}
+        }
+      }
+    },
+
+    "NuoDBonEc2" : {
+      "Condition" : "CreateNuoDBonEC2",
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : "Loadbalancers",
+      "Properties" : {
+        "TemplateURL" : { "Fn::Join" : ["", [
+          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
+          {"Ref" : "Bucket"},
+          "/nuodb-on-ec2.cfn.json"
+        ]]},
+        "Parameters" : {
+          "EcsClusterName" : { "Ref" : "EcsClusterName" },
+          "Bucket" :  { "Ref" : "Bucket" },
+          "nuodbDocker" :     { "Ref" : "nuodbDocker" },
+          "VolumeSize" : { "Ref" : "VolumeSize" },
+          "dbuser" : { "Ref" : "dbuser" },
+          "dbpassword" :    { "Ref" : "dbpassword" },
+          "dbname" :    { "Ref" : "dbname" },
+
+          "DomainPassword":   { "Ref" : "DomainPassword" },
+          "EnvironmentType":  { "Ref" : "EnvironmentType" },
+          "NuoDBInstanceAMI":   { "Ref" : "NuoDBInstanceAMI" },
+          "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
+          "KeyName":  { "Ref" : "KeyName" },
+          "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
+          "SubnetIds":  { "Fn::Join" : [ ", ", [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }] ]},
+          "peerAddress" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] },
+          "brokerELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerELB"] },
+          "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] },
+          "BrokerElbSecurityGroup" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbSecurityGroup"]}
+        }
+      }
+    },
+
+    "NuoDBonEcs" : {
+      "Condition" : "CreateNuoDBonECS",
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : ["Loadbalancers"],
+      "Properties" : {
+        "TemplateURL" : { "Fn::Join" : ["", [
+          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
+          {"Ref" : "Bucket"},
+          "/nuodb-on-ecs.cfn.json"
+        ]]},
+        "Parameters" : {
+          "EcsClusterName" : { "Ref" : "EcsClusterName" },
+          "Bucket" :  { "Ref" : "Bucket" },
+          "nuodbDocker" :     { "Ref" : "nuodbDocker" },
+          "VolumeSize" : { "Ref" : "VolumeSize" },
+          "dbuser" : { "Ref" : "dbuser" },
+          "dbpassword" :    { "Ref" : "dbpassword" },
+          "dbname" :    { "Ref" : "dbname" },
+
+          "DomainPassword":   { "Ref" : "DomainPassword" },
+          "EnvironmentType":  { "Ref" : "EnvironmentType" },
+          "NuoDBInstanceAMI":   { "Ref" : "NuoDBInstanceAMI" },
+          "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
+          "KeyName":  { "Ref" : "KeyName" },
+          "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
+          "SubnetIds":  { "Fn::Join" : [ ", ", [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }] ]},
+          "peerAddress" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] },
+          "brokerELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerELB"] },
+          "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] }
+        }
+      }
+    }
+
+
+  },
+
+  "Outputs" : {
+    "StorefrontElbURL" : {
+      "Description" : "Load Balancer for ECS Service",
+      "Value" : { "Fn::GetAtt" : [ "Loadbalancers", "Outputs.StorefrontCNAME"]}
+    },
+    "BrokerElbURL" : {
+      "Description" : "Load Balancer for Broker Service",
+      "Value" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] }
+    }
+  }
+}

@@ -445,8 +445,8 @@ def main():
     parse_create.add_argument("--prefix", help="cluster name prefix", nargs=1, default='interactive-demo')
     parse_create.add_argument("--no-wait", help="Do not wait for cluster completion", action='store_true')
     parse_create.add_argument("--dry-run", help="Do not actually create the stack", action='store_true')
-    parse_create.add_argument("--params-file", help="Parameters file", default="params/ecs-cluster.params")
-    parse_create.add_argument("--template", help="CFN Template file", default="cfn/ecs-cluster.cfn.json")
+    parse_create.add_argument("--params-file", help="Parameters file", default="params/demo.params")
+    parse_create.add_argument("--template", help="CFN Template file", default="cfn/demo.cfn.json")
     parse_create.add_argument("--delete-after", help="Hours until the cluster should be deleted")
 
     group = parse_create.add_mutually_exclusive_group()
