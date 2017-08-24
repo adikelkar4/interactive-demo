@@ -27,11 +27,11 @@ public class LocalLauncher implements UserLauncher {
 					outputScanner = new Scanner(process.getInputStream());
 					errorScanner = new Scanner(process.getErrorStream());
 					process.waitFor();
-					if (process.exitValue() != 0) {
-						while(errorScanner.hasNextLine()) {
-							System.out.println(errorScanner.nextLine());
-						}
+					System.out.println("Standard Output: ");
+					while(errorScanner.hasNextLine()) {
+						System.out.println(errorScanner.nextLine());
 					}
+					System.out.println("Standard Error: ");
 					while (outputScanner.hasNextLine()) {
 						System.out.println(outputScanner.nextLine());
 					}
