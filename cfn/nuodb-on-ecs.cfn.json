@@ -292,7 +292,7 @@
               },
               {
                 "Name": "PEER_ADDRESS",
-                "Value": { "Ref" : "brokerELB" }
+                "Value": { "Ref" : "peerAddress" }
               },
               {
                 "Name": "DB_NAME",
@@ -369,7 +369,7 @@
               },
               {
                 "Name": "PEER_ADDRESS",
-                "Value": { "Ref" : "brokerELB" }
+                "Value": { "Ref" : "peerAddress" }
               },
               {
                 "Name": "DB_NAME",
@@ -439,7 +439,7 @@
               },
               {
                 "Name": "PEER_ADDRESS",
-                "Value": { "Ref" : "brokerELB"}
+                "Value": { "Ref" : "peerAddress"}
               },
               {
                 "Name": "DB_NAME",
