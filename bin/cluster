@@ -307,7 +307,7 @@ Create one or more clusters as requested
             pass
 #            print x.result()
 
-        future = pool.submit(wait_for_stack(name,cf, cfr,args))
+        future = pool.submit(wait_for_stack,name,cf, cfr,args)
 #        future.add_done_callback(status)
         futures.append(future)
 
