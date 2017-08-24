@@ -70,7 +70,9 @@ node('aml') {
  	       url=(output =~ /(http.*)/)[0][1]
 	    }
 	    else {
-	       error("Cluster failed to create")
+	      // Remove the broken cluster
+ 	      sh ". py27/bin/activate && bin/cluster delete --include ${cluster_user}-"	
+ 	      error("Cluster failed to create")
 	    }
           }
         }
