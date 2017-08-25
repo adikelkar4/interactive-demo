@@ -40,8 +40,6 @@ public class SimulatedUser implements IWorker, Runnable {
 	private final ISimulator simulator;
 	private final Workload workloadType;
 	private final Random rnd = new Random();
-	private int stepIdx;
-
 	private Customer customer;
 	private ProductFilter filter;
 	private List<Long> productIds;
@@ -73,11 +71,10 @@ public class SimulatedUser implements IWorker, Runnable {
 		if (steps.length == 0) {
 			return IWorker.COMPLETE_NO_REPEAT;
 		}
-
 		try {
-			doWork(steps[stepIdx]);
-			priorBackoffDelay = 0;
-			nextBackoffDelay = MIN_BACKOFF_DELAY;
+			for (int i = 0; i < steps.length; i++) {				
+				doWork(steps[i]);
+			}
 		} catch (RuntimeException e) {
 			if (isExceptionRecoverable(e)) {
 				recoverFromException(e);
@@ -86,19 +83,11 @@ public class SimulatedUser implements IWorker, Runnable {
 				Logger logger = simulator.getService().getLogger(getClass());
 				logger.info("Encountered recoverable exception with simulated user \"" + getWorkload().getName()
 						+ "\". " + "Will retry in " + retryDelay + " ms.", e);
-
 				throw new RetryWorkException(retryDelay);
 			}
 			throw e;
 		}
-		stepIdx++;
-
-		if (stepIdx >= steps.length) {
-			stepIdx = 0;
-			return IWorker.COMPLETE;
-		}
-
-		return workloadType.calcNextThinkTimeMs();
+		return IWorker.COMPLETE;
 	}
 
 	protected long getRetryDelay() {
@@ -124,8 +113,6 @@ public class SimulatedUser implements IWorker, Runnable {
 
 	protected void recoverFromException(RuntimeException e) {
 		if (e instanceof ObjectNotFoundException || e instanceof CustomerNotFoundException) {
-			// Customer may be missing. Reset everything.
-			stepIdx = 0;
 			customer = null;
 			filter = null;
 			productIds = null;
@@ -383,13 +370,11 @@ public class SimulatedUser implements IWorker, Runnable {
 		BaseDao.setThreadTransactionStartTime(0);
 		boolean workerFailed = false;
 		long startTime = System.currentTimeMillis();
-		long delay;
 		try {
-			delay = this.doWork();
+			this.doWork();
 		} catch (RetryWorkException e) {
-			delay = e.getRetryDelayMs();
+			e.getRetryDelayMs();
 		} catch (Exception e) {
-			delay = IWorker.COMPLETE_NO_REPEAT;
 			Logger logger = this.simulator.getService().getLogger(getClass());
 			logger.warn("Simulated worker failed", e);
 		}
