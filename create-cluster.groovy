@@ -16,7 +16,12 @@ node('aml') {
         withEnv(["AWS_DEFAULT_REGION=${aws_region}", "USER=${env.USER}"]) {
 	  withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: aws_credentials, secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
             sh "virtualenv py27 && . py27/bin/activate && pip install -r requirements.txt"
- 	    sh ". py27/bin/activate && bin/cluster create --delete-after ${env.EXPIRATION} && bin/cluster list"
+ 	    sh ". py27/bin/activate && bin/cluster create --delete-after ${env.EXPIRATION} | tee create-output.txt"
+	    output=readFile('create-output.txt').trim()
+	    url=(output =~ /(http.*)/)[0][1]
+	    echo "Sending email to ${env.EMAIL} about ${url}"
+	    archiveArtifacts 'create-output.txt'
+            emailext body: "Visit ${url} to begin exploring all NuoDB has to offer!", subject: "Your NuoShowcase Cluster is Ready", to: "${env.EMAIL}"
           }
         }
       }

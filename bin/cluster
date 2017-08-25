@@ -435,8 +435,8 @@ args -- command line arguments
         stack = resource.Stack(name)
         url = [y['OutputValue'] 
                for y in stack.outputs 
-               if y['OutputKey'] == "StorefrontElbURL"]
-        print "{}: SUCCESS {}".format(name, url[0])
+               if y['OutputKey'] == args.url_property]
+        print "{}: SUCCESS -- {}".format(name, url[0])
 
         return True
                  
