@@ -383,3 +383,13 @@ SUCCESS deleting interactive-demo-dewey-20170629-152626
 $ bin/cluster --profile nuodb_profile  list
 interactive-demo-dewey-20170629-152634 CREATE_COMPLETE http://interacti-Storefro-1C7H76P7HVOZB-1318389021.us-east-2.elb.amazonaws.com/StorefrontWeb/
 ```
+
+
+Known issues
+============
+
+The stack cannot be launched outside of the NuoDB Demo AWS account, because:
+
+* The Route53 domain
+* Missing 'interactive-demo' SSH key
+* Stack cannot pull NuoDB container from ECR
