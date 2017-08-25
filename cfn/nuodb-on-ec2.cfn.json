@@ -1,0 +1,1187 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "AWS CloudFormation template to deploy NuoDB on EC2 instances on an existing VPC",
+  "Mappings": {
+    "VpcCidrs": {
+      "eu-central-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "sa-east-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "ap-northeast-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "eu-west-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "us-east-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "us-east-2": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "us-west-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "us-west-2": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "ap-southeast-2": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      },
+      "ap-southeast-1": {
+        "vpc": "10.0.0.0/16",
+        "pubsubnet1": "10.0.0.0/24",
+        "pubsubnet2": "10.0.1.0/24"
+      }
+    },
+    "ARNNamespace": {
+      "us-east-1": {
+        "Partition": "aws"
+      },
+      "us-east-2": {
+        "Partition": "aws"
+      },
+      "us-west-2": {
+        "Partition": "aws"
+      },
+      "us-west-1": {
+        "Partition": "aws"
+      },
+      "eu-west-1": {
+        "Partition": "aws"
+      },
+      "eu-central-1": {
+        "Partition": "aws"
+      },
+      "ap-southeast-1": {
+        "Partition": "aws"
+      },
+      "ap-northeast-1": {
+        "Partition": "aws"
+      },
+      "ap-southeast-2": {
+        "Partition": "aws"
+      },
+      "sa-east-1": {
+        "Partition": "aws"
+      },
+      "us-gov-west-1": {
+        "Partition": "aws-us-gov"
+      }
+    },
+    "S3Region": {
+      "us-east-1": {
+        "Region": "us-east-1"
+      },
+      "us-east-2": {
+        "Region": "us-east-2"
+      },
+      "us-west-2": {
+        "Region": "us-east-1"
+      },
+      "us-west-1": {
+        "Region": "us-east-1"
+      },
+      "eu-west-1": {
+        "Region": "us-east-1"
+      },
+      "eu-central-1": {
+        "Region": "us-east-1"
+      },
+      "ap-southeast-1": {
+        "Region": "us-east-1"
+      },
+      "ap-northeast-1": {
+        "Region": "us-east-1"
+      },
+      "ap-southeast-2": {
+        "Region": "us-east-1"
+      },
+      "sa-east-1": {
+        "Region": "us-east-1"
+      },
+      "us-gov-west-1": {
+        "Region": "us-gov-west-1"
+      }
+    }
+  },
+  "Parameters": {
+
+    "Bucket" : {
+      "Description" : "Template bucket in s3",
+      "Type" : "String"
+    },
+
+    "EcsClusterName" : {
+      "Type" : "String",
+      "Description" : "ECS Cluster Name",
+      "Default" : "default"
+    },
+
+    "nuodbDocker" : {
+      "Description" : "NuoDB docker container stored in docker.io",
+      "Type" : "String",
+      "Default" : "docker.io/nuodb/nuodb-ce-2.6.1:latest"
+    },
+
+    "VolumeSize" : {
+      "Description" : "EBS Attached volume size",
+      "Type" : "Number",
+      "Default" : "20"
+    },
+
+    "brokerELB" : {
+      "Description" : "Broker ELB",
+      "Type" : "String"
+    },
+
+    "StorefrontElb" : {
+      "Description" : "Storefront ELB address",
+      "Type" : "String"
+    },
+
+    "peerAddress" : {
+      "Description" : "Broker ELB Address",
+      "Type" : "String"
+    },
+
+    "dbuser" : {
+      "Description": "Database user name",
+      "Type": "String"
+    },
+
+    "dbpassword" : {
+      "Description": "Database user password",
+      "Type": "String"
+    },
+
+    "dbname" : {
+      "Description": "Database name",
+      "Type": "String"
+    },
+
+    "DomainPassword" : {
+      "Description" : "NuoDB Domain password",
+      "Type": "String",
+      "Default" : "bird"
+    },
+
+    "EnvironmentType" : {
+      "Description" : "Environment NuoDB container is deployed to",
+      "Type" : "String",
+      "Default" : "AWSECS"
+    },
+
+    "NuoDBInstanceAMI" : {
+      "Type" : "String",
+      "Description" : "Ec2 AMI for NuodB nodes"
+    },
+
+    "NuoDBInstanceType" : {
+      "Type" : "String",
+      "Description" : "EC2 instance type",
+      "Default" : "m4.large"
+    },
+    "KeyName" : {
+      "Type" : "String",
+      "Description" : "Optional - Name of an existing EC2 KeyPair to enable SSH access to the ECS instances",
+      "Default" : ""
+    },
+
+    "VpcId" : {
+      "Type" : "String",
+      "Description" : "Optional - VPC Id of existing VPC. Leave blank to have a new VPC created",
+      "Default" : "",
+      "AllowedPattern" : "^(?:vpc-[0-9a-f]{8}|)$",
+      "ConstraintDescription" : "VPC Id must begin with 'vpc-' or leave blank to have a new VPC created"
+    },
+
+    "SubnetIds" : {
+      "Type" : "CommaDelimitedList",
+      "Description" : "Optional - Comma separated list of existing VPC Subnet Ids where ECS instances will run",
+      "Default" : ""
+    },
+
+    "ECSInstanceProfile" : {
+      "Type" : "String",
+      "Description" : "Profile role for instance"
+    },
+
+    "NuoDBSecurityGroup" : {
+      "Type" : "String",
+      "Description" : "Security group for ec2 instances"
+    }
+
+  },
+  "Resources" : {
+
+    "CWLogGroup" : {
+      "Type" : "AWS::Logs::LogGroup",
+      "Properties" : {
+        "LogGroupName" : { "Ref" : "AWS::StackName" },
+        "RetentionInDays" : 1
+      }
+    },
+
+    "NuoDBBrokerLaunchConfig": {
+      "Type" : "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata" :
+      {
+        "AWS::CloudFormation::Init" : {
+
+          "configSets" : {
+            "deploy_by_ansible"    : [
+              "setup_cloud_env",
+              "setup_cloudwatch_logs",
+              "install_cfn_hup",
+              "setup_static_ip"
+            ]
+          },
+
+          "setup_cloud_env" : {
+            "files" : {
+              "/local/etc/cloud-env.sh" :  {
+                "content" : { "Fn::Join" : ["", [
+                  "export NODE_REGION='",     { "Ref" : "AWS::Region" },  "'\n",
+                  "export S3_Region='", { "Fn::FindInMap" : [ "S3Region", { "Ref" : "AWS::Region" },  "Region" ] },  "'\n",
+                  "export CFN_StackId='",    { "Ref" : "AWS::StackId" }, "'\n",
+                  "export DOMAIN_PASSWORD='", { "Ref": "DomainPassword" }, "'\n",
+                  "export ENV_TYPE='", { "Ref": "EnvironmentType" }, "'\n",
+                  "export AGENT_PORT=48004\n",
+                  "export BROKER_PORT=48004\n",
+                  "export NODE_PORT=48010\n",
+                  "export NODE_TYPE='BROKER'\n",
+                  "export PEER_ADDRESS='", { "Ref" : "peerAddress" }, "'\n",
+                  "export DB_NAME='", { "Ref": "dbname" }, "'\n",
+                  "export DB_USER='", { "Ref": "dbuser" }, "'\n",
+                  "export DB_PASSWORD='", { "Ref": "dbpassword" }, "'\n",
+                  "export ARG_apphost='", { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}, "'\n",
+                  "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
+                  "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n"
+
+                ]]},
+                "mode" : "000400",
+                "owner" : "root",
+                "group" : "root"
+              }
+            }
+          },
+
+          "setup_cloudwatch_logs" : {
+
+            "files" : {
+              "/etc/awslogs/awslogs.conf": {
+                "content": { "Fn::Join": [ "", [
+                  "[general]\n",
+                  "state_file= /var/lib/awslogs/agent-state\n\n",
+
+                  "[/var/log/messages]\n",
+                  "file = /var/log/messages\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/messages\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cloud-init]\n",
+                  "file = /var/log/cloud-init.*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cloud-init.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cloud-init-output]\n",
+                  "file = /var/log/cloud-init-output.*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cloud-init-output.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cfn-init]\n",
+                  "file = /var/log/cfn-init.log*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cfn-init.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cfn-init-cmd]\n",
+                  "file = /var/log/cfn-init-cmd.log*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cfn-init-cmd.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/docker]\n",
+                  "file = /var/log/docker\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb-docker/{instance_id}/docker-daemon\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/docker-logs-output]\n",
+                  "file = /var/log/docker-logs-output\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb-docker/{instance_id}/docker-logs-output\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n"
+
+                ]]},
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              },
+              "/etc/awslogs/awscli.conf": {
+                "content": { "Fn::Join": [ "", [
+                  "[plugins]\ncwlogs = cwlogs\n[default]\nregion = ", { "Ref" : "AWS::Region" }, "\n"
+                ]]},
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              }
+            },
+
+            "packages" : {  "yum" : { "awslogs" : [] } },
+
+            "services" : {
+              "sysvinit" : {
+                "awslogs" : {
+                  "enabled" : "true",
+                  "ensureRunning" : "true",
+                  "files" : ["/etc/awslogs/awslogs.conf"]
+                }
+              }
+            }
+          },
+
+          "install_cfn_hup" : {
+
+            "files" : {
+              "/etc/cfn/cfn-hup.conf" : {
+                "content" : { "Fn::Join" : ["", [
+                  "[main]\n",
+                  "stack=", { "Ref" : "AWS::StackId" }, "\n",
+                  "region=", { "Ref" : "AWS::Region" }, "\n",
+                  "verbose=true\n",
+                  "interval=5\n"
+                ]]},
+                "mode"    : "000400",
+                "owner"   : "root",
+                "group"   : "root"
+              },
+
+              "/etc/cfn/hooks.d/cfn-auto-reloader.conf" : {
+                "content": { "Fn::Join" : ["", [
+                  "[cfn-auto-reloader-hook]\n",
+                  "triggers=post.update\n",
+                  "path=Resources.NuoDBBrokerLaunchConfig.Metadata.AWS::CloudFormation::Init\n",
+                  "action=/opt/aws/bin/cfn-init -v ",
+                  "         --stack ", { "Ref" : "AWS::StackName" },
+                  "         --resource NuoDBBrokerLaunchConfig ",
+                  "         --configsets deploy_by_ansible ",
+                  "         --region ", { "Ref" : "AWS::Region" }, "\n",
+                  "runas=root\n"
+                ]]}
+              }
+            },
+
+            "services" : {
+              "sysvinit" : {
+                "cfn-hup" : {
+                  "enabled" : "true",
+                  "ensureRunning" : "true",
+                  "files" : ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]
+                }
+              }
+            }
+          },
+
+          "setup_static_ip" : {
+            "packages" : {
+              "python": { "aws-ec2-assign-elastic-ip": [ "0.5.0" ] }
+            },
+            "commands" : {
+              "01_assign_ip" : {
+                "command" : "source /local/etc/cloud-env.sh && if [ ! -z $Whitelist_EIPS ]; then /usr/local/bin/aws-ec2-assign-elastic-ip --valid-ips ${Whitelist_EIPS} --region ${CFN_Region}; fi"
+              }
+            }
+          }
+        }
+      },
+      "Properties" : {
+        "KeyName" : { "Ref" : "KeyName" },
+        "AssociatePublicIpAddress" : "true",
+        "ImageId" : { "Ref" : "NuoDBInstanceAMI" },
+        "InstanceType"   : { "Ref" : "NuoDBInstanceType" },
+        "IamInstanceProfile" : {"Ref": "ECSInstanceProfile" },
+        "SecurityGroups" : [
+          {"Ref" : "NuoDBSecurityGroup" }],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : [ "", [
+          "#!/bin/bash -v\n",
+          "yum update -y aws-cfn-bootstrap\n",
+
+          "export CFN_StackId=",     { "Ref" : "AWS::StackId" }, "\n",
+          "export CFN_StackName=",   { "Ref" : "AWS::StackName" }, "\n",
+          "export CFN_Region=",      { "Ref" : "AWS::Region"  }, "\n",
+          "export NODE_REGION='",     { "Ref" : "AWS::Region" },  "'\n",
+          "export S3_Region='", { "Fn::FindInMap" : [ "S3Region", { "Ref" : "AWS::Region" },  "Region" ] },  "'\n",
+
+          "export DOMAIN_PASSWORD='", { "Ref": "DomainPassword" }, "'\n",
+          "export ENV_TYPE='", { "Ref": "EnvironmentType" }, "'\n",
+          "export AGENT_PORT=48004\n",
+          "export BROKER_PORT=48004\n",
+          "export NODE_PORT=48010\n",
+          "export NODE_TYPE='BROKER'\n",
+          "export PEER_ADDRESS='", { "Ref" : "peerAddress" }, "'\n",
+          "export DB_NAME='", { "Ref": "dbname" }, "'\n",
+          "export DB_USER='", { "Ref": "dbuser" }, "'\n",
+          "export DB_PASSWORD='", { "Ref": "dbpassword" }, "'\n",
+          "export ARG_apphost='", { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}, "'\n",
+          "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
+          "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
+          "export INSTANCE_ID=$( /opt/aws/bin/ec2-metadata -i | cut -d ' ' -f 2 )\n",
+          "export AZ=$( /opt/aws/bin/ec2-metadata -z | cut -d ' ' -f 2 )\n",
+
+          "VOL_ID=$( aws ec2 create-volume ",
+          "  --region ${CFN_Region} --availability-zone ${AZ} ",
+          "  --volume-type gp2 --size ", { "Ref" : "VolumeSize" }, " ${ENC_ARGS} ",
+          " | grep VolumeId | cut -d \\\" -f 4 )\n",
+
+          "aws ec2 create-tags --region ${CFN_Region}  --resources ${VOL_ID} --tags Key=Name,Value='",
+          { "Fn::Join" : [ " - ", [ { "Ref": "AWS::StackName" }, "NuoDB Volume" ] ] } ,"'\n",
+
+          "aws ec2 create-tags --region ${CFN_Region}  --resources ${VOL_ID} --tags Key=CustomerID,Value='",{ "Ref": "EcsClusterName" },"'\n",
+
+          "sleep 10\n",
+          "while ! [ \"available\" = $(aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ${VOL_ID} --query Volumes[0].State | tr \\\" ' ' ) ]; do\n",
+          "   sleep 1;\n",
+          "done\n",
+
+          "aws ec2 attach-volume --region ${CFN_Region}  ",
+          "  --volume-id ${VOL_ID} --instance-id ${INSTANCE_ID} ",
+          "  --device /dev/xvdf \n",
+
+          "aws ec2 modify-instance-attribute --region ${CFN_Region} ",
+          "  --instance-id $INSTANCE_ID --block-device-mappings ",
+          "  '[{\"DeviceName\":\"/dev/xvdf\",\"Ebs\": {\"DeleteOnTermination\":true} }]'\n",
+
+          "while ! [ -r /dev/xvdf ]; do sleep 1; done\n",
+          "/sbin/mkfs.ext4 /dev/xvdf && mount /dev/xvdf /local\n",
+
+          "aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ${VOL_ID} \n",
+
+          "mkdir -p /local/log\n",
+
+          "yum install docker -y\n",
+
+          "service docker restart\n",
+
+          "cmd='$(aws ecr get-login --region us-east-1)' && eval $cmd && docker pull ${NUODB_DOCKER} \n",
+
+          "docker run -d -e \"DOMAIN_PASSWORD=${DOMAIN_PASSWORD}\" ",
+          "   -e \"AGENT_PORT=${AGENT_PORT}\" ",
+          "   -e \"NODE_TYPE=${NODE_TYPE}\" ",
+          "   -e \"ENV_TYPE=AWSEC2\" ",
+          "   -e \"DB_NAME=${DB_NAME}\" ",
+          "   -e \"DB_USER=${DB_USER}\" ",
+          "   -e \"DB_PASSWORD=${DB_PASSWORD}\" ",
+          "   -e \"BROKER_PORT=${BROKER_PORT}\" ",
+          "   -e \"DOMAIN_PASSWORD=${DOMAIN_PASSWORD}\" ",
+          "   -e \"PEER_ADDRESS=${PEER_ADDRESS}\" ",
+          "   -e \"NODE_REGION=${NODE_REGION}\" ",
+          "   -e \"ARG_apphost=${ARG_apphost}\" ",
+          "   -p 48004:48004 ",
+          "   -p 8888:8888 ${NUODB_DOCKER} \n",
+
+
+          "/opt/aws/bin/cfn-init ",
+          "   --stack ${CFN_StackId} ",
+          "   --resource NuoDBBrokerLaunchConfig ",
+          "   --region ${CFN_Region} ",
+          "   --configsets deploy_by_ansible\n",
+
+          "# Signal results.\n",
+          "/opt/aws/bin/cfn-signal -e $? ",
+          "  --region ${CFN_Region} ",
+          "  --stack \"${CFN_StackName}\" ",
+          "  --resource NuoDBBrokerASG ",
+          "  --reason \"CFN config setup exited with value $?.\" \n"
+        ]]}}
+      }
+    },
+
+    "NuoDBBrokerASG" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "CreationPolicy": { "ResourceSignal": { "Count" : "1", "Timeout": "PT45M" } },
+      "UpdatePolicy" : {
+        "AutoScalingRollingUpdate" : {
+          "MinInstancesInService" : "1",
+          "MaxBatchSize" : "1",
+          "WaitOnResourceSignals" : "true",
+          "SuspendProcesses" : [ "AlarmNotification" ],
+          "PauseTime" : "PT45M"
+        }
+      },
+      "Properties" : {
+        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
+        "VPCZoneIdentifier" : [ { "Fn::Select" : [ "0", { "Ref" : "SubnetIds" }]} ],
+        "LaunchConfigurationName" : { "Ref" : "NuoDBBrokerLaunchConfig" },
+        "MinSize" : "1",
+        "MaxSize" : "2",
+        "DesiredCapacity" : "1",
+        "HealthCheckGracePeriod" : "600",
+        "HealthCheckType" : "ELB",
+        "LoadBalancerNames" : [{ "Ref" : "brokerELB" }],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref": "AWS::StackName" }, "NuoDBBroker" ]] },
+            "PropagateAtLaunch" : "true"
+          }
+        ]
+      }
+    },
+
+    "NuoDBSMLaunchConfig": {
+      "Type" : "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata" :
+      {
+        "AWS::CloudFormation::Init" : {
+
+          "configSets" : {
+            "deploy_by_ansible"    : [
+              "setup_cloud_env",
+              "setup_cloudwatch_logs",
+              "install_cfn_hup",
+              "setup_static_ip"
+            ]
+          },
+
+          "setup_cloud_env" : {
+            "files" : {
+              "/local/etc/cloud-env.sh" :  {
+                "content" : { "Fn::Join" : ["", [
+                  "export NODE_REGION='",     { "Ref" : "AWS::Region" },  "'\n",
+                  "export S3_Region='", { "Fn::FindInMap" : [ "S3Region", { "Ref" : "AWS::Region" },  "Region" ] },  "'\n",
+                  "export CFN_StackId='",    { "Ref" : "AWS::StackId" }, "'\n",
+                  "export DOMAIN_PASSWORD='", { "Ref": "DomainPassword" }, "'\n",
+                  "export ENV_TYPE='", { "Ref": "EnvironmentType" }, "'\n",
+                  "export AGENT_PORT=48004\n",
+                  "export BROKER_PORT=48004\n",
+                  "export NODE_PORT=48010\n",
+                  "export NODE_TYPE='SM'\n",
+                  "export PEER_ADDRESS='", { "Ref" : "peerAddress" }, "'\n",
+                  "export DB_NAME='", { "Ref": "dbname" }, "'\n",
+                  "export DB_USER='", { "Ref": "dbuser" }, "'\n",
+                  "export DB_PASSWORD='", { "Ref": "dbpassword" }, "'\n",
+                  "export ARG_apphost='", { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}, "'\n",
+                  "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
+                  "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n"
+
+                ]]},
+                "mode" : "000400",
+                "owner" : "root",
+                "group" : "root"
+              }
+            }
+          },
+
+          "setup_cloudwatch_logs" : {
+
+            "files" : {
+              "/etc/awslogs/awslogs.conf": {
+                "content": { "Fn::Join": [ "", [
+                  "[general]\n",
+                  "state_file= /var/lib/awslogs/agent-state\n\n",
+
+                  "[/var/log/messages]\n",
+                  "file = /var/log/messages\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/messages\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cloud-init]\n",
+                  "file = /var/log/cloud-init.*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cloud-init.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cloud-init-output]\n",
+                  "file = /var/log/cloud-init-output.*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cloud-init-output.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cfn-init]\n",
+                  "file = /var/log/cfn-init.log*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cfn-init.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cfn-init-cmd]\n",
+                  "file = /var/log/cfn-init-cmd.log*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cfn-init-cmd.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/docker]\n",
+                  "file = /var/log/docker\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb-docker/{instance_id}/docker-daemon\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/docker-logs-output]\n",
+                  "file = /var/log/docker-logs-output\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb-docker/{instance_id}/docker-logs-output\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n"
+
+                ]]},
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              },
+              "/etc/awslogs/awscli.conf": {
+                "content": { "Fn::Join": [ "", [
+                  "[plugins]\ncwlogs = cwlogs\n[default]\nregion = ", { "Ref" : "AWS::Region" }, "\n"
+                ]]},
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              }
+            },
+
+            "packages" : {  "yum" : { "awslogs" : [] } },
+
+            "services" : {
+              "sysvinit" : {
+                "awslogs" : {
+                  "enabled" : "true",
+                  "ensureRunning" : "true",
+                  "files" : ["/etc/awslogs/awslogs.conf"]
+                }
+              }
+            }
+          },
+
+          "install_cfn_hup" : {
+
+            "files" : {
+              "/etc/cfn/cfn-hup.conf" : {
+                "content" : { "Fn::Join" : ["", [
+                  "[main]\n",
+                  "stack=", { "Ref" : "AWS::StackId" }, "\n",
+                  "region=", { "Ref" : "AWS::Region" }, "\n",
+                  "verbose=true\n",
+                  "interval=5\n"
+                ]]},
+                "mode"    : "000400",
+                "owner"   : "root",
+                "group"   : "root"
+              },
+
+              "/etc/cfn/hooks.d/cfn-auto-reloader.conf" : {
+                "content": { "Fn::Join" : ["", [
+                  "[cfn-auto-reloader-hook]\n",
+                  "triggers=post.update\n",
+                  "path=Resources.NuoDBSMLaunchConfig.Metadata.AWS::CloudFormation::Init\n",
+                  "action=/opt/aws/bin/cfn-init -v ",
+                  "         --stack ", { "Ref" : "AWS::StackName" },
+                  "         --resource NuoDBSMLaunchConfig ",
+                  "         --configsets deploy_by_ansible ",
+                  "         --region ", { "Ref" : "AWS::Region" }, "\n",
+                  "runas=root\n"
+                ]]}
+              }
+            },
+
+            "services" : {
+              "sysvinit" : {
+                "cfn-hup" : {
+                  "enabled" : "true",
+                  "ensureRunning" : "true",
+                  "files" : ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]
+                }
+              }
+            }
+          },
+
+          "setup_static_ip" : {
+            "packages" : {
+              "python": { "aws-ec2-assign-elastic-ip": [ "0.5.0" ] }
+            },
+            "commands" : {
+              "01_assign_ip" : {
+                "command" : "source /local/etc/cloud-env.sh && if [ ! -z $Whitelist_EIPS ]; then /usr/local/bin/aws-ec2-assign-elastic-ip --valid-ips ${Whitelist_EIPS} --region ${CFN_Region}; fi"
+              }
+            }
+          }
+        }
+      },
+      "Properties" : {
+        "KeyName" : { "Ref" : "KeyName" },
+        "AssociatePublicIpAddress" : "true",
+        "ImageId" : { "Ref" : "NuoDBInstanceAMI" },
+        "InstanceType"   : { "Ref" : "NuoDBInstanceType" },
+        "IamInstanceProfile" : {"Ref": "ECSInstanceProfile" },
+        "SecurityGroups" : [
+          {"Ref" : "NuoDBSecurityGroup" }],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : [ "", [
+          "#!/bin/bash -v\n",
+          "yum update -y aws-cfn-bootstrap\n",
+
+          "export CFN_StackId=",     { "Ref" : "AWS::StackId" }, "\n",
+          "export CFN_StackName=",   { "Ref" : "AWS::StackName" }, "\n",
+          "export CFN_Region=",      { "Ref" : "AWS::Region"  }, "\n",
+          "export NODE_REGION='",     { "Ref" : "AWS::Region" },  "'\n",
+          "export S3_Region='", { "Fn::FindInMap" : [ "S3Region", { "Ref" : "AWS::Region" },  "Region" ] },  "'\n",
+
+          "export DOMAIN_PASSWORD='", { "Ref": "DomainPassword" }, "'\n",
+          "export ENV_TYPE='", { "Ref": "EnvironmentType" }, "'\n",
+          "export AGENT_PORT=48004\n",
+          "export BROKER_PORT=48004\n",
+          "export NODE_PORT=48010\n",
+          "export NODE_TYPE='SM'\n",
+          "export PEER_ADDRESS='", { "Ref" : "peerAddress" }, "'\n",
+          "export DB_NAME='", { "Ref": "dbname" }, "'\n",
+          "export DB_USER='", { "Ref": "dbuser" }, "'\n",
+          "export DB_PASSWORD='", { "Ref": "dbpassword" }, "'\n",
+          "export ARG_apphost='", { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}, "'\n",
+          "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
+          "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
+          "export INSTANCE_ID=$( /opt/aws/bin/ec2-metadata -i | cut -d ' ' -f 2 )\n",
+          "export AZ=$( /opt/aws/bin/ec2-metadata -z | cut -d ' ' -f 2 )\n",
+
+          "VOL_ID=$( aws ec2 create-volume ",
+          "  --region ${CFN_Region} --availability-zone ${AZ} ",
+          "  --volume-type gp2 --size ", { "Ref" : "VolumeSize" }, " ${ENC_ARGS} ",
+          " | grep VolumeId | cut -d \\\" -f 4 )\n",
+
+          "aws ec2 create-tags --region ${CFN_Region}  --resources ${VOL_ID} --tags Key=Name,Value='",
+          { "Fn::Join" : [ " - ", [ { "Ref": "AWS::StackName" }, "NuoDB Volume" ] ] } ,"'\n",
+
+          "aws ec2 create-tags --region ${CFN_Region}  --resources ${VOL_ID} --tags Key=CustomerID,Value='",{ "Ref": "EcsClusterName" },"'\n",
+
+          "sleep 10\n",
+          "while ! [ \"available\" = $(aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ${VOL_ID} --query Volumes[0].State | tr \\\" ' ' ) ]; do\n",
+          "   sleep 1;\n",
+          "done\n",
+
+          "aws ec2 attach-volume --region ${CFN_Region}  ",
+          "  --volume-id ${VOL_ID} --instance-id ${INSTANCE_ID} ",
+          "  --device /dev/xvdf \n",
+
+          "aws ec2 modify-instance-attribute --region ${CFN_Region} ",
+          "  --instance-id $INSTANCE_ID --block-device-mappings ",
+          "  '[{\"DeviceName\":\"/dev/xvdf\",\"Ebs\": {\"DeleteOnTermination\":true} }]'\n",
+
+          "while ! [ -r /dev/xvdf ]; do sleep 1; done\n",
+          "/sbin/mkfs.ext4 /dev/xvdf && mount /dev/xvdf /local\n",
+
+          "aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ${VOL_ID} \n",
+
+          "mkdir -p /local/log\n",
+
+          "yum install docker -y\n",
+
+          "service docker restart\n",
+
+          "cmd='$(aws ecr get-login --region us-east-1)' && eval $cmd && docker pull ${NUODB_DOCKER} \n",
+
+          "docker run -d -e \"DOMAIN_PASSWORD=${DOMAIN_PASSWORD}\" ",
+          "   -e \"AGENT_PORT=${AGENT_PORT}\" ",
+          "   -e \"NODE_PORT=48010\" ",
+          "   -e \"NODE_TYPE=${NODE_TYPE}\" ",
+          "   -e \"ENV_TYPE=AWSEC2\" ",
+          "   -e \"DB_NAME=${DB_NAME}\" ",
+          "   -e \"DB_USER=${DB_USER}\" ",
+          "   -e \"DB_PASSWORD=${DB_PASSWORD}\" ",
+          "   -e \"BROKER_PORT=${BROKER_PORT}\" ",
+          "   -e \"DOMAIN_PASSWORD=${DOMAIN_PASSWORD}\" ",
+          "   -e \"PEER_ADDRESS=${PEER_ADDRESS}\" ",
+          "   -e \"NODE_REGION=${NODE_REGION}\" ",
+          "   -e \"ARG_apphost=${ARG_apphost}\" ",
+          "   -p 48010:48010 ",
+          "   -p 48004:48004 ",
+          "   -p 48005:48005 ",
+          "   ${NUODB_DOCKER} \n",
+
+          "/opt/aws/bin/cfn-init ",
+          "   --stack ${CFN_StackId} ",
+          "   --resource NuoDBSMLaunchConfig ",
+          "   --region ${CFN_Region} ",
+          "   --configsets deploy_by_ansible\n",
+
+          "# Signal results.\n",
+          "/opt/aws/bin/cfn-signal -e $? ",
+          "  --region ${CFN_Region} ",
+          "  --stack \"${CFN_StackName}\" ",
+          "  --resource NuoDBSMASG ",
+          "  --reason \"CFN config setup exited with value $?.\" \n"
+        ]]}}
+      }
+    },
+
+    "NuoDBSMASG" : {
+      "DependsOn" : "NuoDBBrokerASG",
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "CreationPolicy": { "ResourceSignal": { "Count" : "1", "Timeout": "PT45M" } },
+      "UpdatePolicy" : {
+        "AutoScalingRollingUpdate" : {
+          "MinInstancesInService" : "1",
+          "MaxBatchSize" : "1",
+          "WaitOnResourceSignals" : "true",
+          "SuspendProcesses" : [ "AlarmNotification" ],
+          "PauseTime" : "PT45M"
+        }
+      },
+      "Properties" : {
+        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
+        "VPCZoneIdentifier" : [ { "Fn::Select" : [ "0", { "Ref" : "SubnetIds" }]} ],
+        "LaunchConfigurationName" : { "Ref" : "NuoDBSMLaunchConfig" },
+        "MinSize" : "1",
+        "MaxSize" : "2",
+        "DesiredCapacity" : "1",
+        "HealthCheckGracePeriod" : "600",
+        "HealthCheckType" : "EC2",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref": "AWS::StackName" }, "NuoDBSM" ]] },
+            "PropagateAtLaunch" : "true"
+          }
+        ]
+      }
+    },
+
+    "NuoDBTELaunchConfig": {
+      "Type" : "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata" :
+      {
+        "AWS::CloudFormation::Init" : {
+
+          "configSets" : {
+            "deploy_by_ansible"    : [
+              "setup_cloud_env",
+              "setup_cloudwatch_logs",
+              "install_cfn_hup",
+              "setup_static_ip"
+            ]
+          },
+
+          "setup_cloud_env" : {
+            "files" : {
+              "/local/etc/cloud-env.sh" :  {
+                "content" : { "Fn::Join" : ["", [
+                  "export NODE_REGION='",     { "Ref" : "AWS::Region" },  "'\n",
+                  "export S3_Region='", { "Fn::FindInMap" : [ "S3Region", { "Ref" : "AWS::Region" },  "Region" ] },  "'\n",
+                  "export CFN_StackId='",    { "Ref" : "AWS::StackId" }, "'\n",
+                  "export DOMAIN_PASSWORD='", { "Ref": "DomainPassword" }, "'\n",
+                  "export ENV_TYPE='", { "Ref": "EnvironmentType" }, "'\n",
+                  "export AGENT_PORT=48004\n",
+                  "export BROKER_PORT=48004\n",
+                  "export NODE_PORT=48010\n",
+                  "export NODE_TYPE='TE'\n",
+                  "export PEER_ADDRESS='", { "Ref" : "peerAddress" }, "'\n",
+                  "export DB_NAME='", { "Ref": "dbname" }, "'\n",
+                  "export DB_USER='", { "Ref": "dbuser" }, "'\n",
+                  "export DB_PASSWORD='", { "Ref": "dbpassword" }, "'\n",
+                  "export ARG_apphost='", { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}, "'\n",
+                  "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
+                  "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n"
+
+                ]]},
+                "mode" : "000400",
+                "owner" : "root",
+                "group" : "root"
+              }
+            }
+          },
+
+          "setup_cloudwatch_logs" : {
+
+            "files" : {
+              "/etc/awslogs/awslogs.conf": {
+                "content": { "Fn::Join": [ "", [
+                  "[general]\n",
+                  "state_file= /var/lib/awslogs/agent-state\n\n",
+
+                  "[/var/log/messages]\n",
+                  "file = /var/log/messages\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/messages\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cloud-init]\n",
+                  "file = /var/log/cloud-init.*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cloud-init.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cloud-init-output]\n",
+                  "file = /var/log/cloud-init-output.*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cloud-init-output.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cfn-init]\n",
+                  "file = /var/log/cfn-init.log*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cfn-init.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/cfn-init-cmd]\n",
+                  "file = /var/log/cfn-init-cmd.log*\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb/{instance_id}/cfn-init-cmd.log\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/docker]\n",
+                  "file = /var/log/docker\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb-docker/{instance_id}/docker-daemon\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n",
+
+                  "[/var/log/docker-logs-output]\n",
+                  "file = /var/log/docker-logs-output\n",
+                  "log_group_name = ", { "Ref" : "CWLogGroup" }, "\n",
+                  "log_stream_name = nuodb-docker/{instance_id}/docker-logs-output\n",
+                  "#datetime_format = %Y-%m-%d %H:%M:%S,%f\n\n"
+
+                ]]},
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              },
+              "/etc/awslogs/awscli.conf": {
+                "content": { "Fn::Join": [ "", [
+                  "[plugins]\ncwlogs = cwlogs\n[default]\nregion = ", { "Ref" : "AWS::Region" }, "\n"
+                ]]},
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              }
+            },
+
+            "packages" : {  "yum" : { "awslogs" : [] } },
+
+            "services" : {
+              "sysvinit" : {
+                "awslogs" : {
+                  "enabled" : "true",
+                  "ensureRunning" : "true",
+                  "files" : ["/etc/awslogs/awslogs.conf"]
+                }
+              }
+            }
+          },
+
+          "install_cfn_hup" : {
+
+            "files" : {
+              "/etc/cfn/cfn-hup.conf" : {
+                "content" : { "Fn::Join" : ["", [
+                  "[main]\n",
+                  "stack=", { "Ref" : "AWS::StackId" }, "\n",
+                  "region=", { "Ref" : "AWS::Region" }, "\n",
+                  "verbose=true\n",
+                  "interval=5\n"
+                ]]},
+                "mode"    : "000400",
+                "owner"   : "root",
+                "group"   : "root"
+              },
+
+              "/etc/cfn/hooks.d/cfn-auto-reloader.conf" : {
+                "content": { "Fn::Join" : ["", [
+                  "[cfn-auto-reloader-hook]\n",
+                  "triggers=post.update\n",
+                  "path=Resources.NuoDBTELaunchConfig.Metadata.AWS::CloudFormation::Init\n",
+                  "action=/opt/aws/bin/cfn-init -v ",
+                  "         --stack ", { "Ref" : "AWS::StackName" },
+                  "         --resource NuoDBTELaunchConfig ",
+                  "         --configsets deploy_by_ansible ",
+                  "         --region ", { "Ref" : "AWS::Region" }, "\n",
+                  "runas=root\n"
+                ]]}
+              }
+            },
+
+            "services" : {
+              "sysvinit" : {
+                "cfn-hup" : {
+                  "enabled" : "true",
+                  "ensureRunning" : "true",
+                  "files" : ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]
+                }
+              }
+            }
+          },
+
+          "setup_static_ip" : {
+            "packages" : {
+              "python": { "aws-ec2-assign-elastic-ip": [ "0.5.0" ] }
+            },
+            "commands" : {
+              "01_assign_ip" : {
+                "command" : "source /local/etc/cloud-env.sh && if [ ! -z $Whitelist_EIPS ]; then /usr/local/bin/aws-ec2-assign-elastic-ip --valid-ips ${Whitelist_EIPS} --region ${CFN_Region}; fi"
+              }
+            }
+          }
+        }
+      },
+      "Properties" : {
+        "KeyName" : { "Ref" : "KeyName" },
+        "AssociatePublicIpAddress" : "true",
+        "ImageId" : { "Ref" : "NuoDBInstanceAMI" },
+        "InstanceType"   : { "Ref" : "NuoDBInstanceType" },
+        "IamInstanceProfile" : {"Ref": "ECSInstanceProfile" },
+        "SecurityGroups" : [
+          {"Ref" : "NuoDBSecurityGroup" }],
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : [ "", [
+          "#!/bin/bash -v\n",
+          "yum update -y aws-cfn-bootstrap\n",
+
+          "export CFN_StackId=",     { "Ref" : "AWS::StackId" }, "\n",
+          "export CFN_StackName=",   { "Ref" : "AWS::StackName" }, "\n",
+          "export CFN_Region=",      { "Ref" : "AWS::Region"  }, "\n",
+          "export NODE_REGION='",     { "Ref" : "AWS::Region" },  "'\n",
+          "export S3_Region='", { "Fn::FindInMap" : [ "S3Region", { "Ref" : "AWS::Region" },  "Region" ] },  "'\n",
+
+          "export DOMAIN_PASSWORD='", { "Ref": "DomainPassword" }, "'\n",
+          "export ENV_TYPE='", { "Ref": "EnvironmentType" }, "'\n",
+          "export AGENT_PORT=48004\n",
+          "export BROKER_PORT=48004\n",
+          "export NODE_PORT=48010\n",
+          "export NODE_TYPE='TE'\n",
+          "export PEER_ADDRESS='", { "Ref" : "peerAddress" }, "'\n",
+          "export DB_NAME='", { "Ref": "dbname" }, "'\n",
+          "export DB_USER='", { "Ref": "dbuser" }, "'\n",
+          "export DB_PASSWORD='", { "Ref": "dbpassword" }, "'\n",
+          "export ARG_apphost='", { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}, "'\n",
+          "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
+          "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
+          "export INSTANCE_ID=$( /opt/aws/bin/ec2-metadata -i | cut -d ' ' -f 2 )\n",
+          "export AZ=$( /opt/aws/bin/ec2-metadata -z | cut -d ' ' -f 2 )\n",
+
+          "VOL_ID=$( aws ec2 create-volume ",
+          "  --region ${CFN_Region} --availability-zone ${AZ} ",
+          "  --volume-type gp2 --size ", { "Ref" : "VolumeSize" }, " ${ENC_ARGS} ",
+          " | grep VolumeId | cut -d \\\" -f 4 )\n",
+
+          "aws ec2 create-tags --region ${CFN_Region}  --resources ${VOL_ID} --tags Key=Name,Value='",
+          { "Fn::Join" : [ " - ", [ { "Ref": "AWS::StackName" }, "NuoDB Volume" ] ] } ,"'\n",
+
+          "aws ec2 create-tags --region ${CFN_Region}  --resources ${VOL_ID} --tags Key=CustomerID,Value='",{ "Ref": "EcsClusterName" },"'\n",
+
+          "sleep 10\n",
+          "while ! [ \"available\" = $(aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ${VOL_ID} --query Volumes[0].State | tr \\\" ' ' ) ]; do\n",
+          "   sleep 1;\n",
+          "done\n",
+
+          "aws ec2 attach-volume --region ${CFN_Region}  ",
+          "  --volume-id ${VOL_ID} --instance-id ${INSTANCE_ID} ",
+          "  --device /dev/xvdf \n",
+
+          "aws ec2 modify-instance-attribute --region ${CFN_Region} ",
+          "  --instance-id $INSTANCE_ID --block-device-mappings ",
+          "  '[{\"DeviceName\":\"/dev/xvdf\",\"Ebs\": {\"DeleteOnTermination\":true} }]'\n",
+
+          "while ! [ -r /dev/xvdf ]; do sleep 1; done\n",
+          "/sbin/mkfs.ext4 /dev/xvdf && mount /dev/xvdf /local\n",
+
+          "aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ${VOL_ID} \n",
+
+          "mkdir -p /local/log\n",
+
+          "yum install docker -y\n",
+
+          "service docker restart\n",
+
+          "cmd='$(aws ecr get-login --region us-east-1)' && eval $cmd && docker pull ${NUODB_DOCKER} \n",
+
+          "docker run -d -e \"DOMAIN_PASSWORD=${DOMAIN_PASSWORD}\" ",
+          "   -e \"AGENT_PORT=${AGENT_PORT}\" ",
+          "   -e \"NODE_PORT=48010\" ",
+          "   -e \"NODE_TYPE=${NODE_TYPE}\" ",
+          "   -e \"ENV_TYPE=AWSEC2\" ",
+          "   -e \"DB_NAME=${DB_NAME}\" ",
+          "   -e \"DB_USER=${DB_USER}\" ",
+          "   -e \"DB_PASSWORD=${DB_PASSWORD}\" ",
+          "   -e \"BROKER_PORT=${BROKER_PORT}\" ",
+          "   -e \"DOMAIN_PASSWORD=${DOMAIN_PASSWORD}\" ",
+          "   -e \"PEER_ADDRESS=${PEER_ADDRESS}\" ",
+          "   -e \"NODE_REGION=${NODE_REGION}\" ",
+          "   -e \"ARG_apphost=${ARG_apphost}\" ",
+          "   -p 48010:48010 ",
+          "   -p 48004:48004 ",
+          "   -p 48005:48005 ",
+          "   ${NUODB_DOCKER} \n",
+
+          "/opt/aws/bin/cfn-init ",
+          "   --stack ${CFN_StackId} ",
+          "   --resource NuoDBTELaunchConfig ",
+          "   --region ${CFN_Region} ",
+          "   --configsets deploy_by_ansible\n",
+
+          "# Signal results.\n",
+          "/opt/aws/bin/cfn-signal -e $? ",
+          "  --region ${CFN_Region} ",
+          "  --stack \"${CFN_StackName}\" ",
+          "  --resource NuoDBTEASG ",
+          "  --reason \"CFN config setup exited with value $?.\" \n"
+        ]]}}
+      }
+    },
+
+    "NuoDBTEASG" : {
+      "DependsOn" : "NuoDBSMASG",
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "CreationPolicy": { "ResourceSignal": { "Count" : "1", "Timeout": "PT45M" } },
+      "UpdatePolicy" : {
+        "AutoScalingRollingUpdate" : {
+          "MinInstancesInService" : "1",
+          "MaxBatchSize" : "1",
+          "WaitOnResourceSignals" : "true",
+          "SuspendProcesses" : [ "AlarmNotification" ],
+          "PauseTime" : "PT45M"
+        }
+      },
+      "Properties" : {
+        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
+        "VPCZoneIdentifier" : [ { "Fn::Select" : [ "0", { "Ref" : "SubnetIds" }]} ],
+        "LaunchConfigurationName" : { "Ref" : "NuoDBTELaunchConfig" },
+        "MinSize" : "1",
+        "MaxSize" : "5",
+        "DesiredCapacity" : "1",
+        "HealthCheckGracePeriod" : "600",
+        "HealthCheckType" : "EC2",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref": "AWS::StackName" }, "NuoDBTE" ]] },
+            "PropagateAtLaunch" : "true"
+          }
+        ]
+      }
+    }
+
+  },
+  "Outputs" : {
+    "TeASG" : {
+      "Description" : "TE Autoscaling group",
+      "Value" : { "Ref" : "NuoDBTEASG"}
+    }
+  }
+}

@@ -55,22 +55,32 @@ def list_clusters(session, args):
     '''main 'list' command implementation.  
 
 Select clusters using common 'select' method and print them out'''
+
+    print_stack_info(session, args, select(session, args))
+
+def print_stack_info(session, args, stacks):
+    ''' Given a list of stacks from cloudformation, print the info for each stack'''
     cf = session.resource('cloudformation')
 
-    for x in select(session, args):
+    for x in stacks:
         url=[""]
         if x['StackStatus'] == 'CREATE_COMPLETE':
             stack = cf.Stack(x['StackName'])
         else:
             stack=None
         if stack:
-            print "Looking for {}".format(args.url_property)
-            url = [y['OutputValue'] 
-                   for y in stack.outputs 
-                   if y['OutputKey'] == args.url_property]
+            # done this way because https://hynek.me/articles/hasattr/
+            try:
+                outputs = stack.outputs
+                if outputs:
+                    url = [y['OutputValue'] 
+                           for y in outputs
+                           if y['OutputKey'] == args.url_property]
+            except AttributeError:
+                pass
 
-        if len(url) < 1:
-                    url=[""]
+        if len(url)<1:
+            url=[""]
 
         print "{} {} {} ".format(x['StackName'], x['StackStatus'], url[0])
 
@@ -88,9 +98,14 @@ This should be used by any function selecting clusters to implement --include an
 
     stacks = result['StackSummaries']
 
-    if not args.include and not args.exclude:
+    if args.all:
+        pass
+    elif not args.include and not args.exclude:
         filter = os.environ['USER']
         stacks = [x for x in stacks if filter in x['StackName']]
+
+    if args.status:
+        stacks = [x for x in stacks if args.status in x['StackStatus']]
 
     if args.include:
         filter = args.include[0]
@@ -103,6 +118,9 @@ This should be used by any function selecting clusters to implement --include an
     if args.expired:
         now = datetime.datetime.now(utc)
         stacks = [x for x in stacks if is_stack_expired(cf, x, now)]
+
+    if args.failed:
+        stacks = [x for x in stacks if 'FAILED' in x['StackStatus']]
 
     return stacks
 
@@ -245,6 +263,16 @@ def delete_cluster(stack, session, args):
         print "FAILED to delete cluster %s" % stack_name
         return False
 
+
+def sync_to_s3(aws_region, bucket_naame):
+    target_dir = os.path.dirname(__file__) + "/../cfn/"
+
+    s3 = boto3.resource('s3', region_name=aws_region)
+
+    for filename in os.listdir(target_dir):
+        s3.Object(bucket_name, filename).put(Body=open(os.path.join(target_dir, filename), 'rb'))
+
+
 def create_cluster_name(number, args):
     '''Create a cluster name from the number on which we're working and the given command line args'''
     if args.suffix:
@@ -279,7 +307,7 @@ Create one or more clusters as requested
             pass
 #            print x.result()
 
-        future = pool.submit(wait_for_stack(name,cf, cfr,args))
+        future = pool.submit(wait_for_stack,name,cf, cfr,args)
 #        future.add_done_callback(status)
         futures.append(future)
 
@@ -355,6 +383,15 @@ the command to return successfully.
              Value=os.environ['USER'])
         ]
 
+    # Upload cfn templates to s3 bucket
+    global aws_region
+    global bucket_name
+
+    aws_region = params['BucketRegion']
+    bucket_name = params['Bucket']
+
+    sync_to_s3(aws_region, bucket_name)
+
     if args.delete_after:
         tags.append(dict(Key='DeleteAfter',
                          Value=args.delete_after + "h"))
@@ -414,7 +451,7 @@ def main():
 
     parser.add_argument("--profile", help="The AWS profile to use", )
     parser.add_argument("--parallel", help="Number of operations to perform in parallel", default=40)
-    parser.add_argument("--url-property", help="Name of the stack property containing the cluster URL", default='StorefrontElbURL')
+    parser.add_argument("--url-property", help="Name of the StorefrontURL CloudFormation export property", default="StorefrontElbURL")
 
     subs = parser.add_subparsers(help='sub-command help')
 
@@ -442,9 +479,12 @@ def main():
 
     # This shoud, perhaps, be a parent parser
     for p in [parse_list, parse_delete]:
+        p.add_argument("--all", help="include all stacks", action='store_true', default=False)
         p.add_argument("--include", help="include clusters containing", nargs=1)
         p.add_argument("--exclude", help="exclude clusters containing", nargs=1)
         p.add_argument("--expired", help="include only expired stacks", action='store_true', default=False)
+        p.add_argument("--failed", help="include only stacks with failed operations", action='store_true', default=False)
+        p.add_argument("--status", help="include only stacks with the given word in the status")
 
     args = parser.parse_args()
 

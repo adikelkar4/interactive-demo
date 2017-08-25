@@ -13,7 +13,7 @@ import com.nuodb.storefront.util.LoggerToStringStyle;
  */
 public class WorkloadStats {
     private Workload workload;
-    private Integer activeWorkerLimit;
+    private int activeWorkerLimit;
     private int activeWorkerCount;
     private int failedWorkerCount;
     private int killedWorkerCount;
@@ -43,7 +43,6 @@ public class WorkloadStats {
     }
 
     public void applyDeltas(WorkloadStats stats) {
-    	this.activeWorkerCount += stats.activeWorkerCount;
         this.failedWorkerCount += stats.failedWorkerCount;
         this.killedWorkerCount += stats.killedWorkerCount;
         this.completedWorkerCount += stats.completedWorkerCount;
@@ -56,10 +55,6 @@ public class WorkloadStats {
     }
     
     public void applyDeltas(Map<String, Integer> stats) {
-    	if (stats.get("activeWorkerLimit") != null) {    		
-    		this.activeWorkerLimit += stats.get("activeWorkerLimit");
-    	}
-        this.activeWorkerCount += stats.get("activeWorkerCount");
         this.failedWorkerCount += stats.get("failedWorkerCount");
         this.killedWorkerCount += stats.get("killedWorkerCount");
         this.completedWorkerCount += stats.get("completedWorkerCount");
@@ -79,21 +74,12 @@ public class WorkloadStats {
         this.workload = workload;
     }
 
-    public boolean canAddWorker() {
-        return activeWorkerLimit == null || getActiveWorkerCount() < activeWorkerLimit;
-    }
-
-    public Integer getActiveWorkerLimit() {
+    public int getActiveWorkerLimit() {
         return activeWorkerLimit;
     }
 
-    public void setActiveWorkerLimit(Integer limit) {
+    public void setActiveWorkerLimit(int limit) {
         this.activeWorkerLimit = limit;
-    }
-
-    public boolean exceedsWorkerLimit() {
-        return (activeWorkerLimit != null && activeWorkerCount > activeWorkerLimit)
-                || (workload.getMaxWorkers() > 0 && activeWorkerCount > workload.getMaxWorkers());
     }
 
     /**
