@@ -7,6 +7,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -82,11 +83,8 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 			}
 		}
 
-		WorkloadStats info = getOrCreateWorkloadStats(workload);
-		info.setActiveWorkerLimit(activeWorkerLimit);
-		while (info.getActiveWorkerCount() < minActiveWorkers) {
-			SimulatedUser user = new SimulatedUser(this, workload);
-			threadPool.scheduleAtFixedRate(user, workload.calcNextThinkTimeMs(), 5000, TimeUnit.MILLISECONDS);
+		for (int i = 0; i < minActiveWorkers; i++) {
+			threadPool.scheduleAtFixedRate(new SimulatedUser(this, workload), workload.calcNextThinkTimeMs(), 5000, TimeUnit.MILLISECONDS);
 		}
 	}
 
