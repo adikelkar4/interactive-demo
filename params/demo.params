@@ -11,7 +11,7 @@ EcsInstanceType: r4.8xlarge
 NuoDBInstanceAMI: ami-8a7859ef
 
 # Environment Type options for deploying NuoDB: AWSECS, AWSEC2
-EnvironmentType: AWSEC2
+EnvironmentType: AWSECS
 
 KeyName: interactive-demo
 

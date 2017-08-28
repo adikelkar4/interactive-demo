@@ -53,10 +53,6 @@
       "Type" : "String"
     },
 
-    "NuoDBInstanceType" : {
-      "Type" : "String"
-    },
-
     "EcsAmiId" : {
       "Type" : "String"
     },
@@ -99,6 +95,9 @@
       "Type" : "String"
     },
     "BrokerElbURL" : {
+      "Type" : "String"
+    },
+    "brokerELB" : {
       "Type" : "String"
     },
     "LambdaUserContinerArn" : {
@@ -304,13 +303,16 @@
     "EcsInstanceAsg" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
-        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }, { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
+        "AvailabilityZones" : [ { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] } ],
         "VPCZoneIdentifier" : { "Ref" : "SubnetIds" },
         "LaunchConfigurationName" : { "Ref" : "EcsInstanceLc" },
         "LoadBalancerNames" : [{ "Ref" : "StorefrontELB" } ],
         "MinSize" : "1",
         "MaxSize" : "2",
         "DesiredCapacity" : "1",
+        "HealthCheckGracePeriod" : "600",
+        "HealthCheckType" : "ELB",
+        "LoadBalancerNames" : [{ "Ref" : "brokerELB" }, { "Ref" : "StorefrontELB" }],
         "Tags" : [ { "Key" : "Name", "Value" : { "Fn::Join" : ["", [ "ECS Instance - ", { "Ref" : "AWS::StackName" } ] ] }, "PropagateAtLaunch" : "true" } ]
       }
     },

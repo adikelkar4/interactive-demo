@@ -246,7 +246,7 @@
           "dbuser" : { "Ref" : "dbuser" },
           "dbpassword" :    { "Ref" : "dbpassword" },
           "dbname" :    { "Ref" : "dbname" },
-          "BrokerElbURL" : { "Fnn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"]},
+          "BrokerElbURL" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontURL"]},
           "TeASG" : { "Fn::If" : ["CreateNuoDBonEC2", { "Fn::GetAtt": ["NuoDBonEc2", "Outputs.TeASG"] }, "NONE" ]}
         }
       }
@@ -271,14 +271,10 @@
 
           "DomainPassword":   { "Ref" : "DomainPassword" },
           "EnvironmentType":  { "Ref" : "EnvironmentType" },
-          "NuoDBInstanceAMI":   { "Ref" : "NuoDBInstanceAMI" },
-          "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
+
           "KeyName":  { "Ref" : "KeyName" },
           "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
           "SubnetIds":  { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"]},
-          "peerAddress" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] },
-          "brokerELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerELB"] },
-          "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] },
 
           "SourceCidr" : { "Ref" : "SourceCidr" },
           "ElbSecurityGroup" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.ElbSecurityGroup"]},
@@ -286,9 +282,16 @@
           "StorefrontELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"]},
           "StorefrontURL" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontURL"]},
           "BrokerElbURL" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"]},
+          "brokerELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerELB"] },
 
           "LambdaUserContinerArn" : { "Fn::GetAtt" : [ "LambdaFunctions", "Outputs.LambdaUserContinerArn"]},
-          "ScaleTEService" : { "Fn::GetAtt" : [ "LambdaFunctions", "Outputs.ScaleTEService"]}
+          "ScaleTEService" : { "Fn::GetAtt" : [ "LambdaFunctions", "Outputs.ScaleTEService"]},
+
+          "storeFrontUserDocker" : { "Ref" : "storeFrontUserDocker" },
+          "EcsInstanceType" : { "Ref" : "EcsInstanceType" },
+          "storeFrontWebDocker" : {"Ref" : "storeFrontWebDocker"},
+          "EcsPort" : { "Ref" : "EcsPort" },
+          "EcsAmiId" : { "Ref" : "EcsAmiId" }
         }
       }
     },
@@ -330,7 +333,7 @@
     "NuoDBonEcs" : {
       "Condition" : "CreateNuoDBonECS",
       "Type" : "AWS::CloudFormation::Stack",
-      "DependsOn" : ["Loadbalancers"],
+      "DependsOn" : ["EcsCluster"],
       "Properties" : {
         "TemplateURL" : { "Fn::Join" : ["", [
           { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
@@ -348,13 +351,11 @@
 
           "DomainPassword":   { "Ref" : "DomainPassword" },
           "EnvironmentType":  { "Ref" : "EnvironmentType" },
-          "NuoDBInstanceAMI":   { "Ref" : "NuoDBInstanceAMI" },
           "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
           "KeyName":  { "Ref" : "KeyName" },
           "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
           "SubnetIds":  { "Fn::Join" : [ ", ", [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }] ]},
           "peerAddress" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] },
-          "brokerELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerELB"] },
           "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] }
         }
       }

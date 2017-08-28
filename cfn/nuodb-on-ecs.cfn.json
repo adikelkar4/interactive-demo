@@ -19,10 +19,6 @@
       "Type" : "Number"
     },
 
-    "brokerELB" : {
-      "Type" : "String"
-    },
-
     "StorefrontElb" : {
       "Type" : "String"
     },
@@ -51,10 +47,6 @@
       "Type" : "String"
     },
 
-    "NuoDBInstanceAMI" : {
-      "Type" : "String"
-    },
-
     "NuoDBInstanceType" : {
       "Type" : "String"
     },
@@ -68,14 +60,6 @@
 
     "SubnetIds" : {
       "Type" : "CommaDelimitedList"
-    },
-
-    "ECSInstanceProfile" : {
-      "Type" : "String"
-    },
-
-    "NuoDBSecurityGroup" : {
-      "Type" : "String"
     }
   },
   "Resources" : {
@@ -139,7 +123,7 @@
               },
               {
                 "Name": "PEER_ADDRESS",
-                "Value": { "Ref" : "brokerELB" }
+                "Value": { "Ref" : "peerAddress" }
               },
               {
                 "Name": "DB_NAME",
@@ -216,7 +200,7 @@
               },
               {
                 "Name": "PEER_ADDRESS",
-                "Value": { "Ref" : "brokerELB" }
+                "Value": { "Ref" : "peerAddress" }
               },
               {
                 "Name": "DB_NAME",
@@ -286,7 +270,7 @@
               },
               {
                 "Name": "PEER_ADDRESS",
-                "Value": { "Ref" : "brokerELB"}
+                "Value": { "Ref" : "peerAddress"}
               },
               {
                 "Name": "DB_NAME",
