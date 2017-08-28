@@ -387,7 +387,7 @@
       "Type" : "AWS::ECS::Service",
       "Properties" : {
         "Cluster" : { "Ref" : "EcsClusterName" },
-        "DesiredCount" : "0",
+        "DesiredCount" : "1",
         "ServiceName" : "storefrontuser-service",
         "PlacementStrategies" : [{ "Type": "random"}],
         "TaskDefinition" : { "Ref" : "StorefrontUserTaskDefinition"},

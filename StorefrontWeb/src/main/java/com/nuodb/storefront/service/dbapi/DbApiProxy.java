@@ -582,8 +582,8 @@ public class DbApiProxy implements IDbApi {
         	vars.put(DBVAR_HOST, null);
         	vars.put(DBVAR_SM_MIN, "1");
         	vars.put(DBVAR_SM_MAX, "1");
-        	vars.put(DBVAR_TE_MIN, "5");
-        	vars.put(DBVAR_TE_MAX, "5");
+        	vars.put(DBVAR_TE_MIN, "1");
+        	vars.put(DBVAR_TE_MAX, "1");
         }
 
         // Apply template name

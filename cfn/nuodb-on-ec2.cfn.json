@@ -1207,7 +1207,7 @@
         "LaunchConfigurationName" : { "Ref" : "NuoDBTELaunchConfig" },
         "MinSize" : "1",
         "MaxSize" : "5",
-        "DesiredCapacity" : "1",
+        "DesiredCapacity" : "5",
         "HealthCheckGracePeriod" : "600",
         "HealthCheckType" : "EC2",
         "Tags": [
