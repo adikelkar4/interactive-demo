@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "AWS CloudFormation template to create a new VPC",
+  "Description": "Demo VPC",
   "Mappings": {
     "VpcCidrs": {
       "eu-central-1": {

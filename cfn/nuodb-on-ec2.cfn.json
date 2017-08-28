@@ -1,98 +1,21 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "AWS CloudFormation template to deploy NuoDB on EC2 instances on an existing VPC",
-  "Mappings": {
-    "VpcCidrs": {
-      "eu-central-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "sa-east-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "ap-northeast-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "eu-west-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "us-east-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "us-east-2": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "us-west-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "us-west-2": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "ap-southeast-2": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      },
-      "ap-southeast-1": {
-        "vpc": "10.0.0.0/16",
-        "pubsubnet1": "10.0.0.0/24",
-        "pubsubnet2": "10.0.1.0/24"
-      }
-    },
+  "Description": "NuoDB doployed on EC2 Instances",
+  "Mappings" : {
     "ARNNamespace": {
-      "us-east-1": {
-        "Partition": "aws"
-      },
-      "us-east-2": {
-        "Partition": "aws"
-      },
-      "us-west-2": {
-        "Partition": "aws"
-      },
-      "us-west-1": {
-        "Partition": "aws"
-      },
-      "eu-west-1": {
-        "Partition": "aws"
-      },
-      "eu-central-1": {
-        "Partition": "aws"
-      },
-      "ap-southeast-1": {
-        "Partition": "aws"
-      },
-      "ap-northeast-1": {
-        "Partition": "aws"
-      },
-      "ap-southeast-2": {
-        "Partition": "aws"
-      },
-      "sa-east-1": {
-        "Partition": "aws"
-      },
-      "us-gov-west-1": {
-        "Partition": "aws-us-gov"
-      }
+      "us-east-1":      { "Partition": "aws" },
+      "us-east-2":      { "Partition": "aws" },
+      "us-west-2":      { "Partition": "aws" },
+      "us-west-1":      { "Partition": "aws" },
+      "eu-west-1":      { "Partition": "aws" },
+      "eu-central-1":   { "Partition": "aws" },
+      "ap-southeast-1": { "Partition": "aws" },
+      "ap-northeast-1": { "Partition": "aws" },
+      "ap-southeast-2": { "Partition": "aws" },
+      "sa-east-1":      { "Partition": "aws" },
+      "us-gov-west-1":  { "Partition": "aws-us-gov" }
     },
-    "S3Region": {
-      "us-east-1": {
-        "Region": "us-east-1"
-      },
+    "S3Region": { "us-east-1": { "Region": "us-east-1" },
       "us-east-2": {
         "Region": "us-east-2"
       },
@@ -125,115 +48,235 @@
       }
     }
   },
-  "Parameters": {
 
+  "Parameters": {
     "Bucket" : {
-      "Description" : "Template bucket in s3",
       "Type" : "String"
     },
 
     "EcsClusterName" : {
-      "Type" : "String",
-      "Description" : "ECS Cluster Name",
-      "Default" : "default"
+      "Type" : "String"
     },
 
     "nuodbDocker" : {
-      "Description" : "NuoDB docker container stored in docker.io",
-      "Type" : "String",
-      "Default" : "docker.io/nuodb/nuodb-ce-2.6.1:latest"
+      "Type" : "String"
     },
 
     "VolumeSize" : {
-      "Description" : "EBS Attached volume size",
-      "Type" : "Number",
-      "Default" : "20"
+      "Type" : "Number"
     },
 
     "brokerELB" : {
-      "Description" : "Broker ELB",
       "Type" : "String"
     },
 
     "StorefrontElb" : {
-      "Description" : "Storefront ELB address",
       "Type" : "String"
     },
 
     "peerAddress" : {
-      "Description" : "Broker ELB Address",
       "Type" : "String"
     },
 
     "dbuser" : {
-      "Description": "Database user name",
       "Type": "String"
     },
 
     "dbpassword" : {
-      "Description": "Database user password",
       "Type": "String"
     },
 
     "dbname" : {
-      "Description": "Database name",
       "Type": "String"
     },
 
     "DomainPassword" : {
-      "Description" : "NuoDB Domain password",
-      "Type": "String",
-      "Default" : "bird"
+      "Type": "String"
     },
 
     "EnvironmentType" : {
-      "Description" : "Environment NuoDB container is deployed to",
-      "Type" : "String",
-      "Default" : "AWSECS"
+      "Type" : "String"
     },
 
     "NuoDBInstanceAMI" : {
-      "Type" : "String",
-      "Description" : "Ec2 AMI for NuodB nodes"
+      "Type" : "String"
     },
 
     "NuoDBInstanceType" : {
-      "Type" : "String",
-      "Description" : "EC2 instance type",
-      "Default" : "m4.large"
+      "Type" : "String"
     },
     "KeyName" : {
-      "Type" : "String",
-      "Description" : "Optional - Name of an existing EC2 KeyPair to enable SSH access to the ECS instances",
-      "Default" : ""
+      "Type" : "String"
     },
 
     "VpcId" : {
-      "Type" : "String",
-      "Description" : "Optional - VPC Id of existing VPC. Leave blank to have a new VPC created",
-      "Default" : "",
-      "AllowedPattern" : "^(?:vpc-[0-9a-f]{8}|)$",
-      "ConstraintDescription" : "VPC Id must begin with 'vpc-' or leave blank to have a new VPC created"
+      "Type" : "String"
     },
 
     "SubnetIds" : {
-      "Type" : "CommaDelimitedList",
-      "Description" : "Optional - Comma separated list of existing VPC Subnet Ids where ECS instances will run",
-      "Default" : ""
+      "Type" : "CommaDelimitedList"
     },
 
-    "ECSInstanceProfile" : {
-      "Type" : "String",
-      "Description" : "Profile role for instance"
+    "BrokerElbSecurityGroup" : {
+      "Type" : "String"
+    }
+  },
+
+  "Resources" : {
+    "EC2InstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement":
+          [
+            {
+              "Effect": "Allow",
+              "Principal" : { "Service": [ "ec2.amazonaws.com", "ecs-tasks.amazonaws.com" ] },
+              "Action": [ "sts:AssumeRole" ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies":
+        [
+          {
+            "PolicyName": "deployRead",
+            "PolicyDocument": {
+              "Statement":
+              [
+                {
+                  "Action": [ "s3:Get*", "s3:List*" ],
+                  "Effect": "Allow",
+                  "Resource":
+                  [
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":s3:::", {"Ref" : "Bucket"}, "/"]]},
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":s3:::", {"Ref" : "Bucket"}, "/*"]]}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "deployBucketRead",
+            "PolicyDocument": {
+              "Statement":
+              [
+                {
+                  "Action": [  "s3:List*" ],
+                  "Effect": "Allow",
+                  "Resource":
+                  [
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":s3:::", {"Ref" : "Bucket"}]]}
+                  ]
+                }
+              ]
+            }
+          },
+
+          {
+            "PolicyName": "cloudwatchLogs",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:GetLogEvents",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogGroups",
+                    "logs:DescribeLogStreams"
+                  ],
+                  "Resource": [
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":logs:*:*:*" ]]}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName" : "ECSCreateCluster",
+            "PolicyDocument" : {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "createandattachvolume",
+            "PolicyDocument":  {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "Stmt1441831086000",
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:AttachVolume",
+                    "ec2:CreateVolume",
+                    "ec2:DescribeVolumes",
+                    "ec2:CreateSnapshot",
+                    "ec2:DeleteSnapshot",
+                    "ec2:DescribeSnapshots",
+                    "ec2:CreateTags",
+                    "ec2:ModifyInstanceAttribute"
+                  ],
+                  "Resource": [ "*" ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "manageElb",
+            "PolicyDocument":  {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "Stmt1441831086000",
+                  "Effect": "Allow",
+                  "Action": [
+                    "elasticloadbalancing:*"
+                  ],
+                  "Resource": [ "*" ]
+                }
+              ]
+            }
+          }
+        ]
+      }
     },
+
+    "EC2InstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [ { "Ref": "EC2InstanceRole" } ]
+      }
+    },
+
 
     "NuoDBSecurityGroup" : {
-      "Type" : "String",
-      "Description" : "Security group for ec2 instances"
-    }
-
-  },
-  "Resources" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Allow access to NuoDB ports",
+        "VpcId" : { "Ref" : "VpcId" },
+        "SecurityGroupIngress" :
+        [
+          { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48004", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
+          { "IpProtocol" : "tcp", "FromPort" : "8888", "ToPort" : "8888", "SourceSecurityGroupId" :  { "Ref" : "BrokerElbSecurityGroup" } },
+          { "IpProtocol" : "tcp", "FromPort" : "48010", "ToPort" : "48010",  "CidrIp": "10.0.0.0/16" },
+          { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48005",  "CidrIp": "10.0.0.0/16" },
+          { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp": "0.0.0.0/0" }
+        ]
+      }
+    },
 
     "CWLogGroup" : {
       "Type" : "AWS::Logs::LogGroup",
@@ -424,7 +467,7 @@
         "AssociatePublicIpAddress" : "true",
         "ImageId" : { "Ref" : "NuoDBInstanceAMI" },
         "InstanceType"   : { "Ref" : "NuoDBInstanceType" },
-        "IamInstanceProfile" : {"Ref": "ECSInstanceProfile" },
+        "IamInstanceProfile" : {"Ref": "EC2InstanceProfile" },
         "SecurityGroups" : [
           {"Ref" : "NuoDBSecurityGroup" }],
         "UserData" : { "Fn::Base64" : { "Fn::Join" : [ "", [
@@ -734,7 +777,7 @@
         "AssociatePublicIpAddress" : "true",
         "ImageId" : { "Ref" : "NuoDBInstanceAMI" },
         "InstanceType"   : { "Ref" : "NuoDBInstanceType" },
-        "IamInstanceProfile" : {"Ref": "ECSInstanceProfile" },
+        "IamInstanceProfile" : {"Ref": "EC2InstanceProfile" },
         "SecurityGroups" : [
           {"Ref" : "NuoDBSecurityGroup" }],
         "UserData" : { "Fn::Base64" : { "Fn::Join" : [ "", [
@@ -1046,7 +1089,7 @@
         "AssociatePublicIpAddress" : "true",
         "ImageId" : { "Ref" : "NuoDBInstanceAMI" },
         "InstanceType"   : { "Ref" : "NuoDBInstanceType" },
-        "IamInstanceProfile" : {"Ref": "ECSInstanceProfile" },
+        "IamInstanceProfile" : {"Ref": "EC2InstanceProfile" },
         "SecurityGroups" : [
           {"Ref" : "NuoDBSecurityGroup" }],
         "UserData" : { "Fn::Base64" : { "Fn::Join" : [ "", [

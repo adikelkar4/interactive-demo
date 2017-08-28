@@ -1,0 +1,91 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "",
+  "Parameters" : {
+    "dbuser" : {
+      "Type": "String"
+    },
+
+    "dbpassword" : {
+      "Type": "String"
+    },
+
+    "dbname" : {
+      "Type": "String"
+    },
+    "DomainPassword" : {
+      "Type": "String"
+    },
+    "EcsClusterName" : {
+      "Type" : "String"
+    },
+  },
+
+  "Resources" : {
+    "MySQLTaskDefinitions": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "mysql-family",
+        "ContainerDefinitions": [
+          {
+            "Name": "mysql-definition",
+            "Image": "mysql",
+            "Cpu": "2",
+            "MemoryReservation": "4096",
+            "ReadonlyRootFilesystem": "false",
+            "PortMappings": [
+              {
+                "ContainerPort": "3306",
+                "HostPort": "3306"
+              }
+            ],
+            "Environment": [
+              {
+                "Name": "NODE_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "MYSQL_ROOT_PASSWORD",
+                "Value": {
+                  "Ref": "DomainPassword"
+                }
+              },
+              {
+                "Name": "MYSQL_DATABASE",
+                "Value": {
+                  "Ref": "dbname"
+                }
+              },
+              {
+                "Name": "MYSQL_USER",
+                "Value": {
+                  "Ref": "dbuser"
+                }
+              },
+              {
+                "Name": "MYSQL_PASSWORD",
+                "Value": {
+                  "Ref": "dbpassword"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+    "MySQLService": {
+      "Type" : "AWS::ECS::Service",
+      "Properties" : {
+        "Cluster" : { "Ref" : "EcsClusterName" },
+        "DesiredCount" : "0",
+        "ServiceName" : "mysql-service",
+        "PlacementStrategies" : [{ "Type": "random"}],
+        "TaskDefinition" : { "Ref" : "MySQLTaskDefinitions"}
+      }
+    }
+  }
+}
