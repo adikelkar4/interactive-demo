@@ -332,7 +332,13 @@ public class DbApiProxy implements IDbApi {
                 if (createDb) {
                     database = new Database();
                 }
-                boolean updateDb = fixDatabaseTemplate(database, footprint.usedRegionCount, footprint.usedHostCount, homeHostInfo);
+
+                if (footprint.usedTeHostCount < 1) {
+                    footprint.usedTeHostCount++;
+                }
+
+                boolean updateDb = fixDatabaseTemplate(database, footprint.usedRegionCount, footprint.usedTeHostCount, homeHostInfo);
+
                 if (createDb) {
                     database.name = dbConnInfo.getDbName();
                     database.username = dbConnInfo.getUsername();
