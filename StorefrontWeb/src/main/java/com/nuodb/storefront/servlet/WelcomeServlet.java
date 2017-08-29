@@ -33,10 +33,10 @@ public class WelcomeServlet extends ControlPanelProductsServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Map<String, Object> pageData = new HashMap<String, Object>();
-        Pair<String, Object> prop = doHealthCheck(req);
-        if (prop != null) {
-            pageData.put(prop.getKey(), prop.getValue());
-        }
+        //Pair<String, Object> prop = doHealthCheck(req);
+        //if (prop != null) {
+        //    pageData.put(prop.getKey(), prop.getValue());
+        //}
 
         showPage(req, resp, "Welcome", "welcome", pageData, new Customer());
     }
@@ -72,7 +72,7 @@ public class WelcomeServlet extends ControlPanelProductsServlet {
             connInfo.setPassword(req.getParameter("password"));
             tenant.setDbConnInfo(connInfo);
 
-            tenant.getDbApi().fixDbSetup(true);
+            //tenant.getDbApi().fixDbSetup(true);
 
             // Wait until API acknowledges the DB exists
             for (int secondsWaited = 0; secondsWaited < StorefrontWebApp.DB_MAX_INIT_WAIT_TIME_SEC; secondsWaited++) {
