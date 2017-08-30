@@ -63,18 +63,34 @@
       }
     },
 
-
     "StorefrontELB" : {
       "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties" : {
         "SecurityGroups" : [ { "Ref" : "ElbSecurityGroup" } ],
         "Subnets" : [{ "Ref": "PublicSubnetAz1" }],
         "CrossZone" : "true",
-        "Listeners" : [ {
-          "LoadBalancerPort" : { "Ref" : "ElbPort" },
-          "InstancePort" : { "Ref" : "EcsPort" },
-          "Protocol" : { "Ref" : "ElbProtocol" }
-        } ],
+        "Listeners" : [
+          {
+            "LoadBalancerPort" : { "Ref" : "ElbPort" },
+            "InstancePort" : { "Ref" : "EcsPort" },
+            "Protocol" : { "Ref" : "ElbProtocol" }
+          },
+          {
+            "LoadBalancerPort" : "5601",
+            "InstancePort" : "5601",
+            "Protocol" : "TCP"
+          },
+          {
+            "LoadBalancerPort" : "9200",
+            "InstancePort" : "9200",
+            "Protocol" : "TCP"
+          },
+          {
+            "LoadBalancerPort" : "5044",
+            "InstancePort" : "5044",
+            "Protocol" : "TCP"
+          }
+        ],
         "HealthCheck" : {
           "Target" : { "Ref" : "ElbHealthCheckTarget" },
           "HealthyThreshold" : "2",

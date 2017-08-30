@@ -63,6 +63,12 @@
       "Default" : "docker.io/nuodb/nuodb-ce-2.6.1:latest"
     },
 
+    "elkDocker" : {
+      "Description" : "Elk logging container",
+      "Type" : "String",
+      "Default" : "sebp/elk"
+    },
+
     "VolumeSize" : {
       "Description" : "EBS Attached volume size",
       "Type" : "Number",
@@ -184,7 +190,6 @@
 
   "Conditions" : {
     "CreateVpcResources" : { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] },
-    "ExistingVpcResources" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] } ] },
     "CreateNuoDBonECS" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSECS" ]},
     "CreateNuoDBonEC2" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSEC2" ]}
   },
@@ -206,6 +211,45 @@
       }
     },
 
+    "Resources" : {
+      "Type" : "AWS::CloudFormation::Stack",
+      "Properties" : {
+        "TemplateURL" : { "Fn::Join" : ["", [
+          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
+          {"Ref" : "Bucket"},
+          "/resources.cfn.json"
+        ]]},
+        "Parameters" : {
+          "EcsClusterName" : { "Ref" : "EcsClusterName" }
+        }
+      }
+    },
+
+    "ElkLogging" : {
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : "VPC",
+      "Properties" : {
+        "TemplateURL" : { "Fn::Join" : ["", [
+          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
+          {"Ref" : "Bucket"},
+          "/elk-logging.cfn.json"
+        ]]},
+        "Parameters" : {
+          "Bucket" :  { "Ref" : "Bucket" },
+          "VolumeSize" : { "Ref" : "VolumeSize" },
+          "VpcID" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
+          "SubnetIds" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
+          "Hostname" : { "Ref" : "Hostname" },
+          "EcsClusterName" : { "Ref" : "EcsClusterName" },
+          "elkDocker" : { "Ref" : "elkDocker" },
+          "KeyName":  { "Ref" : "KeyName" },
+
+          "NuoDBInstanceAMI":   { "Ref" : "NuoDBInstanceAMI" },
+          "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" }
+        }
+      }
+    },
+
     "Loadbalancers" : {
       "Type" : "AWS::CloudFormation::Stack",
       "DependsOn" : "VPC",
@@ -219,7 +263,7 @@
           "VpcID" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
           "ElbPort" : { "Ref" : "ElbPort" },
           "SourceCidr" : { "Ref" : "SourceCidr"},
-          "PublicSubnetAz1" : { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] },
+          "PublicSubnetAz1" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
           "EcsPort" : { "Ref" : "EcsPort" },
           "ElbProtocol" : { "Ref" : "ElbProtocol" },
           "ElbHealthCheckTarget" : { "Ref" : "ElbHealthCheckTarget" },
@@ -254,7 +298,7 @@
 
     "EcsCluster" : {
       "Type" : "AWS::CloudFormation::Stack",
-      "DependsOn" : "LambdaFunctions",
+      "DependsOn" : ["LambdaFunctions", "ElkLogging"],
       "Properties" : {
         "TemplateURL" : { "Fn::Join" : ["", [
           { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
@@ -274,7 +318,7 @@
 
           "KeyName":  { "Ref" : "KeyName" },
           "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
-          "SubnetIds":  { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"]},
+          "SubnetIds":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
 
           "SourceCidr" : { "Ref" : "SourceCidr" },
           "ElbSecurityGroup" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.ElbSecurityGroup"]},
@@ -299,7 +343,7 @@
     "NuoDBonEc2" : {
       "Condition" : "CreateNuoDBonEC2",
       "Type" : "AWS::CloudFormation::Stack",
-      "DependsOn" : "Loadbalancers",
+      "DependsOn" : ["Loadbalancers", "ElkLogging"],
       "Properties" : {
         "TemplateURL" : { "Fn::Join" : ["", [
           { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
@@ -321,11 +365,13 @@
           "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
           "KeyName":  { "Ref" : "KeyName" },
           "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
-          "SubnetIds":  { "Fn::Join" : [ ", ", [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }] ]},
+          "SubnetIds":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
           "peerAddress" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] },
           "brokerELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerELB"] },
           "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] },
-          "BrokerElbSecurityGroup" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbSecurityGroup"]}
+          "BrokerElbSecurityGroup" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbSecurityGroup"]},
+
+          "CWLogGroup" : { "Fn::GetAtt" : [ "Resources", "Outputs.CWLogGroup"]}
         }
       }
     },
@@ -333,7 +379,7 @@
     "NuoDBonEcs" : {
       "Condition" : "CreateNuoDBonECS",
       "Type" : "AWS::CloudFormation::Stack",
-      "DependsOn" : ["EcsCluster"],
+      "DependsOn" : ["EcsCluster", "ElkLogging"],
       "Properties" : {
         "TemplateURL" : { "Fn::Join" : ["", [
           { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
@@ -354,7 +400,7 @@
           "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
           "KeyName":  { "Ref" : "KeyName" },
           "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
-          "SubnetIds":  { "Fn::Join" : [ ", ", [{ "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }] ]},
+          "SubnetIds":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
           "peerAddress" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] },
           "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] }
         }
@@ -372,6 +418,10 @@
     "BrokerElbURL" : {
       "Description" : "Load Balancer for Broker Service",
       "Value" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] }
+    },
+    "ElkURL" : {
+      "Description" : "Elk logging URL address",
+      "Value" : { "Fn::GetAtt" : ["ElkLogging", "Outputs.ELKCNAME"]}
     }
   }
 }

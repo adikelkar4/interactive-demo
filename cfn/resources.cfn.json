@@ -1,0 +1,25 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Shared Stack resources",
+
+  "Parameters": {
+    "EcsClusterName": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "CWLogGroup" : {
+      "Type" : "AWS::Logs::LogGroup",
+      "Properties" : {
+        "LogGroupName" : { "Ref" : "AWS::StackName" },
+        "RetentionInDays" : 1
+      }
+    }
+  },
+  "Outputs" : {
+    "CWLogGroup" : {
+      "Description" : "Shared log group",
+      "Value" : { "Ref" : "CWLogGroup"}
+    }
+  }
+}

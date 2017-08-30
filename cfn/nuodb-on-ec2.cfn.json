@@ -119,6 +119,10 @@
 
     "BrokerElbSecurityGroup" : {
       "Type" : "String"
+    },
+
+    "CWLogGroup" : {
+      "Type" : "String"
     }
   },
 
@@ -275,14 +279,6 @@
           { "IpProtocol" : "tcp", "FromPort" : "48004", "ToPort" : "48005",  "CidrIp": "10.0.0.0/16" },
           { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp": "0.0.0.0/0" }
         ]
-      }
-    },
-
-    "CWLogGroup" : {
-      "Type" : "AWS::Logs::LogGroup",
-      "Properties" : {
-        "LogGroupName" : { "Ref" : "AWS::StackName" },
-        "RetentionInDays" : 1
       }
     },
 
