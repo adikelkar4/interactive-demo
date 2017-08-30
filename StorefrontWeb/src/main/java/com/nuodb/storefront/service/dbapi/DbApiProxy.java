@@ -157,7 +157,7 @@ public class DbApiProxy implements IDbApi {
 
         // Sync footprint & template, ensuring DB is running on at least 1 node
         DbFootprint stats = getDbFootprint(regions);
-        setDbFootprint(Math.max(1, stats.usedRegionCount), Math.max(1, stats.usedHostCount), true, regions);
+        setDbFootprint(Math.max(1, stats.usedRegionCount), Math.max(1, stats.usedTeHostCount), true, regions);
 
         return db;
     }
@@ -332,7 +332,13 @@ public class DbApiProxy implements IDbApi {
                 if (createDb) {
                     database = new Database();
                 }
-                boolean updateDb = fixDatabaseTemplate(database, footprint.usedRegionCount, footprint.usedHostCount, homeHostInfo);
+
+                if (footprint.usedTeHostCount < 1) {
+                    footprint.usedTeHostCount++;
+                }
+
+                boolean updateDb = fixDatabaseTemplate(database, footprint.usedRegionCount, footprint.usedTeHostCount, homeHostInfo);
+
                 if (createDb) {
                     database.name = dbConnInfo.getDbName();
                     database.username = dbConnInfo.getUsername();
@@ -582,8 +588,8 @@ public class DbApiProxy implements IDbApi {
         	vars.put(DBVAR_HOST, null);
         	vars.put(DBVAR_SM_MIN, "1");
         	vars.put(DBVAR_SM_MAX, "1");
-        	vars.put(DBVAR_TE_MIN, "1");
-        	vars.put(DBVAR_TE_MAX, "1");
+        	vars.put(DBVAR_TE_MIN, Integer.toString(targetHosts));
+        	vars.put(DBVAR_TE_MAX, Integer.toString(targetHosts));
         }
 
         // Apply template name

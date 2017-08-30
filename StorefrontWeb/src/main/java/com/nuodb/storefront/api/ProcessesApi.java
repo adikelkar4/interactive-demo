@@ -12,6 +12,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.nuodb.storefront.service.dbapi.DbApiProxy;
 import org.apache.log4j.Logger;
 import com.nuodb.storefront.model.db.Process;
 import com.nuodb.storefront.model.dto.ProcessDetail;
@@ -108,17 +109,7 @@ public class ProcessesApi extends BaseApi {
     }
 
     private void moveHostCount(HttpServletRequest req, int count) {
-        HostLauncher launcher = this.buildHostLauncher(req);
-
-        if (launcher == null) {
-            return;
-        }
-
-        try {
-            launcher.scaleHosts(count);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        getDbApi(req).setDbFootprint(1, count);
 
         return;
     }

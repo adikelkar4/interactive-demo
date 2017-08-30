@@ -59,39 +59,39 @@ node('aml') {
   }
 
   // TODO:  Ensure that this cluster is actually using the images we just built
-    stage('Cluster Create') {
-      docker.image("python:2.7").inside {
-        withEnv(["AWS_DEFAULT_REGION=${aws_region}", "USER=${cluster_user}"]) {
-          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: aws_credentials, secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-            sh "virtualenv py27 && . py27/bin/activate && pip install -r requirements.txt"
-	    success=sh ". py27/bin/activate && bin/cluster create --delete-after ${expiration} | tee create-output.txt"
-	    if(success) {
- 	       output=readFile('create-output.txt').trim()
- 	       url=(output =~ /(http.*)/)[0][1]
-	    }
-	    else {
-	      // Remove the broken cluster
- 	      sh ". py27/bin/activate && bin/cluster delete --include ${cluster_user}-"	
- 	      error("Cluster failed to create")
-	    }
-          }
-        }
-      }
-    }
+  //   stage('Cluster Create') {
+  //     docker.image("python:2.7").inside {
+  //       withEnv(["AWS_DEFAULT_REGION=${aws_region}", "USER=${cluster_user}"]) {
+  //         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: aws_credentials, secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+  //           sh "virtualenv py27 && . py27/bin/activate && pip install -r requirements.txt"
+	//     success=sh ". py27/bin/activate && bin/cluster create --delete-after ${expiration} | tee create-output.txt"
+	//     if(success) {
+ 	//        output=readFile('create-output.txt').trim()
+ 	//        url=(output =~ /(http.*)/)[0][1]
+	//     }
+	//     else {
+	//       // Remove the broken cluster
+ 	//       sh ". py27/bin/activate && bin/cluster delete --include ${cluster_user}-"	
+ 	//       error("Cluster failed to create")
+	//     }
+  //         }
+  //       }
+  //     }
+  //   }
 
-    stage('Cluster Verify') {
-       sh "curl ${url}"
-       // TODO:  We need some kind of 'self check' URL to call
-    }
+  //   stage('Cluster Verify') {
+  //      sh "curl ${url}"
+  //      // TODO:  We need some kind of 'self check' URL to call
+  //   }
    
-   stage('Cluster Delete') {
-      docker.image("python:2.7").inside {
-        withEnv(["AWS_DEFAULT_REGION=${aws_region}", "USER=${cluster_user}"]) {
-	  withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: aws_credentials, secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-            sh "virtualenv py27 && . py27/bin/activate && pip install -r requirements.txt"
- 	    sh ". py27/bin/activate && bin/cluster delete --include ${cluster_user}-"
-          }
-        }
-     }
-  }
+  //  stage('Cluster Delete') {
+  //     docker.image("python:2.7").inside {
+  //       withEnv(["AWS_DEFAULT_REGION=${aws_region}", "USER=${cluster_user}"]) {
+	//   withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: aws_credentials, secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+  //           sh "virtualenv py27 && . py27/bin/activate && pip install -r requirements.txt"
+ 	//     sh ". py27/bin/activate && bin/cluster delete --include ${cluster_user}-"
+  //         }
+  //       }
+  //    }
+  // }
 }
