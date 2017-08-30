@@ -157,7 +157,7 @@ public class DbApiProxy implements IDbApi {
 
         // Sync footprint & template, ensuring DB is running on at least 1 node
         DbFootprint stats = getDbFootprint(regions);
-        setDbFootprint(Math.max(1, stats.usedRegionCount), Math.max(1, stats.usedHostCount), true, regions);
+        setDbFootprint(Math.max(1, stats.usedRegionCount), Math.max(1, stats.usedTeHostCount), true, regions);
 
         return db;
     }
