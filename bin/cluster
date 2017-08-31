@@ -264,13 +264,18 @@ def delete_cluster(stack, session, args):
         return False
 
 
-def sync_to_s3(aws_region, bucket_naame):
+def sync_to_s3(session, aws_region, bucket_naame):
     target_dir = os.path.dirname(__file__) + "/../cfn/"
 
-    s3 = boto3.resource('s3', region_name=aws_region)
+    s3 = session.resource('s3')
 
     for filename in os.listdir(target_dir):
-        s3.Object(bucket_name, filename).put(Body=open(os.path.join(target_dir, filename), 'rb'))
+        try:
+            obj = s3.Object(bucket_name, filename)
+            obj.put(Body=open(os.path.join(target_dir, filename), 'rb'))
+        except Exception as e:
+            print "FAILED to sync {} to {}".format(filename, bucket_name)
+            raise e
 
 
 def create_cluster_name(number, args):
@@ -390,7 +395,7 @@ the command to return successfully.
     aws_region = params['BucketRegion']
     bucket_name = params['Bucket']
 
-    sync_to_s3(aws_region, bucket_name)
+    sync_to_s3(session, aws_region, bucket_name)
 
     if args.delete_after:
         tags.append(dict(Key='DeleteAfter',
