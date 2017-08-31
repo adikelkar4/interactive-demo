@@ -469,13 +469,19 @@ def main():
     parse_delete = subs.add_parser('delete', help='Delete clusters')
     parse_delete.set_defaults(function=delete_clusters)
 
+    def check_delete_after (x):
+        if x.endswith('h'):
+            return x
+        else:
+            raise argparse.ArgumentTypeError("--delete-after must end in 'h'")
+
     parse_create.add_argument("--user", help="user name to include in cluster name", nargs=1, default=os.environ['USER'])
     parse_create.add_argument("--prefix", help="cluster name prefix", nargs=1, default='interactive-demo')
     parse_create.add_argument("--no-wait", help="Do not wait for cluster completion", action='store_true')
     parse_create.add_argument("--dry-run", help="Do not actually create the stack", action='store_true')
     parse_create.add_argument("--params-file", help="Parameters file", default="params/demo.params")
     parse_create.add_argument("--template", help="CFN Template file", default="cfn/demo.cfn.json")
-    parse_create.add_argument("--delete-after", help="Hours until the cluster should be deleted")
+    parse_create.add_argument("--delete-after", help="Hours until the cluster should be deleted", type=check_delete_after)
 
     group = parse_create.add_mutually_exclusive_group()
     group.add_argument("--count", help="number of clusters to create", type=int,  default=1)
