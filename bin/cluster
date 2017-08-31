@@ -267,7 +267,9 @@ def delete_cluster(stack, session, args):
         return False
 
 
-def sync_to_s3(session, aws_region, bucket_naame):
+@cache
+def sync_to_s3(session, aws_region, bucket_name):
+    print "Copying resources to S3"
     target_dir = os.path.dirname(__file__) + "/../cfn/"
 
     s3 = session.resource('s3')
@@ -392,13 +394,8 @@ the command to return successfully.
         ]
 
     # Upload cfn templates to s3 bucket
-    global aws_region
-    global bucket_name
-
     aws_region = params['BucketRegion']
     bucket_name = params['Bucket']
-
-    sync_to_s3(session, aws_region, bucket_name)
 
     if args.delete_after:
         tags.append(dict(Key='DeleteAfter',
@@ -411,6 +408,7 @@ the command to return successfully.
             name,
             "\n   ".join(format_params(params)))
     else:
+        sync_to_s3(session, aws_region, bucket_name)
         cfn.create_stack(
             StackName = name,
             TemplateBody = template,
