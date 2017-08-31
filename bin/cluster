@@ -98,6 +98,9 @@ This should be used by any function selecting clusters to implement --include an
 
     stacks = result['StackSummaries']
 
+    if not args.no_filter_names:
+        stacks = [x for x in stacks if re.match("^.*\\d+-\\d+$", x['StackName'])]
+
     if args.all:
         pass
     elif not args.include and not args.exclude:
@@ -496,6 +499,7 @@ def main():
         p.add_argument("--expired", help="include only expired stacks", action='store_true', default=False)
         p.add_argument("--failed", help="include only stacks with failed operations", action='store_true', default=False)
         p.add_argument("--status", help="include only stacks with the given word in the status")
+        p.add_argument("--no-filter-names", help="Do not filter the stacks by the conventional naming pattern", action='store_true')
 
     args = parser.parse_args()
 
