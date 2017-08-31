@@ -1,0 +1,338 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "ELK deployed on EC2 Instance",
+  "Mappings" : {
+    "ARNNamespace": {
+      "us-east-1":      { "Partition": "aws" },
+      "us-east-2":      { "Partition": "aws" },
+      "us-west-2":      { "Partition": "aws" },
+      "us-west-1":      { "Partition": "aws" },
+      "eu-west-1":      { "Partition": "aws" },
+      "eu-central-1":   { "Partition": "aws" },
+      "ap-southeast-1": { "Partition": "aws" },
+      "ap-northeast-1": { "Partition": "aws" },
+      "ap-southeast-2": { "Partition": "aws" },
+      "sa-east-1":      { "Partition": "aws" },
+      "us-gov-west-1":  { "Partition": "aws-us-gov" }
+    },
+    "S3Region": { "us-east-1": { "Region": "us-east-1" },
+      "us-east-2": {
+        "Region": "us-east-2"
+      },
+      "us-west-2": {
+        "Region": "us-east-1"
+      },
+      "us-west-1": {
+        "Region": "us-east-1"
+      },
+      "eu-west-1": {
+        "Region": "us-east-1"
+      },
+      "eu-central-1": {
+        "Region": "us-east-1"
+      },
+      "ap-southeast-1": {
+        "Region": "us-east-1"
+      },
+      "ap-northeast-1": {
+        "Region": "us-east-1"
+      },
+      "ap-southeast-2": {
+        "Region": "us-east-1"
+      },
+      "sa-east-1": {
+        "Region": "us-east-1"
+      },
+      "us-gov-west-1": {
+        "Region": "us-gov-west-1"
+      }
+    }
+  },
+  "Conditions" : {
+    "HasHostedZone" : { "Fn::Not": [{"Fn::Equals" : [{ "Ref" : "Hostname" },   "NONE"]}]}
+  },
+
+  "Parameters": {
+    "Bucket" : {
+      "Type" : "String"
+    },
+
+    "EcsClusterName" : {
+      "Type" : "String",
+      "Default" : "test"
+    },
+
+    "elkDocker" : {
+      "Type" : "String"
+    },
+
+    "VolumeSize" : {
+      "Type" : "Number"
+    },
+
+    "NuoDBInstanceAMI" : {
+      "Type" : "String"
+    },
+
+    "NuoDBInstanceType" : {
+      "Type" : "String"
+    },
+    "KeyName" : {
+      "Type" : "String"
+    },
+
+    "VpcID" : {
+      "Type" : "String"
+    },
+
+    "SubnetIds" : {
+      "Type" : "String"
+    },
+
+    "Hostname" : {
+     "Type" : "String"
+    }
+  },
+
+  "Resources" : {
+    "ELKInstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement":
+          [
+            {
+              "Effect": "Allow",
+              "Principal" : { "Service": [ "ec2.amazonaws.com", "ecs-tasks.amazonaws.com" ] },
+              "Action": [ "sts:AssumeRole" ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies":
+        [
+          {
+            "PolicyName": "deployRead",
+            "PolicyDocument": {
+              "Statement":
+              [
+                {
+                  "Action": [ "s3:Get*", "s3:List*" ],
+                  "Effect": "Allow",
+                  "Resource":
+                  [
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":s3:::", {"Ref" : "Bucket"}, "/"]]},
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":s3:::", {"Ref" : "Bucket"}, "/*"]]}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "deployBucketRead",
+            "PolicyDocument": {
+              "Statement":
+              [
+                {
+                  "Action": [  "s3:List*" ],
+                  "Effect": "Allow",
+                  "Resource":
+                  [
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":s3:::", {"Ref" : "Bucket"}]]}
+                  ]
+                }
+              ]
+            }
+          },
+
+          {
+            "PolicyName": "cloudwatchLogs",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:GetLogEvents",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogGroups",
+                    "logs:DescribeLogStreams"
+                  ],
+                  "Resource": [
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":logs:*:*:*" ]]}
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "createandattachvolume",
+            "PolicyDocument":  {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "Stmt1441831086000",
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:AttachVolume",
+                    "ec2:CreateVolume",
+                    "ec2:DescribeVolumes",
+                    "ec2:CreateSnapshot",
+                    "ec2:DeleteSnapshot",
+                    "ec2:DescribeSnapshots",
+                    "ec2:CreateTags",
+                    "ec2:ModifyInstanceAttribute"
+                  ],
+                  "Resource": [ "*" ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    "ELKInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [ { "Ref": "ELKInstanceRole" } ]
+      }
+    },
+
+
+    "ELKSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Allow access to NuoDB ports",
+        "VpcId" : { "Ref" : "VpcID" },
+        "SecurityGroupIngress" :
+        [
+          { "IpProtocol" : "tcp", "FromPort" : "5601", "ToPort" : "5601",  "CidrIp": "0.0.0.0/0" },
+          { "IpProtocol" : "tcp", "FromPort" : "9200", "ToPort" : "9200",  "CidrIp": "10.0.0.0/16" },
+          { "IpProtocol" : "tcp", "FromPort" : "5022", "ToPort" : "5044",  "CidrIp": "10.0.0.0/16" },
+          { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp": "0.0.0.0/0" }
+        ]
+      }
+    },
+
+    "ElkEc2Instance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "KeyName" : { "Ref" : "KeyName" },
+        "NetworkInterfaces" : [
+          {
+            "AssociatePublicIpAddress" : "true",
+            "DeviceIndex": "0",
+            "GroupSet": [{"Ref" : "ELKSecurityGroup" }],
+            "SubnetId": { "Ref" : "SubnetIds" }
+          }
+        ],
+        "ImageId" : { "Ref" : "NuoDBInstanceAMI" },
+        "InstanceType"   : { "Ref" : "NuoDBInstanceType" },
+        "IamInstanceProfile" : {"Ref": "ELKInstanceProfile" },
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : [ "", [
+          "#!/bin/bash -v\n",
+          "yum update -y aws-cfn-bootstrap\n",
+
+          "export CFN_StackId=",     { "Ref" : "AWS::StackId" }, "\n",
+          "export CFN_StackName=",   { "Ref" : "AWS::StackName" }, "\n",
+          "export CFN_Region=",      { "Ref" : "AWS::Region"  }, "\n",
+          "export NODE_REGION='",     { "Ref" : "AWS::Region" },  "'\n",
+          "export S3_Region='", { "Fn::FindInMap" : [ "S3Region", { "Ref" : "AWS::Region" },  "Region" ] },  "'\n",
+
+          "export ELK_DOCKER='", { "Ref": "elkDocker" }, "'\n",
+          "export INSTANCE_ID=$( /opt/aws/bin/ec2-metadata -i | cut -d ' ' -f 2 )\n",
+          "export AZ=$( /opt/aws/bin/ec2-metadata -z | cut -d ' ' -f 2 )\n",
+
+          "VOL_ID=$( aws ec2 create-volume ",
+          "  --region ${CFN_Region} --availability-zone ${AZ} ",
+          "  --volume-type gp2 --size ", { "Ref" : "VolumeSize" }, " ${ENC_ARGS} ",
+          " | grep VolumeId | cut -d \\\" -f 4 )\n",
+
+          "aws ec2 create-tags --region ${CFN_Region}  --resources ${VOL_ID} --tags Key=Name,Value='",
+          { "Fn::Join" : [ " - ", [ { "Ref": "AWS::StackName" }, "ELK Volume" ] ] } ,"'\n",
+
+          "aws ec2 create-tags --region ${CFN_Region}  --resources ${VOL_ID} --tags Key=CustomerID,Value='",{ "Ref": "EcsClusterName" },"'\n",
+
+          "sleep 10\n",
+          "while ! [ \"available\" = $(aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ${VOL_ID} --query Volumes[0].State | tr \\\" ' ' ) ]; do\n",
+          "   sleep 1;\n",
+          "done\n",
+
+          "aws ec2 attach-volume --region ${CFN_Region}  ",
+          "  --volume-id ${VOL_ID} --instance-id ${INSTANCE_ID} ",
+          "  --device /dev/xvdf \n",
+
+          "aws ec2 modify-instance-attribute --region ${CFN_Region} ",
+          "  --instance-id $INSTANCE_ID --block-device-mappings ",
+          "  '[{\"DeviceName\":\"/dev/xvdf\",\"Ebs\": {\"DeleteOnTermination\":true} }]'\n",
+
+          "while ! [ -r /dev/xvdf ]; do sleep 1; done\n",
+          "/sbin/mkfs.ext4 /dev/xvdf && mount /dev/xvdf /local\n",
+
+          "aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ${VOL_ID} \n",
+
+          "mkdir -p /local/log\n",
+
+          "yum install docker -y\n",
+
+          "service docker restart\n",
+
+          "cmd='$(aws ecr get-login --region us-east-2)' && eval $cmd && docker pull ${ELK_DOCKER} \n",
+
+          "docker run -d -p 5601:5601 -p 9200:9200 -p 5044:5044 ${ELK_DOCKER} \n",
+
+
+          "/opt/aws/bin/cfn-init ",
+          "   --stack ${CFN_StackId} ",
+          "   --resource NuoDBBrokerLaunchConfig ",
+          "   --region ${CFN_Region} ",
+          "   --configsets deploy_by_ansible\n",
+
+          "# Signal results.\n",
+          "/opt/aws/bin/cfn-signal -e $? ",
+          "  --region ${CFN_Region} ",
+          "  --stack \"${CFN_StackName}\" ",
+          "  --resource NuoDBBrokerASG ",
+          "  --reason \"CFN config setup exited with value $?.\" \n"
+        ]]}}
+        }
+    },
+
+    "ElkCNAME" : {
+      "Condition" : "HasHostedZone",
+      "DependsOn" : "ElkEc2Instance",
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+        "HostedZoneName" : { "Fn::Join" : [ "", [ { "Ref" : "Hostname" }, "." ] ]
+        },
+        "Comment" : "A Record for Kibana.",
+        "Name" : { "Fn::Join": ["", ["elk-", {"Ref" : "EcsClusterName"}, ".", { "Ref" : "Hostname" }, "." ]]},
+        "Type" : "A",
+        "TTL" : "300",
+        "ResourceRecords" : [ { "Fn::GetAtt" : ["ElkEc2Instance", "PublicIp"] } ]
+      }
+    }
+
+  },
+  "Outputs" : {
+    "ElkPrivateIP": {
+      "Description": "Internal ELK IP address",
+      "Value": {"Fn::GetAtt": ["ElkEc2Instance", "PrivateIp"] }
+    },
+    "ElkPublicIP" : {
+      "Description" : "External ELK IP Address",
+      "Value" : { "Fn::GetAtt" : ["ElkEc2Instance", "PublicIp"]}
+    },
+    "ELKCNAME" : {
+      "Description" : "URL for Kibana",
+      "Value" : { "Fn::If": [ "HasHostedZone",
+        { "Fn::Join": [ "", [ "http://", {"Ref": "ElkCNAME"}, ":5601/" ]]},
+        { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt" : ["ElkEc2Instance", "PublicIp"] }, ":5601/" ]]}]
+      }
+    }
+  }
+}
