@@ -48,10 +48,6 @@ public abstract class BaseApi {
         return BaseServlet.getTenant(req);
     }
 
-    protected IStorefrontService getService(HttpServletRequest req) {
-        return BaseServlet.getStorefrontService(req);
-    }
-
     protected static IDbApi getDbApi(HttpServletRequest req) {
         return BaseServlet.getDbApi(req);
     }

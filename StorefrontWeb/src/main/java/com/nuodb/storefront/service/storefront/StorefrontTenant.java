@@ -26,8 +26,6 @@ import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 
-import com.nuodb.storefront.dal.IStorefrontDao;
-import com.nuodb.storefront.dal.StorefrontDao;
 import com.nuodb.storefront.dal.UpperCaseNamingStrategy;
 import com.nuodb.storefront.model.dto.ConnInfo;
 import com.nuodb.storefront.model.dto.DbConnInfo;
@@ -222,23 +220,6 @@ public class StorefrontTenant implements IStorefrontTenant {
     }
 
     @Override
-    public SchemaExport createSchemaExport() {
-        SchemaExport export = new SchemaExport(hibernateCfg);
-        export.setDelimiter(";");
-        return export;
-    }
-
-    @Override
-    public void createSchema() {
-        new SchemaExport(hibernateCfg).create(false, true);
-    }
-
-    @Override
-    public IStorefrontService createStorefrontService() {
-        return new StorefrontService(appInstance, createStorefrontDao());
-    }
-
-    @Override
     public IDataGeneratorService createDataGeneratorService() {
         SessionFactory factory = getOrCreateSessionFactory();
         try {
@@ -261,11 +242,6 @@ public class StorefrontTenant implements IStorefrontTenant {
             }
         }
         return dbApi;
-    }
-
-    @Override
-    public IStorefrontDao createStorefrontDao() {
-        return createStorefrontDao(getOrCreateSessionFactory());
     }
 
     @Override
@@ -312,7 +288,6 @@ public class StorefrontTenant implements IStorefrontTenant {
                     sessionFactory = hibernateCfg.buildSessionFactory(serviceRegistry);
                 }
                 try {
-                    new AppInstanceInitService(createStorefrontDao(sessionFactory)).init(appInstance);
                     initializedApp = true;
                 } catch (Exception e) {
                     throw (e instanceof RuntimeException) ? ((RuntimeException) e) : new RuntimeException(e);
@@ -320,12 +295,6 @@ public class StorefrontTenant implements IStorefrontTenant {
             }
         }
         return sessionFactory;
-    }
-
-    protected IStorefrontDao createStorefrontDao(SessionFactory sf) {
-        StorefrontDao dao = new StorefrontDao(transactionStatsMap);
-        dao.setSessionFactory(sf);
-        return dao;
     }
 
     protected String getDbApiHost() {

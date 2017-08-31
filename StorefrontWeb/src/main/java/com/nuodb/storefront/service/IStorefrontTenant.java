@@ -8,7 +8,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 
-import com.nuodb.storefront.dal.IStorefrontDao;
 import com.nuodb.storefront.model.dto.ConnInfo;
 import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.dto.TransactionStats;
@@ -38,19 +37,11 @@ public interface IStorefrontTenant {
 
     public String getSqlExplorerUrl();
 
-    // Schema management
-    
-    public SchemaExport createSchemaExport();
-
-    public void createSchema();
 
     // Factory methods
     
-    public IStorefrontService createStorefrontService();
 
     public IDataGeneratorService createDataGeneratorService();
-
-    public IStorefrontDao createStorefrontDao();
     
     public Client createApiClient();
 

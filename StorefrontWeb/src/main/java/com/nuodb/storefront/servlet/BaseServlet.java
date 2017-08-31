@@ -4,6 +4,7 @@ package com.nuodb.storefront.servlet;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.servlet.ServletException;
@@ -46,10 +47,6 @@ public abstract class BaseServlet extends HttpServlet {
 
     public static IStorefrontTenant getTenant(HttpServletRequest req) {
         return StorefrontTenantManager.getTenant(req);
-    }
-    
-    public static IStorefrontService getStorefrontService(HttpServletRequest req) {
-        return getTenant(req).createStorefrontService();
     }
 
     public static IDbApi getDbApi(HttpServletRequest req) {
@@ -116,16 +113,7 @@ public abstract class BaseServlet extends HttpServlet {
             pageTitle += " [" + appInstance.getTenantName() + "]";
         }
 
-        // Fetch app instance list for region dropdown menu
-        List<AppInstance> appInstances;
-        try {
-            appInstances = getStorefrontService(req).getAppInstances(true);
-        } catch (Exception e) {
-            appInstances = new ArrayList<AppInstance>();
-            appInstances.add(appInstance);
-        }
-
-        PageConfig initData = new PageConfig(pageTitle, pageName, pageData, customer, getMessages(req), appInstances);
+        PageConfig initData = new PageConfig(pageTitle, pageName, pageData, customer, getMessages(req), Arrays.asList(appInstance) );
         req.setAttribute(ATTR_PAGE_CONFIG, initData);
         req.getSession().removeAttribute(SESSION_MESSAGES);
 
@@ -138,28 +126,7 @@ public abstract class BaseServlet extends HttpServlet {
     protected static void showCriticalErrorPage(HttpServletRequest req, HttpServletResponse resp, Exception ex) throws ServletException, IOException {
         getMessages(req).clear();
         addErrorMessage(req, ex);
-        
-        IStorefrontTenant tenant = getTenant(req);
 
-        if (ex instanceof GenericJDBCException) {
-            DbConnInfo dbInfo = tenant.getDbConnInfo();
-            addMessage(
-                    req,
-                    MessageSeverity.INFO,
-                    "Tip:  Check to see whether NuoDB is running and the database exists.  The storefront is trying to connect to \""
-                            + dbInfo.getUrl() + "\" with the username \"" + dbInfo.getUsername() + "\".");
-        } else if (ex instanceof SQLGrammarException) {
-            // Tables could be missing or bad. This could happen if a user re-creates the Storefront DB while it's running. Try repairing.
-            try {
-                synchronized (s_schemaUpdateLock) {
-                    tenant.createSchema();
-                }
-                addMessage(req, MessageSeverity.WARNING, "The Storefront schema has been updated.  One or more tables were missing or out of date.",
-                        "Refresh page");
-            } catch (Exception e) {
-                // Repair didn't work
-            }
-        }
         Customer customer = (Customer)req.getAttribute(ATTR_CUSTOMER);
         showPage(req, resp, "Storefront Problem", "error", null, (customer == null) ? new Customer() : customer);
 

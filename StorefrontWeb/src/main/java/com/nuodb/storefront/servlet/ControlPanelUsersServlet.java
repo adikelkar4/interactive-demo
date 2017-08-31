@@ -28,7 +28,6 @@ public class ControlPanelUsersServlet extends BaseServlet {
             pageData.put("stats", stats);
             pageData.put("maxIdleSec", StorefrontWebApp.STOP_USERS_AFTER_IDLE_UI_SEC);
             pageData.put("stopUsersWhenIdle", getTenant(req).getAppInstance().getStopUsersWhenIdle());
-            pageData.put("activeWebCustomerCount", getStorefrontService(req).getStorefrontStats(StorefrontWebApp.DEFAULT_SESSION_TIMEOUT_SEC, null).getActiveWebCustomerCount());
 
             showPage(req, resp, "Control Panel", "control-panel-users", pageData, new Customer());
         } catch (Exception ex) {

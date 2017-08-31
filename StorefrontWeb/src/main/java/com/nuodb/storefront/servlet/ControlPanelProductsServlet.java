@@ -27,7 +27,6 @@ public class ControlPanelProductsServlet extends BaseServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             Map<String, Object> pageData = new HashMap<String, Object>();
-            pageData.put("stats", checkForProducts(req));
             showPage(req, resp, "Control Panel", "control-panel-products", pageData, new Customer());
         } catch (Exception ex) {
             showCriticalErrorPage(req, resp, ex);
@@ -70,19 +69,5 @@ public class ControlPanelProductsServlet extends BaseServlet {
                 logger.error("Unable to remove product data", e);
             }
         }
-    }
-
-    protected StorefrontStats checkForProducts(HttpServletRequest req) {
-        StorefrontStats stats = getStorefrontService(req).getStorefrontStats(StorefrontWebApp.DEFAULT_SESSION_TIMEOUT_SEC, null);
-
-        if (stats.getProductCount() == 0) {
-            addMessage(
-                    req,
-                    MessageSeverity.INFO,
-                    "There are no products in the database.  Click a button below to seed the database with some sample products and reviews.  Note that the loading process may take around 10 seconds.",
-                    "Load 900 Real Products (with pictures served by Amazon.com)", "Generate 5,000 Fake Products (without pictures)");
-        }
-
-        return stats;
     }
 }

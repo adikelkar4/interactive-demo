@@ -42,12 +42,6 @@ public class AppInstanceApi extends BaseApi {
     }
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<AppInstance> getActiveAppInstances(@Context HttpServletRequest req) {
-        return getService(req).getAppInstances(true);
-    }
-
-    @GET
     @Path("/init-params")
     public Map<String, String> getParams(@Context HttpServletRequest req) {
         Map<String, String> map = new HashMap<String, String>();
@@ -79,40 +73,6 @@ public class AppInstanceApi extends BaseApi {
             instance.setStopUsersWhenIdle(stopUsersWhenIdle);
         }
         return instance;
-    }
-
-    @PUT
-    @Path("/sync")
-    @Produces(MediaType.APPLICATION_JSON)
-    public DbConnInfo sync(@Context HttpServletRequest req, DbConnInfo newDbConfig) {
-        // Update Storefront URL info
-        StorefrontWebApp.updateWebAppUrl(req);
-
-        // Update DB info
-        IStorefrontTenant tenant = getTenant(req);
-        DbConnInfo dbConfig = tenant.getDbConnInfo();
-        if (newDbConfig != null) {
-            if (!dbConfig.equals(newDbConfig)) {
-                if (!StringUtils.isEmpty(newDbConfig.getUrl())) {
-                    dbConfig.setUrl(newDbConfig.getUrl());
-                }
-                if (!StringUtils.isEmpty(newDbConfig.getUsername())) {
-                    dbConfig.setUsername(newDbConfig.getUsername());
-                }
-                if (!StringUtils.isEmpty(newDbConfig.getPassword())) {
-                    dbConfig.setPassword(newDbConfig.getPassword());
-                }
-
-                tenant.setDbConnInfo(dbConfig);
-            }
-        }
-
-        tenant.getLogger(this.getClass()).info("Received sync message with database " + newDbConfig.getDbName() + "; URL now " + tenant.getAppInstance().getUrl());
-        
-        // Start sending heartbeats if we aren't yet
-        tenant.startUp();
-
-        return dbConfig;
     }
 
     @POST
