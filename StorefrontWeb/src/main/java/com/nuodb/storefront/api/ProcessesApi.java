@@ -7,16 +7,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.nuodb.storefront.service.dbapi.DbApiProxy;
 import org.apache.log4j.Logger;
+
 import com.nuodb.storefront.model.db.Process;
 import com.nuodb.storefront.model.dto.ProcessDetail;
-import com.nuodb.storefront.model.entity.AppInstance;
 import com.storefront.workload.launcher.AwsHostLauncher;
 import com.storefront.workload.launcher.HostLauncher;
 
@@ -38,14 +42,6 @@ public class ProcessesApi extends BaseApi {
             
             if (process.nodeId == currentNodeId) {
                 detail.setCurrentConnection(true);
-            }
-        }
-
-        // Marry with AppInstances
-        for (AppInstance appInstance : getService(req).getAppInstances(true)) {
-            ProcessDetail detail = processMap.get(appInstance.getNodeId());
-            if (detail != null) {
-                detail.getAppInstances().add(appInstance.getUrl());
             }
         }
 

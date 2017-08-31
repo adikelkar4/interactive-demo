@@ -27,21 +27,32 @@ import com.nuodb.storefront.model.entity.Customer;
 import com.nuodb.storefront.model.type.MessageSeverity;
 import com.nuodb.storefront.service.IStorefrontTenant;
 
-public class WelcomeServlet extends ControlPanelProductsServlet {
+public class WelcomeServlet extends BaseServlet {
     private static final long serialVersionUID = 4369262156023258885L;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Map<String, Object> pageData = new HashMap<String, Object>();
-        //Pair<String, Object> prop = doHealthCheck(req);
-        //if (prop != null) {
-        //    pageData.put(prop.getKey(), prop.getValue());
-        //}
 
         showPage(req, resp, "Welcome", "welcome", pageData, new Customer());
     }
-
+    
     @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            String btnAction = req.getParameter("btn-msg");
+            if (btnAction != null) {
+                btnAction = btnAction.toLowerCase();
+                doPostAction(req, resp, btnAction);
+            }
+        } catch (Exception ex) {
+            getLogger(req, getClass()).error("Post failed", ex);
+            addErrorMessage(req, ex);
+        }
+
+        doGet(req, resp);
+    }
+
     protected void doPostAction(HttpServletRequest req, HttpServletResponse resp, String btnAction) throws IOException {
         IStorefrontTenant tenant = getTenant(req);
 
@@ -72,8 +83,6 @@ public class WelcomeServlet extends ControlPanelProductsServlet {
             connInfo.setPassword(req.getParameter("password"));
             tenant.setDbConnInfo(connInfo);
 
-            //tenant.getDbApi().fixDbSetup(true);
-
             // Wait until API acknowledges the DB exists
             for (int secondsWaited = 0; secondsWaited < StorefrontWebApp.DB_MAX_INIT_WAIT_TIME_SEC; secondsWaited++) {
                 try {
@@ -88,83 +97,5 @@ public class WelcomeServlet extends ControlPanelProductsServlet {
                 }
             }
         }
-
-        super.doPostAction(req, resp, btnAction);
-    }
-
-    protected Pair<String, Object> doHealthCheck(HttpServletRequest req) throws ServletException {
-        IStorefrontTenant tenant = getTenant(req);
-        Logger logger = tenant.getLogger(getClass());
-
-        try {
-            try {
-                tenant.getDbApi().fixDbSetup(false);
-            } catch (ApiUnavailableException e) {
-                // Try one more time
-                tenant.getDbApi().fixDbSetup(false);
-            }
-
-            synchronized (s_schemaUpdateLock) {
-                try {
-                    checkForProducts(req);
-                } catch (SQLGrammarException e) {
-                    // Database exists, but schema might not yet exist. Try creating it automatically.
-                    try {
-                        tenant.createSchema();
-                        checkForProducts(req);
-                    } catch (Exception e2) {
-                        logger.warn("Schema repair didn't work", e2);
-                        throw e;
-                    }
-                }
-            }
-        } catch (DatabaseNotFoundException e) {
-            return new ImmutablePair<String, Object>("db", tenant.getDbConnInfo());
-
-        } catch (GenericJDBCException e) {
-            logger.warn("Servlet handled JDBC error", e);
-
-            // Database may not exist. Inform the user
-            DbConnInfo dbInfo = tenant.getDbConnInfo();
-            addMessage(req, MessageSeverity.WARNING, "Could not connect to " + dbInfo.getDbName() + ":  " + e.getMessage());
-            return new ImmutablePair<String, Object>("db", dbInfo);
-
-        } catch (ApiUnavailableException e) {
-            addMessage(req, MessageSeverity.ERROR, "The NuoDB API is temporarily unavailable.", "Retry");
-            return null;
-
-        } catch (ApiConnectionException e) {
-            logger.error("Can't connect to API", e);
-            ConnInfo apiConnInfo = tenant.getDbApi().getApiConnInfo();
-            addMessage(req, MessageSeverity.ERROR,
-                    "Cannot connect to NuoDB API.  The Storefront is trying to connect to \"" + apiConnInfo.getUrl() + "\" with the username \""
-                            + apiConnInfo.getUsername() + "\".", "Retry");
-            return new ImmutablePair<String, Object>("api", apiConnInfo);
-
-        } catch (ApiUnauthorizedException e) {
-            ConnInfo apiConnInfo = tenant.getDbApi().getApiConnInfo();
-            apiConnInfo.setPassword(null);
-            addMessage(req, MessageSeverity.INFO, "Unable to connect to NuoDB API at \"" + apiConnInfo.getUrl() + "\" with the provided credentials.");
-            return new ImmutablePair<String, Object>("api", apiConnInfo);
-
-        } catch (ApiException e) {
-            logger.error("Health check failed", e);
-            addMessage(req, MessageSeverity.ERROR,
-                    "NuoDB RESTful API at " + tenant.getDbApi().getApiConnInfo().getUrl() + " returned an error:  " + e.getMessage(), "Retry");
-
-        } catch (Exception e) {
-            logger.error("Health check failed", e);
-            Throwable ei = e.getCause();
-            DbConnInfo dbInfo = tenant.getDbConnInfo();
-            String msg = (ei != null) ? ei.getMessage() : null;
-            if (msg != null && msg.indexOf("Database is inactive") >= 0) {
-                addMessage(req, MessageSeverity.WARNING, dbInfo.getDbName() + " is inactive.  Unquiesce the database via the Automation Console.",
-                        "Retry");
-            } else {
-                addMessage(req, MessageSeverity.ERROR, "Unable to connect to " + dbInfo.getDbName() + ":  " + e.getMessage(), "Retry");
-            }
-        }
-
-        return null;
     }
 }

@@ -3,8 +3,6 @@
 package com.nuodb.storefront.service.storefront;
 
 import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -18,26 +16,18 @@ import org.apache.log4j.Logger;
 import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.hibernate.SessionFactory;
-import org.hibernate.StatelessSession;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
-import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.service.ServiceRegistry;
-import org.hibernate.tool.hbm2ddl.SchemaExport;
 
-import com.nuodb.storefront.dal.IStorefrontDao;
-import com.nuodb.storefront.dal.StorefrontDao;
 import com.nuodb.storefront.dal.UpperCaseNamingStrategy;
 import com.nuodb.storefront.model.dto.ConnInfo;
 import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.entity.AppInstance;
-import com.nuodb.storefront.service.IDataGeneratorService;
 import com.nuodb.storefront.service.IDbApi;
-import com.nuodb.storefront.service.IStorefrontService;
 import com.nuodb.storefront.service.IStorefrontTenant;
-import com.nuodb.storefront.service.datagen.DataGeneratorService;
 import com.nuodb.storefront.service.dbapi.DbApiProxy;
 import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.nuodb.storefront.util.PerformanceUtil;
@@ -222,36 +212,6 @@ public class StorefrontTenant implements IStorefrontTenant {
     }
 
     @Override
-    public SchemaExport createSchemaExport() {
-        SchemaExport export = new SchemaExport(hibernateCfg);
-        export.setDelimiter(";");
-        return export;
-    }
-
-    @Override
-    public void createSchema() {
-        new SchemaExport(hibernateCfg).create(false, true);
-    }
-
-    @Override
-    public IStorefrontService createStorefrontService() {
-        return new StorefrontService(appInstance, createStorefrontDao());
-    }
-
-    @Override
-    public IDataGeneratorService createDataGeneratorService() {
-        SessionFactory factory = getOrCreateSessionFactory();
-        try {
-            Connection connection = factory.getSessionFactoryOptions().getServiceRegistry().getService(ConnectionProvider.class).getConnection();
-            StatelessSession session = factory.openStatelessSession(connection);
-            connection.setAutoCommit(true);
-            return new DataGeneratorService(session, connection, appInstance.getRegion());
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
     public IDbApi getDbApi() {
         if (dbApi == null) {
             synchronized (lock) {
@@ -261,11 +221,6 @@ public class StorefrontTenant implements IStorefrontTenant {
             }
         }
         return dbApi;
-    }
-
-    @Override
-    public IStorefrontDao createStorefrontDao() {
-        return createStorefrontDao(getOrCreateSessionFactory());
     }
 
     @Override
@@ -312,7 +267,6 @@ public class StorefrontTenant implements IStorefrontTenant {
                     sessionFactory = hibernateCfg.buildSessionFactory(serviceRegistry);
                 }
                 try {
-                    new AppInstanceInitService(createStorefrontDao(sessionFactory)).init(appInstance);
                     initializedApp = true;
                 } catch (Exception e) {
                     throw (e instanceof RuntimeException) ? ((RuntimeException) e) : new RuntimeException(e);
@@ -320,12 +274,6 @@ public class StorefrontTenant implements IStorefrontTenant {
             }
         }
         return sessionFactory;
-    }
-
-    protected IStorefrontDao createStorefrontDao(SessionFactory sf) {
-        StorefrontDao dao = new StorefrontDao(transactionStatsMap);
-        dao.setSessionFactory(sf);
-        return dao;
     }
 
     protected String getDbApiHost() {

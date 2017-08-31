@@ -70,17 +70,8 @@ public class ControlPanelLogServlet extends BaseServlet {
         // Storefront instances
         int appCount = 0;
         buff.append("STOREFRONT INSTANCES:\n\n");
-        try {
-            for (AppInstance instance : getStorefrontService(req).getAppInstances(true)) {
-                buff.append(++appCount);
-                buff.append(". ");
-                buff.append(instance);
-                buff.append("\n");
-            }
-        } catch (Exception e) {
-            buff.append(thisTenant.getAppInstance());
-            buff.append("\n");
-        }
+        buff.append(thisTenant.getAppInstance());
+        buff.append("\n");
 
         // Connections
         buff.append(StringUtils.repeat('-', 150));
