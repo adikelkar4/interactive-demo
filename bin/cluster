@@ -167,12 +167,40 @@ Select the clusters and then delete them in parallel.'''
     stacks = select(session, args)
     futures=[]
 
-    pool = concurrent.futures.ThreadPoolExecutor(args.parallel)
-    for stack in stacks:
-        futures.append(pool.submit(delete_cluster, stack, session, args))
-        #delete_cluster(stack, *args)
+    s3 = session.resource('s3')
+    params = read_params(args.params_file)
+
+    bucket_name = params['Bucket']
+
+
+    with  concurrent.futures.ThreadPoolExecutor(args.parallel) as pool:
+        for stack in stacks:
+            f = pool.submit(delete_cluster, stack, session, args)
+            f.add_done_callback(lambda x: delete_s3(bucket_name, stack['StackName'], s3))
+            futures.append(f)
         
     return reduce(lambda x,y: x and y, map(lambda x: x.done(), futures), True)
+
+def delete_s3(bucket_name, name, s3):
+    '''Delete the stack creation resources from s3'''
+    print "Deleting files in s3://{}/templates/{}".format(bucket_name, name)
+    prefix = "templates/{}".format(name)
+
+    bucket = s3.Bucket(bucket_name)
+    r = bucket.objects.filter(Prefix=prefix).delete()
+
+    if r == []:
+        return True
+
+    code = r[0]['ResponseMetadata']['HTTPStatusCode']
+    success = code >= 200 and code < 300
+
+    if success:
+        return True
+    else:
+        print "...deletion of files in {}/{} FAILED".format(bucket_name, name)
+        return False
+    
 
 def find_ecs_cluster(ecs, stack_name):
     '''Find the ECS cluster with the given name'''
@@ -269,15 +297,15 @@ def delete_cluster(stack, session, args):
 
 
 @cache
-def sync_to_s3(session, aws_region, bucket_name):
-    print "Copying resources to S3"
+def sync_to_s3(session, aws_region, bucket_name, name):
+    print "Copying resources to //s3/{}/templates/{}".format(bucket_name, name)
     target_dir = os.path.dirname(__file__) + "/../cfn/"
 
     s3 = session.resource('s3')
 
     for filename in os.listdir(target_dir):
         try:
-            obj = s3.Object(bucket_name, filename)
+            obj = s3.Object(bucket_name, "templates/" + name + "/" + filename)
             obj.put(Body=open(os.path.join(target_dir, filename), 'rb'))
         except Exception as e:
             print "FAILED to sync {} to {}".format(filename, bucket_name)
@@ -396,7 +424,7 @@ the command to return successfully.
             name,
             "\n   ".join(format_params(params)))
     else:
-        sync_to_s3(session, aws_region, bucket_name)
+        sync_to_s3(session, aws_region, bucket_name, name)
         cfn.create_stack(
             StackName = name,
             TemplateBody = template,
@@ -446,7 +474,6 @@ def main():
     parser.add_argument("--parallel", help="Number of operations to perform in parallel", default=40)
     parser.add_argument("--url-property", help="Name of the StorefrontURL CloudFormation export property", default="StorefrontElbURL")
 
-
     selectParser = argparse.ArgumentParser(add_help=False)
 
     selectParser.add_argument("--all", help="include all stacks", action='store_true', default=False)
@@ -458,15 +485,21 @@ def main():
     selectParser.add_argument("--no-filter-names", help="Do not filter the stacks by the conventional naming pattern", action='store_true')
 
 
+    fileChoiceParser = argparse.ArgumentParser(add_help=False)
+    fileChoiceParser.add_argument("--params-file", help="Parameters file", default="params/demo.params")
+    fileChoiceParser.add_argument("--template", help="CFN Template file", default="cfn/demo.cfn.json")
+
+
+
     subs = parser.add_subparsers(help='sub-command help')
 
-    parse_create = subs.add_parser('create', help='Create one or more clusters')
+    parse_create = subs.add_parser('create', help='Create one or more clusters', parents=[fileChoiceParser])
     parse_create.set_defaults(function=create_clusters)
 
     parse_list = subs.add_parser('list', help='List clusters', parents=[selectParser])
     parse_list.set_defaults(function=list_clusters)
 
-    parse_delete = subs.add_parser('delete', help='Delete clusters', parents=[selectParser])
+    parse_delete = subs.add_parser('delete', help='Delete clusters', parents=[selectParser, fileChoiceParser])
     parse_delete.set_defaults(function=delete_clusters)
 
     def check_delete_after (x):
@@ -479,8 +512,6 @@ def main():
     parse_create.add_argument("--prefix", help="cluster name prefix", nargs=1, default='interactive-demo')
     parse_create.add_argument("--no-wait", help="Do not wait for cluster completion", action='store_true')
     parse_create.add_argument("--dry-run", help="Do not actually create the stack", action='store_true')
-    parse_create.add_argument("--params-file", help="Parameters file", default="params/demo.params")
-    parse_create.add_argument("--template", help="CFN Template file", default="cfn/demo.cfn.json")
     parse_create.add_argument("--delete-after", help="Hours until the cluster should be deleted", type=check_delete_after)
 
     group = parse_create.add_mutually_exclusive_group()
