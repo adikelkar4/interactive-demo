@@ -27,7 +27,7 @@ import com.nuodb.storefront.model.entity.Customer;
 import com.nuodb.storefront.model.type.MessageSeverity;
 import com.nuodb.storefront.service.IStorefrontTenant;
 
-public class WelcomeServlet extends ControlPanelProductsServlet {
+public class WelcomeServlet extends BaseServlet {
     private static final long serialVersionUID = 4369262156023258885L;
 
     @Override
@@ -36,8 +36,23 @@ public class WelcomeServlet extends ControlPanelProductsServlet {
 
         showPage(req, resp, "Welcome", "welcome", pageData, new Customer());
     }
-
+    
     @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        try {
+            String btnAction = req.getParameter("btn-msg");
+            if (btnAction != null) {
+                btnAction = btnAction.toLowerCase();
+                doPostAction(req, resp, btnAction);
+            }
+        } catch (Exception ex) {
+            getLogger(req, getClass()).error("Post failed", ex);
+            addErrorMessage(req, ex);
+        }
+
+        doGet(req, resp);
+    }
+
     protected void doPostAction(HttpServletRequest req, HttpServletResponse resp, String btnAction) throws IOException {
         IStorefrontTenant tenant = getTenant(req);
 
@@ -68,8 +83,6 @@ public class WelcomeServlet extends ControlPanelProductsServlet {
             connInfo.setPassword(req.getParameter("password"));
             tenant.setDbConnInfo(connInfo);
 
-            //tenant.getDbApi().fixDbSetup(true);
-
             // Wait until API acknowledges the DB exists
             for (int secondsWaited = 0; secondsWaited < StorefrontWebApp.DB_MAX_INIT_WAIT_TIME_SEC; secondsWaited++) {
                 try {
@@ -84,7 +97,5 @@ public class WelcomeServlet extends ControlPanelProductsServlet {
                 }
             }
         }
-
-        super.doPostAction(req, resp, btnAction);
     }
 }

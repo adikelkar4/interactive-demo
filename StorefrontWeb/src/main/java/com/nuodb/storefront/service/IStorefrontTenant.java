@@ -6,7 +6,6 @@ import java.io.StringWriter;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.hibernate.tool.hbm2ddl.SchemaExport;
 
 import com.nuodb.storefront.model.dto.ConnInfo;
 import com.nuodb.storefront.model.dto.DbConnInfo;
@@ -39,10 +38,7 @@ public interface IStorefrontTenant {
 
 
     // Factory methods
-    
-
-    public IDataGeneratorService createDataGeneratorService();
-    
+        
     public Client createApiClient();
 
     // Tenant singletons

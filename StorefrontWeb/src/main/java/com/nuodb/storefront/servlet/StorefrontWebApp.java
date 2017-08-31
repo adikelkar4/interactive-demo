@@ -18,7 +18,6 @@ import org.codehaus.jackson.type.TypeReference;
 
 import com.nuodb.storefront.StorefrontTenantManager;
 import com.nuodb.storefront.model.entity.Product;
-import com.nuodb.storefront.service.IDataGeneratorService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.util.NetworkUtil;
 
@@ -108,38 +107,6 @@ public class StorefrontWebApp implements ServletContextListener {
             tenant.shutDown();
         }
     }
-
-    public static void loadData(IDataGeneratorService svc) throws IOException {
-	    InputStream stream = StorefrontWebApp.class.getClassLoader().getResourceAsStream("sample-products.json");
-	    ObjectMapper mapper = new ObjectMapper();
-	
-	    // Read products from JSON file
-	    List<Product> products = mapper.readValue(stream, new TypeReference<ArrayList<Product>>() {
-	    });
-	
-	    // Load products into DB, and load generated views
-	    try {
-	        svc.generateProductReviews(100, products, 10);
-	    } finally {
-	        svc.close();
-	    }
-	}
-
-	public static void removeData(IDataGeneratorService svc) throws IOException {
-	    try {
-	        svc.removeAll();
-	    } finally {
-	        svc.close();
-	    }
-	}
-
-	public static void generateData(IDataGeneratorService svc) throws IOException {
-	    try {
-	        svc.generateAll(100, 5000, 2, 10);
-	    } finally {
-	        svc.close();
-	    }
-	}
 
 	public static void updateWebAppUrl(HttpServletRequest req) {
         updateWebAppUrl(req.isSecure(), req.getHeader("HOST").split(":")[0], req.getServerPort(), req.getServletContext().getContextPath());
