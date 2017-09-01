@@ -50,10 +50,10 @@ node('aml') {
          user.push("${tag_prefix}")
          web.push("${tag_prefix}")
   
-         if(env.BRANCH_NAME.equals("release")) {
+//         if(env.BRANCH_NAME.equals("release")) {
            user.push("latest")
            web.push("latest")
-         }
+//         }
        }
      }
   }
