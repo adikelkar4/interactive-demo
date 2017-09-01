@@ -105,7 +105,7 @@ public class ProcessesApi extends BaseApi {
     }
 
     private void moveHostCount(HttpServletRequest req, int count) {
-        getDbApi(req).setDbFootprint(1, count);
+        // TODO - Replace this with up/down code
 
         return;
     }

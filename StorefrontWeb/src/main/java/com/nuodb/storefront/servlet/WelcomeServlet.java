@@ -82,20 +82,6 @@ public class WelcomeServlet extends BaseServlet {
             connInfo.setUsername(req.getParameter("username"));
             connInfo.setPassword(req.getParameter("password"));
             tenant.setDbConnInfo(connInfo);
-
-            // Wait until API acknowledges the DB exists
-            for (int secondsWaited = 0; secondsWaited < StorefrontWebApp.DB_MAX_INIT_WAIT_TIME_SEC; secondsWaited++) {
-                try {
-                    tenant.getDbApi().fixDbSetup(false);
-                    break;
-                } catch (DatabaseNotFoundException e) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ie) {
-                        break;
-                    }
-                }
-            }
         }
     }
 }

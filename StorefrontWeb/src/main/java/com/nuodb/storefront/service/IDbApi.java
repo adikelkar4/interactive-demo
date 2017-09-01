@@ -52,21 +52,6 @@ public interface IDbApi {
     public DbFootprint getDbFootprint() throws ApiException;
 
     /**
-     * Updates the Storefront DB's footprint. If the Storefront DB is not running, this method still changes tags on hosts for the proper footprint,
-     * but does not create the Storefront DB nor thrown an exception.
-     */
-    public DbFootprint setDbFootprint(int numRegions, int numHosts) throws ApiException, DataValidationException;
-
-    /**
-     * If the database does not yet exist, creates it, unless createIfDne is false in which case a {@link DatabaseNotFoundException} is thrown.
-     * 
-     * If it does exist, properly sets the database template, database variables, and host tags as appropriate.
-     * 
-     * @return Database metadata
-     */
-    public Database fixDbSetup(boolean createIfDne) throws DatabaseNotFoundException, ApiException;
-
-    /**
      * Gets stats for all regions, including ones where the Storefront DB is not currently running.
      */
     public List<RegionStats> getRegionStats() throws ApiException;

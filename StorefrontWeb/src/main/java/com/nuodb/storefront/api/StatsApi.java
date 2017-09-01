@@ -112,7 +112,7 @@ public class StatsApi extends BaseApi {
     @Path("/db")
     @Produces(MediaType.APPLICATION_JSON)
     public DbFootprint setDbStats(@Context HttpServletRequest req, @QueryParam("numRegions") Integer numRegions, @QueryParam("numHosts") Integer numHosts) {
-        DbFootprint footprint = getDbApi(req).setDbFootprint(numRegions.intValue(), numHosts.intValue());
+        DbFootprint footprint = getDbApi(req).getDbFootprint();
 
         return footprint;
     }
