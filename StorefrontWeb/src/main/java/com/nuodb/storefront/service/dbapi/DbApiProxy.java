@@ -161,6 +161,21 @@ public class DbApiProxy implements IDbApi {
         return getDbFootprint(getRegions());
     }
 
+    @Override
+    public void increaseTeCount() {
+
+    }
+
+    @Override
+    public void decreaseTeCount() {
+
+    }
+
+    @Override
+    public void resetTeCount() {
+
+    }
+
     protected List<Region> getRegions() {
         try {
             String dbName = dbConnInfo.getDbName();
@@ -363,74 +378,6 @@ public class DbApiProxy implements IDbApi {
                 .resource(apiConnInfo.getUrl() + path)
                 .header(HttpHeaders.AUTHORIZATION, authHeader)
                 .type(MediaType.APPLICATION_JSON);
-    }
-
-    @SuppressWarnings({ "unchecked" })
-    protected boolean fixDatabaseTemplate(Database database, int targetRegions, int targetHosts, HomeHostInfo homeHostInfo) {
-        // Initialize DB tag constraint map (to specify host tags for SMs and TEs)
-        Map<String, Map<String, String>> tagConstraints = new HashMap<String, Map<String, String>>();
-        dbConnInfo.getDbProcessTag();
-        tagConstraints.put(DBVAR_TAG_CONSTRAINT_GROUP_SM, buildTagMustExistConstraint(DBVAR_TAG_CONSTRAINT_SM));
-        tagConstraints.put(DBVAR_TAG_CONSTRAINT_GROUP_TE, buildTagMustExistConstraint(DBVAR_TAG_CONSTRAINT_TE));
-
-        // Determine which template to use, and add template-specific variables
-        Map<String, String> vars = new HashMap<String, String>();
-        String templateName;
-        
-        if (dbConnInfo.getHost().contains("localhost")) {
-        	tagConstraints.clear();
-            templateName = TEMPLATE_SINGLE_HOST;
-            vars.put(DBVAR_REGION, null);
-            vars.put(DBVAR_HOST, homeHostInfo.host.id);
-            vars.put(DBVAR_SM_MIN, null);
-            vars.put(DBVAR_SM_MAX, null);
-            vars.put(DBVAR_TE_MIN, null);
-            vars.put(DBVAR_TE_MAX, null);
-
-        } else {        	
-        	templateName = TEMPLATE_MULTI_HOST;
-        	vars.put(DBVAR_REGION, homeHostInfo.region.region);
-        	vars.put(DBVAR_HOST, null);
-        	vars.put(DBVAR_SM_MIN, "1");
-        	vars.put(DBVAR_SM_MAX, "1");
-        	vars.put(DBVAR_TE_MIN, Integer.toString(targetHosts));
-        	vars.put(DBVAR_TE_MAX, Integer.toString(targetHosts));
-        }
-
-        // Apply template name
-        int changeCount = 0;
-        String oldTemplateName = null;
-        if (database.template instanceof Map) {
-            oldTemplateName = ((Map<String, String>) database.template).get("name");
-        } else if (database.template != null) {
-            oldTemplateName = String.valueOf(database.template);
-        }
-        if (!templateName.equals(oldTemplateName)) {
-            changeCount++;
-        }
-        database.template = templateName; // always set DB template to a string since any update request needs this as a string, not an object
-
-        // Apply variables
-        if (database.variables == null) {
-            database.variables = new HashMap<String, String>();
-        }
-        if (database.tagConstraints == null) {
-            database.tagConstraints = new HashMap<String, Map<String, String>>();
-        }
-        changeCount += applyVariables(database.variables, vars);
-        changeCount += applyMapVariables(database.tagConstraints, tagConstraints);
-
-        // Apply options
-        if (database.options == null) {
-            database.options = new HashMap<String, String>();
-        }
-        Map<String, String> targetOptions = new HashMap<String, String>();
-        if (StorefrontWebApp.DB_PING_TIMEOUT_SEC > 0) {
-            targetOptions.put(OPTIONS_PING_TIMEOUT, Integer.toString(StorefrontWebApp.DB_PING_TIMEOUT_SEC));
-        }
-        changeCount += applyVariables(database.options, targetOptions);
-
-        return changeCount > 0;
     }
 
     private static Map<String, String> buildTagMustExistConstraint(String tagName) {
