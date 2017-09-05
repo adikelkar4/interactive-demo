@@ -8,7 +8,7 @@ aws_region='us-east-2'
 expiration="2"
 cluster_user="build-${BUILD_NUMBER}"
 def scmUrl = scm.getUserRemoteConfigs()[0].getUrl()
-should_push=scmUrl ==~ /nuodb\/interactive-demo/
+should_push=true
 
 // We're currently building all steps on a single node, labeled 'aml'
 
@@ -50,10 +50,10 @@ node('aml') {
          user.push("${tag_prefix}")
          web.push("${tag_prefix}")
   
-//         if(env.BRANCH_NAME.equals("release")) {
+        if(env.BRANCH_NAME.equals("master")) {
            user.push("latest")
            web.push("latest")
-//         }
+        }
        }
      }
   }
