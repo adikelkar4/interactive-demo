@@ -43,19 +43,19 @@ node('aml') {
        }
      }
 
-     if(should_push) {
-       stage('docker push') {
-         user.push("${tag_prefix}-${BUILD_NUMBER}")
-         web.push("${tag_prefix}-${BUILD_NUMBER}")
-         user.push("${tag_prefix}")
-         web.push("${tag_prefix}")
-  
-//         if(env.BRANCH_NAME.equals("release")) {
-           user.push("latest")
-           web.push("latest")
-//         }
-       }
-     }
+    //  if(should_push) {
+    stage('docker push') {
+      user.push("${tag_prefix}-${BUILD_NUMBER}")
+      web.push("${tag_prefix}-${BUILD_NUMBER}")
+      user.push("${tag_prefix}")
+      web.push("${tag_prefix}")
+
+      if(env.BRANCH_NAME.equals("master")) {
+          user.push("latest")
+          web.push("latest")
+      }
+    }
+    //  }
   }
 
   // TODO:  Ensure that this cluster is actually using the images we just built
