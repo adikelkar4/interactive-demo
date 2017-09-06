@@ -65,24 +65,27 @@ public class SimulatedUser implements IWorker, Runnable {
 		return workloadType;
 	}
 
-	public long doWork() {
+	public long doWork() throws InterruptedException {
 		WorkloadStep[] steps = workloadType.getSteps();
 
 		if (steps.length == 0) {
 			return IWorker.COMPLETE_NO_REPEAT;
 		}
+		Logger logger = simulator.getService().getLogger(getClass());
 		try {
 			for (int i = 0; i < steps.length; i++) {				
 				doWork(steps[i]);
+				long sleepTime = workloadType.calcNextThinkTimeMs();
+				Thread.sleep(sleepTime);
 			}
 		} catch (RuntimeException e) {
 			if (isExceptionRecoverable(e)) {
 				recoverFromException(e);
 
 				long retryDelay = getRetryDelay();
-				Logger logger = simulator.getService().getLogger(getClass());
 				logger.info("Encountered recoverable exception with simulated user \"" + getWorkload().getName()
 						+ "\". " + "Will retry in " + retryDelay + " ms.", e);
+				Thread.sleep(retryDelay);
 				throw new RetryWorkException(retryDelay);
 			}
 			throw e;
@@ -383,11 +386,6 @@ public class SimulatedUser implements IWorker, Runnable {
 			this.simulator.updateWorkloadStats(this.getWorkload(), "FAILED", duration);
 		} else {
 			this.simulator.updateWorkloadStats(this.getWorkload(), "COMPLETE", duration);
-		}
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
 	}
 }

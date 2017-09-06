@@ -42,5 +42,5 @@ public interface IWorker {
      *         The difference between returning a wait time and throwing this exception is that the exception version does not reset the original 
      *         dequeue time, thus the overall transaction time reported includes all delays and failed attempts.
      */
-    public long doWork() throws RetryWorkException;
+    public long doWork() throws InterruptedException;
 }
