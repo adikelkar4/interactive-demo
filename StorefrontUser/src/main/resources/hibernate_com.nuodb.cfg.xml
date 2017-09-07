@@ -15,8 +15,7 @@
         <property name="hibernate.connection.initialSize">100</property>
         <property name="hibernate.connection.loginTimeout">10</property>
         <property name="hibernate.connection.maxActive">0</property>
-        <property name="hibernate.connection.maxIdle">50</property>
-        <property name="hibernate.connection.maxWait">15000</property>
+        <property name="hibernate.connection.maxWait">30100</property>
         <property name="hibernate.connection.maxAge">30000</property>
         <property name="hibernate.connection.defaultSchema">Storefront</property>
         <property name="hibernate.connection.defaultReadOnly">false</property>
