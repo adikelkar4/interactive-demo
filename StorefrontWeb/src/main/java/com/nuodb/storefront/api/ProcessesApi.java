@@ -58,6 +58,12 @@ public class ProcessesApi extends BaseApi {
         try {
             getDbApi(req).increaseTeCount();
             log.warn("Host count increase requested");
+
+            Map<String, String> event = new HashMap<>();
+            event.put("Data", "Host count increase requested");
+
+            AppInstanceApi app = new AppInstanceApi();
+            app.putLog(event);
         } catch (ApiException e) {
             return Response.serverError().build();
         }
@@ -74,6 +80,12 @@ public class ProcessesApi extends BaseApi {
         try {
             getDbApi(req).decreaseTeCount();
             log.warn("Host count decrease requested");
+
+            Map<String, String> event = new HashMap<>();
+            event.put("Data", "Host count decrease requested");
+
+            AppInstanceApi app = new AppInstanceApi();
+            app.putLog(event);
         } catch (ApiException e) {
             return Response.serverError().build();
         }
@@ -90,6 +102,12 @@ public class ProcessesApi extends BaseApi {
         try {
             getDbApi(req).resetTeCount();
             log.info("Host count reset requested");
+
+            Map<String, String> event = new HashMap<>();
+            event.put("Data", "Host count reset requested");
+
+            AppInstanceApi app = new AppInstanceApi();
+            app.putLog(event);
         } catch (ApiException e) {
             return Response.serverError().build();
         }
