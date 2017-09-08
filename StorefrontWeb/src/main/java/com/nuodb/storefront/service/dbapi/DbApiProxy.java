@@ -187,7 +187,7 @@ public class DbApiProxy implements IDbApi {
                     varPair.setValue("1");
                 } else if (change < 0 && current > 1) {
                     varPair.setValue(Integer.toString(current - 1));
-                } else {
+                } else if (change > 0 && current < 5) {
                     varPair.setValue(Integer.toString(current + 1));
                 }
             }
