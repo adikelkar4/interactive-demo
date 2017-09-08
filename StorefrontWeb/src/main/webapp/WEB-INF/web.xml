@@ -89,6 +89,10 @@
         <servlet-name>storefront-tour-continuous-availability</servlet-name>
         <servlet-class>com.nuodb.storefront.servlet.TourContinuousAvailabilityServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>storefront-tour-nuodb-101</servlet-name>
+        <servlet-class>com.nuodb.storefront.servlet.NuoDb101Servlet</servlet-class>
+    </servlet>
 
     <!-- URL mappings -->
     <servlet-mapping>
@@ -130,5 +134,9 @@
     <servlet-mapping>
         <servlet-name>storefront-tour-continuous-availability</servlet-name>
         <url-pattern>/tour-continuous-availability</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>storefront-tour-nuodb-101</servlet-name>
+        <url-pattern>/nuodb-101</url-pattern>
     </servlet-mapping>
 </web-app>
