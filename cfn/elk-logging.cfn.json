@@ -189,6 +189,26 @@
                 }
               ]
             }
+          },
+          {
+            "PolicyName": "EcrReadAccess",
+            "PolicyDocument" : {
+              "Version": "2012-10-17",
+              "Statement": [{
+                "Effect": "Allow",
+                "Action": [
+                  "ecr:GetAuthorizationToken",
+                  "ecr:BatchCheckLayerAvailability",
+                  "ecr:GetDownloadUrlForLayer",
+                  "ecr:GetRepositoryPolicy",
+                  "ecr:DescribeRepositories",
+                  "ecr:ListImages",
+                  "ecr:DescribeImages",
+                  "ecr:BatchGetImage"
+                ],
+                "Resource": "*"
+              }]
+            }
           }
         ]
       }
@@ -277,13 +297,15 @@
 
           "mkdir -p /local/log\n",
 
+          "sysctl -w vm.max_map_count=262144\n",
+
           "yum install docker -y\n",
 
           "service docker restart\n",
 
-          "cmd='$(aws ecr get-login --region us-east-2)' && eval $cmd && docker pull ${ELK_DOCKER} \n",
+          "cmd='$(aws ecr get-login --region ${CFN_Region})' && eval $cmd && docker pull ${ELK_DOCKER} \n",
 
-          "docker run -d -p 5601:5601 -p 9200:9200 -p 5044:5044 ${ELK_DOCKER} \n",
+          "docker run -d --ulimit nofile=65536 -p 5601:5601 -p 9200:9200 -p 5044:5044 ${ELK_DOCKER} \n",
 
 
           "/opt/aws/bin/cfn-init ",
