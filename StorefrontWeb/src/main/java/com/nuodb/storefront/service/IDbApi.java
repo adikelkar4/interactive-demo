@@ -22,37 +22,52 @@ public interface IDbApi {
      * Gets the username and URL used by this implementation when connecting to the NuoDB RESTful API.
      * For security, the password is not reported (but rather set to null).
      */
-    public ConnInfo getApiConnInfo();
+    ConnInfo getApiConnInfo();
     
     /**
      * Makes a read-only API request to test the connection.  Throws an exception if a valid response was not received. 
      */
-    public void testConnection();
+    void testConnection();
 
     /**
      * Fetches information about the Storefront DB.
      */
-    public Database getDb() throws ApiException;
+    Database getDb() throws ApiException;
 
     /**
      * Fetches information about all the database processes running in support of the Storefront DB. This method returns an empty list if the
      * Storefront DB not running.
      */
-    public List<Process> getDbProcesses() throws ApiException;
+    List<Process> getDbProcesses() throws ApiException;
 
     /**
      * Shuts down a NuoDB process (TE or SM) with the given UID (which is a globally unique identifier, not PID). You can use this to shut down any
      * NuoDB process, not just ones running the Storefront DB.
      */
-    public void shutdownProcess(String uid) throws ApiException;
+    void shutdownProcess(String uid) throws ApiException;
 
     /**
      * Fetches some basic stats on the Storefront DB's footprint and the NuoDB domain overall.
      */
-    public DbFootprint getDbFootprint() throws ApiException;
+    DbFootprint getDbFootprint() throws ApiException;
 
     /**
      * Gets stats for all regions, including ones where the Storefront DB is not currently running.
      */
-    public List<RegionStats> getRegionStats() throws ApiException;
+    List<RegionStats> getRegionStats() throws ApiException;
+
+    /**
+     * Increases the TE count by one for the currently connected domain.
+     */
+    void increaseTeCount() throws ApiException;
+
+    /**
+     * Decreases the TE count by one for the currently connected domain, never going beneath one TE.
+     */
+    void decreaseTeCount() throws ApiException;
+
+    /**
+     * Resets the TE count to 1 for the currently connected domain.
+     */
+    void resetTeCount() throws ApiException;
 }
