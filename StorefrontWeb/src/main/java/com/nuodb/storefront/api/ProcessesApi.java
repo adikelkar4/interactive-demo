@@ -17,6 +17,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.nuodb.storefront.exception.ApiException;
 import org.apache.log4j.Logger;
 
 import com.nuodb.storefront.model.db.Process;
@@ -54,14 +55,12 @@ public class ProcessesApi extends BaseApi {
     public Response increaseHostCount(@Context HttpServletRequest req) {
         Logger log = getTenant(req).getLogger(this.getClass());
 
-        if (hostContainerCount < 5) {
-            moveHostCount(req, ++hostContainerCount);
-            log.info("Host count increased by 1");
-
-            return Response.ok().build();
+        try {
+            getDbApi(req).increaseTeCount();
+            log.warn("Host count increase requested");
+        } catch (ApiException e) {
+            return Response.serverError().build();
         }
-
-        log.warn("Host count increase requested when already maxed out");
 
         return Response.ok().build();
     }
@@ -72,14 +71,12 @@ public class ProcessesApi extends BaseApi {
     public Response decreaseHostCount(@Context HttpServletRequest req) {
         Logger log = getTenant(req).getLogger(this.getClass());
 
-        if (hostContainerCount > 1) {
-            moveHostCount(req, --hostContainerCount);
-            log.info("Host count decreased by 1");
-
-            return Response.ok().build();
+        try {
+            getDbApi(req).decreaseTeCount();
+            log.warn("Host count decrease requested");
+        } catch (ApiException e) {
+            return Response.serverError().build();
         }
-
-        log.warn("Host count decrease requested when already at minimum");
 
         return Response.ok().build();
     }
@@ -90,8 +87,12 @@ public class ProcessesApi extends BaseApi {
     public Response resetHostCount(@Context HttpServletRequest req) {
         Logger log = getTenant(req).getLogger(this.getClass());
 
-        moveHostCount(req, 1);
-        log.info("Host count reset to 1");
+        try {
+            getDbApi(req).resetTeCount();
+            log.info("Host count reset requested");
+        } catch (ApiException e) {
+            return Response.serverError().build();
+        }
 
         return Response.ok().build();
     }
@@ -102,12 +103,6 @@ public class ProcessesApi extends BaseApi {
     public Response get(@Context HttpServletRequest req, @PathParam("uid") String uid) {
         getDbApi(req).shutdownProcess(uid);
         return Response.ok().build();
-    }
-
-    private void moveHostCount(HttpServletRequest req, int count) {
-        // TODO - Replace this with up/down code
-
-        return;
     }
 
     private HostLauncher buildHostLauncher(HttpServletRequest req) {

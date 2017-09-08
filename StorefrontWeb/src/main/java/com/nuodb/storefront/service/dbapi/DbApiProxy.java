@@ -163,17 +163,41 @@ public class DbApiProxy implements IDbApi {
 
     @Override
     public void increaseTeCount() {
-
+        moveTeCount(1);
     }
 
     @Override
     public void decreaseTeCount() {
-
+        moveTeCount(-1);
     }
 
     @Override
     public void resetTeCount() {
+        moveTeCount(0);
+    }
 
+    protected void moveTeCount(int change) {
+        Database db = getDb();
+
+        for (Map.Entry<String, String> varPair : db.variables.entrySet()) {
+            if (varPair.getKey().equalsIgnoreCase("te_min") || varPair.getKey().equalsIgnoreCase("te_max")) {
+                int current = Integer.parseInt(varPair.getValue());
+
+                if (change == 0) {
+                    varPair.setValue("1");
+                } else if (change < 0 && current > 1) {
+                    varPair.setValue(Integer.toString(current - 1));
+                } else {
+                    varPair.setValue(Integer.toString(current + 1));
+                }
+            }
+        }
+
+        try {
+            buildClient("/databases/" + UriComponent.encode(db.name, Type.PATH_SEGMENT)).put(Database.class, db);
+        } catch (Exception e) {
+            throw ApiException.toApiException(e);
+        }
     }
 
     protected List<Region> getRegions() {
