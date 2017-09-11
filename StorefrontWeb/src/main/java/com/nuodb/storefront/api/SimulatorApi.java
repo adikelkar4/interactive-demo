@@ -15,11 +15,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.nuodb.storefront.launcher.AwsUserLauncher;
+import com.nuodb.storefront.launcher.LocalUserLauncher;
+import com.nuodb.storefront.launcher.UserLauncher;
 import com.nuodb.storefront.model.dto.WorkloadStats;
 import com.nuodb.storefront.servlet.StorefrontWebApp;
-import com.storefront.workload.launcher.LambdaLauncher;
-import com.storefront.workload.launcher.LocalLauncher;
-import com.storefront.workload.launcher.UserLauncher;
 
 @Path("/simulator")
 public class SimulatorApi extends BaseApi {
@@ -40,14 +40,14 @@ public class SimulatorApi extends BaseApi {
 			dbSettings.put("db.url", StorefrontWebApp.DB_NAME);
 			dbSettings.put("db.user", StorefrontWebApp.DB_USER);
 			dbSettings.put("db.password", StorefrontWebApp.DB_PASSWORD);
-			LocalLauncher local = new LocalLauncher();
+			LocalUserLauncher local = new LocalUserLauncher();
 			local.setDbOptions(dbSettings);
 			Map<String, String> appSettings = new HashMap<>();
 			appSettings.put("app.host", "http://" + host + "/StorefrontWeb");
 			local.setAppOptions(appSettings);
 			launcher = local;
     	} else {
-    		launcher = new LambdaLauncher();
+    		launcher = new AwsUserLauncher();
     	}
 
     	return launcher;

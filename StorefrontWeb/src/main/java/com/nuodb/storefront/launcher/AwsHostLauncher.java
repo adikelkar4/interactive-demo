@@ -1,4 +1,4 @@
-package com.storefront.workload.launcher;
+package com.nuodb.storefront.launcher;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,7 +24,6 @@ public class AwsHostLauncher implements HostLauncher {
             catalinaProperties = new Properties();
             catalinaProperties.load(propertiesStream);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 

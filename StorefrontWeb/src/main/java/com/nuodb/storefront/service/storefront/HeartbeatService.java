@@ -13,11 +13,11 @@ import com.amazonaws.services.cloudwatch.model.MetricDatum;
 import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
 import com.amazonaws.services.cloudwatch.model.StandardUnit;
 import com.nuodb.storefront.api.StatsApi;
+import com.nuodb.storefront.launcher.AwsUserLauncher;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.nuodb.storefront.util.PerformanceUtil;
-import com.storefront.workload.launcher.LambdaLauncher;
 
 public class HeartbeatService implements Runnable {
     private final Logger logger;
@@ -85,7 +85,7 @@ public class HeartbeatService implements Runnable {
                     AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
                     Dimension dimension = new Dimension()
                             .withName("ClusterName")
-                            .withValue(LambdaLauncher.getEcsClusterName());
+                            .withValue(AwsUserLauncher.getEcsClusterName());
                     MetricDatum datum = new MetricDatum()
                             .withMetricName("AverageLatency")
                             .withUnit(StandardUnit.Milliseconds)

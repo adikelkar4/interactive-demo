@@ -1,4 +1,4 @@
-package com.storefront.workload.launcher;
+package com.nuodb.storefront.launcher;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 
-public class LocalLauncher implements UserLauncher {
+public class LocalUserLauncher implements UserLauncher {
 	
 	private Map<String, String> appOptions;
 	private Map<String, String> dbOptions;
