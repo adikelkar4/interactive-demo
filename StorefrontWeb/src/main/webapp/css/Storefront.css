@@ -80,6 +80,37 @@ h2{
 	width:16px;
 	height:16px;
 	margin-top:0}
+.resource-table{
+	width: 100%;
+	height: 350px;}
+.resource-asset{
+	float:left;
+	width: 250px;
+	height: 300px;}
+.resource-download{
+	float:left;
+	width: 200px;
+	height: 200px;
+	background-image: url(../img/download-sq);
+	margin-bottom: 20px;
+	margin-top: 20px;}
+.resource-casestudy{
+	float:left;
+	width: 200px;
+	height: 200px;
+	background-image: url(img/causesquare-sq.jpg);
+	margin-bottom: 20px;
+	margin-top: 20px;}
+.resource-whitepaper{
+	float:left;
+	width: 200px;
+	height: 200px;
+	background-image: url(../img/whitepaper-sq);
+	margin-bottom: 20px;
+	margin-top: 20px;}
+.resource-caption{
+	width:200px;
+	height: 50px;}
 th.text-right,td.text-right{
 	text-align:right}
 th.text-center,td.text-center{
