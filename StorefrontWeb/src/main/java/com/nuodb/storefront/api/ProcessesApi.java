@@ -60,7 +60,7 @@ public class ProcessesApi extends BaseApi {
             log.warn("Host count increase requested");
             putActivityLog("Host count increase requested");
         } catch (ApiException e) {
-            log.error(e.getMessage() + "\n" + e.getStackTrace());
+            log.error(e.getMessage() + "\n" + e.getStackTraceAsString());
 
             return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
         }
@@ -79,7 +79,7 @@ public class ProcessesApi extends BaseApi {
             log.warn("Host count decrease requested");
             putActivityLog("Host count decrease requested");
         } catch (ApiException e) {
-            log.error(e.getMessage() + "\n" + e.getStackTrace());
+            log.error(e.getMessage() + "\n" + e.getStackTraceAsString());
 
             return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
         }
@@ -98,7 +98,7 @@ public class ProcessesApi extends BaseApi {
             log.info("Host count reset requested");
             putActivityLog("Host count reset requested");
         } catch (ApiException e) {
-            log.error(e.getMessage() + "\n" + e.getStackTrace());
+            log.error(e.getMessage() + "\n" + e.getStackTraceAsString());
 
             return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
         }
@@ -112,19 +112,6 @@ public class ProcessesApi extends BaseApi {
     public Response get(@Context HttpServletRequest req, @PathParam("uid") String uid) {
         getDbApi(req).shutdownProcess(uid);
         return Response.ok().build();
-    }
-
-    private HostLauncher buildHostLauncher(HttpServletRequest req) {
-        HostLauncher launcher = null;
-        String host = req.getHeader("HOST");
-
-        if (host.contains("localhost")) {
-            return launcher;
-        }
-
-        launcher = new AwsHostLauncher();
-
-        return launcher;
     }
 
     private void putActivityLog(String message) {
