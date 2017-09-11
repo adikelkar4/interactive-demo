@@ -123,6 +123,17 @@
 
     "CWLogGroup" : {
       "Type" : "String"
+    },
+    "ElkPrivateIP" : {
+      "Type" : "String"
+    },
+    "ElasticPort" : {
+      "Type" : "String",
+      "Default" : "9200"
+    },
+    "ElasticIndex" : {
+      "Type" : "String",
+      "Default" : "interactive-demo"
     }
   },
 
@@ -316,7 +327,10 @@
                   "export DB_PASSWORD='", { "Ref": "dbpassword" }, "'\n",
                   "export ARG_apphost='", { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}, "'\n",
                   "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
-                  "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n"
+                  "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
+                  "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
+                  "export ELASTIC_PORT='", { "Ref" : "elastic_port"}, "'\n",
+                  "export ELASTIC_INDEX='", { "Ref" : "elastic_index"}, "'\n"
 
                 ]]},
                 "mode" : "000400",
@@ -491,6 +505,9 @@
           "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
           "export INSTANCE_ID=$( /opt/aws/bin/ec2-metadata -i | cut -d ' ' -f 2 )\n",
           "export AZ=$( /opt/aws/bin/ec2-metadata -z | cut -d ' ' -f 2 )\n",
+          "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
+          "export ELASTIC_PORT='", { "Ref" : "ElasticPort"}, "'\n",
+          "export ELASTIC_INDEX='", { "Ref" : "ElasticIndex"}, "'\n",
 
           "VOL_ID=$( aws ec2 create-volume ",
           "  --region ${CFN_Region} --availability-zone ${AZ} ",
@@ -540,6 +557,9 @@
           "   -e \"PEER_ADDRESS=${PEER_ADDRESS}\" ",
           "   -e \"NODE_REGION=${NODE_REGION}\" ",
           "   -e \"ARG_apphost=${ARG_apphost}\" ",
+          "   -e \"ELASTIC_HOST=${ELASTIC_HOST}\" ",
+          "   -e \"ELASTIC_PORT=${ELASTIC_PORT}\" ",
+          "   -e \"ELASTIC_INDEX=${ELASTIC_INDEX}\" ",
           "   -p 48004:48004 ",
           "   -p 8888:8888 ${NUODB_DOCKER} \n",
 
@@ -626,7 +646,10 @@
                   "export DB_PASSWORD='", { "Ref": "dbpassword" }, "'\n",
                   "export ARG_apphost='", { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}, "'\n",
                   "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
-                  "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n"
+                  "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
+                  "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
+                  "export ELASTIC_PORT='", { "Ref" : "elastic_port"}, "'\n",
+                  "export ELASTIC_INDEX='", { "Ref" : "elastic_index"}, "'\n"
 
                 ]]},
                 "mode" : "000400",
@@ -801,6 +824,9 @@
           "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
           "export INSTANCE_ID=$( /opt/aws/bin/ec2-metadata -i | cut -d ' ' -f 2 )\n",
           "export AZ=$( /opt/aws/bin/ec2-metadata -z | cut -d ' ' -f 2 )\n",
+          "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
+          "export ELASTIC_PORT='", { "Ref" : "ElasticPort"}, "'\n",
+          "export ELASTIC_INDEX='", { "Ref" : "ElasticIndex"}, "'\n",
 
           "VOL_ID=$( aws ec2 create-volume ",
           "  --region ${CFN_Region} --availability-zone ${AZ} ",
@@ -851,6 +877,9 @@
           "   -e \"PEER_ADDRESS=${PEER_ADDRESS}\" ",
           "   -e \"NODE_REGION=${NODE_REGION}\" ",
           "   -e \"ARG_apphost=${ARG_apphost}\" ",
+          "   -e \"ELASTIC_HOST=${ELASTIC_HOST}\" ",
+          "   -e \"ELASTIC_PORT=${ELASTIC_PORT}\" ",
+          "   -e \"ELASTIC_INDEX=${ELASTIC_INDEX}\" ",
           "   -p 48010:48010 ",
           "   -p 48004:48004 ",
           "   -p 48005:48005 ",
@@ -938,7 +967,10 @@
                   "export DB_PASSWORD='", { "Ref": "dbpassword" }, "'\n",
                   "export ARG_apphost='", { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}, "'\n",
                   "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
-                  "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n"
+                  "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
+                  "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
+                  "export ELASTIC_PORT='", { "Ref" : "elastic_port"}, "'\n",
+                  "export ELASTIC_INDEX='", { "Ref" : "elastic_index"}, "'\n"
 
                 ]]},
                 "mode" : "000400",
@@ -1113,6 +1145,9 @@
           "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
           "export INSTANCE_ID=$( /opt/aws/bin/ec2-metadata -i | cut -d ' ' -f 2 )\n",
           "export AZ=$( /opt/aws/bin/ec2-metadata -z | cut -d ' ' -f 2 )\n",
+          "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
+          "export ELASTIC_PORT='", { "Ref" : "ElasticPort"}, "'\n",
+          "export ELASTIC_INDEX='", { "Ref" : "ElasticIndex"}, "'\n",
 
           "VOL_ID=$( aws ec2 create-volume ",
           "  --region ${CFN_Region} --availability-zone ${AZ} ",
@@ -1163,6 +1198,9 @@
           "   -e \"PEER_ADDRESS=${PEER_ADDRESS}\" ",
           "   -e \"NODE_REGION=${NODE_REGION}\" ",
           "   -e \"ARG_apphost=${ARG_apphost}\" ",
+          "   -e \"ELASTIC_HOST=${ELASTIC_HOST}\" ",
+          "   -e \"ELASTIC_PORT=${ELASTIC_PORT}\" ",
+          "   -e \"ELASTIC_INDEX=${ELASTIC_INDEX}\" ",
           "   -p 48010:48010 ",
           "   -p 48004:48004 ",
           "   -p 48005:48005 ",
