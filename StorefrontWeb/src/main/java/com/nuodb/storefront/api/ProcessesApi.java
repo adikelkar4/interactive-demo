@@ -60,7 +60,7 @@ public class ProcessesApi extends BaseApi {
             log.warn("Host count increase requested");
             putActivityLog("Host count increase requested");
         } catch (ApiException e) {
-            log.debug(e.getMessage() + "\n" + e.getStackTrace());
+            log.error(e.getMessage() + "\n" + e.getStackTrace());
 
             return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
         }
@@ -79,7 +79,7 @@ public class ProcessesApi extends BaseApi {
             log.warn("Host count decrease requested");
             putActivityLog("Host count decrease requested");
         } catch (ApiException e) {
-            log.debug(e.getMessage() + "\n" + e.getStackTrace());
+            log.error(e.getMessage() + "\n" + e.getStackTrace());
 
             return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
         }
@@ -98,7 +98,7 @@ public class ProcessesApi extends BaseApi {
             log.info("Host count reset requested");
             putActivityLog("Host count reset requested");
         } catch (ApiException e) {
-            log.debug(e.getMessage() + "\n" + e.getStackTrace());
+            log.error(e.getMessage() + "\n" + e.getStackTrace());
 
             return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
         }
