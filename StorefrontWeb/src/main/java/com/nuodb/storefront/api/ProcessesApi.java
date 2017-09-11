@@ -58,14 +58,11 @@ public class ProcessesApi extends BaseApi {
         try {
             getDbApi(req).increaseTeCount();
             log.warn("Host count increase requested");
-
-            Map<String, String> event = new HashMap<>();
-            event.put("Data", "Host count increase requested");
-
-            AppInstanceApi app = new AppInstanceApi();
-            app.putLog(event);
+            putActivityLog("Host count increase requested");
         } catch (ApiException e) {
-            return Response.serverError().build();
+            log.debug(e.getMessage() + "\n" + e.getStackTrace());
+
+            return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
         }
 
         return Response.ok().build();
@@ -80,14 +77,11 @@ public class ProcessesApi extends BaseApi {
         try {
             getDbApi(req).decreaseTeCount();
             log.warn("Host count decrease requested");
-
-            Map<String, String> event = new HashMap<>();
-            event.put("Data", "Host count decrease requested");
-
-            AppInstanceApi app = new AppInstanceApi();
-            app.putLog(event);
+            putActivityLog("Host count decrease requested");
         } catch (ApiException e) {
-            return Response.serverError().build();
+            log.debug(e.getMessage() + "\n" + e.getStackTrace());
+
+            return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
         }
 
         return Response.ok().build();
@@ -102,14 +96,11 @@ public class ProcessesApi extends BaseApi {
         try {
             getDbApi(req).resetTeCount();
             log.info("Host count reset requested");
-
-            Map<String, String> event = new HashMap<>();
-            event.put("Data", "Host count reset requested");
-
-            AppInstanceApi app = new AppInstanceApi();
-            app.putLog(event);
+            putActivityLog("Host count reset requested");
         } catch (ApiException e) {
-            return Response.serverError().build();
+            log.debug(e.getMessage() + "\n" + e.getStackTrace());
+
+            return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
         }
 
         return Response.ok().build();
@@ -134,5 +125,15 @@ public class ProcessesApi extends BaseApi {
         launcher = new AwsHostLauncher();
 
         return launcher;
+    }
+
+    private void putActivityLog(String message) {
+        Map<String, String> event = new HashMap<>();
+        event.put("Data", message);
+
+        AppInstanceApi app = new AppInstanceApi();
+        app.putLog(event);
+
+        return;
     }
 }
