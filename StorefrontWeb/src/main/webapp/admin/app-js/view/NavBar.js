@@ -18,6 +18,10 @@ Ext.define('App.view.NavBar', {
         icon: 'ico-home.png'
     },
     {
+        title: 'NuoDB 101',
+        href: '/nuodb-101'
+    },
+    {
         title: 'Guided Tours',
     }, {
         title: 'Scale-Out Performance',

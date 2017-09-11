@@ -15,8 +15,6 @@
     </div>
     <h3>Build Your Own</h3>
         <p>Experience the demo in your own environment! Dive into the details of the application and NuoDB by downloading the code and following instructions in the Github repository.</p>
-
-    <t:messages />
     
     <h3>Learn More:</h3>
         <a href="http://doc.nuodb.com/display/21V/Start+and+Stop+NuoDB+Services" target="_blank">

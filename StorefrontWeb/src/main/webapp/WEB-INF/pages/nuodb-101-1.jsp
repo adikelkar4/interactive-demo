@@ -4,12 +4,12 @@
 
 <t:page showHeader="false">
     <div class="header-logo"></div>
-    <h1>NUODB 101</h1>
+    <h1>NuoDB 101</h1>
    <h3>Introduction</h3>
-        <p>NuoDB is an elastic SQL database for hybrid cloud applications.  The database scales-out on-demand, ensures continuous availability, and provides standard database interfaces, operations, and guarantees of consistency and durability. Applications access NuoDB via an ANSI SQL interface and as a single logical database, even across data centers or Amazon availability zones.</br></br>
+        <p>NuoDB is an elastic SQL database for hybrid cloud applications.  The database scales-out on-demand, ensures continuous availability, and provides standard database interfaces, operations, and guarantees of consistency and durability. Applications access NuoDB via an ANSI SQL interface and as a single logical database, even across data centers or Amazon availability zones.</br>
         Particularly well-suited for hybrid cloud, distributed and microservices architectures, container environments, and dynamic operational workloads, NuoDB also preserves the best of the traditional database world via support of an ANSI SQL interface and full ACID compliance.
         </p>
-    <h3>Use Cases</h3>
+    <h3>Use Cases:</h3>
         <p>NuoDB is designed to be a general system of record database for enterprise operational workloads, including online transaction processing (OLTP) and hybrid transactional/analytical (HTAP) processing workloads. Well-suited as a technology for software development organizations that service a diverse range of industries, NuoDB is built for the modern data center, hybrid cloud environments, and for adaptability to efficiently handle a broad range of transactional workloads. Popular use cases for NuoDB include software services within telecom, financial services, e-commerce, product lifecycle management, and healthcare management industries.</p>
         <div style="float:left;width:40%;padding-right:10%;"><img src="img/network-architecture.png" style="width: 90%;padding-left:10%;padding-right:10%;padding-top:20%;padding-bottom:20%;"/></div>
 <h3>NuoDB Architecture: The Durable Distributed Cache</h3>        
