@@ -297,6 +297,10 @@
 
           "mkdir -p /local/log\n",
 
+          "mkdir -p /local/scripts\n",
+
+          "aws s3 sync s3://", { "Ref" : "Bucket"}, "/templates/", { "Ref" : "EcsClusterName"}, "/scripts /local/scripts\n",
+
           "sysctl -w vm.max_map_count=262144\n",
 
           "yum install docker -y\n",
@@ -307,6 +311,9 @@
 
           "docker run -d --ulimit nofile=65536 -p 5601:5601 -p 9200:9200 -p 5044:5044 ${ELK_DOCKER} \n",
 
+          "sleep 30\n",
+
+          "curl -XPUT http://localhost:9200/interactive-demo?pretty -H 'Content-Type: application/json' -d \"@/local/scripts/nuodbElasticIndex.json\"\n",
 
           "/opt/aws/bin/cfn-init ",
           "   --stack ${CFN_StackId} ",

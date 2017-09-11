@@ -60,6 +60,17 @@
 
     "SubnetIds" : {
       "Type" : "CommaDelimitedList"
+    },
+    "ElkPrivateIP" : {
+      "Type" : "String"
+    },
+    "ElasticPort" : {
+      "Type" : "String",
+      "Default" : "9200"
+    },
+    "ElasticIndex" : {
+      "Type" : "String",
+      "Default" : "interactive-demo"
     }
   },
   "Resources" : {
@@ -146,6 +157,18 @@
               {
                 "Name": "ARG_apphost",
                 "Value": { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb" }, ":80/StorefrontWeb" ]]}
+              },
+              {
+                "Name" : "ELASTIC_HOST",
+                "Value" : { "Ref" : "ElkPrivateIP"}
+              },
+              {
+                "Name" : "ELASTIC_PORT",
+                "Value" : { "Ref" : "ElasticPort" }
+              },
+              {
+                "Name" : "ELASTIC_INDEX",
+                "Value" : { "Ref" : "ElasticIndex" }
               }
             ]
           }
@@ -217,6 +240,18 @@
               {
                 "Name": "ARG_apphost",
                 "Value": { "Fn::Join" : ["", ["http://", { "Ref" : "StorefrontElb"}, ":80/StorefrontWeb" ]]}
+              },
+              {
+                "Name" : "ELASTIC_HOST",
+                "Value" : { "Ref" : "ElkPrivateIP"}
+              },
+              {
+                "Name" : "ELASTIC_PORT",
+                "Value" : { "Ref" : "ElasticPort" }
+              },
+              {
+                "Name" : "ELASTIC_INDEX",
+                "Value" : { "Ref" : "ElasticIndex" }
               }
             ]
           }
@@ -291,6 +326,18 @@
               {
                 "Name" : "POPULATE_NUODB",
                 "Value" : "true"
+              },
+              {
+                "Name" : "ELASTIC_HOST",
+                "Value" : { "Ref" : "ElkPrivateIP"}
+              },
+              {
+                "Name" : "ELASTIC_PORT",
+                "Value" : { "Ref" : "ElasticPort" }
+              },
+              {
+                "Name" : "ELASTIC_INDEX",
+                "Value" : { "Ref" : "ElasticIndex" }
               }
             ]
           }
