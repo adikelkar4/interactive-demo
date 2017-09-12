@@ -178,6 +178,7 @@ public class DbApiProxy implements IDbApi {
 
     protected void moveTeCount(int change) {
         Database db = getDb();
+        String uid = "";
 
         for (Map.Entry<String, String> varPair : db.variables.entrySet()) {
             if (varPair.getKey().equalsIgnoreCase("te_min") || varPair.getKey().equalsIgnoreCase("te_max")) {
@@ -187,6 +188,16 @@ public class DbApiProxy implements IDbApi {
                     varPair.setValue("1");
                 } else if (change < 0 && current > 1) {
                     varPair.setValue(Integer.toString(current - 1));
+
+                    List<Process> procs = getDbProcesses();
+
+                    for (Process proc : procs) {
+                        if (proc.type.equalsIgnoreCase("te")) {
+                            uid = proc.uid;
+
+                            break;
+                        }
+                    }
                 } else if (change > 0 && current < 5) {
                     varPair.setValue(Integer.toString(current + 1));
                 }
@@ -199,6 +210,10 @@ public class DbApiProxy implements IDbApi {
 
         try {
             buildClient("/databases/" + UriComponent.encode(db.name, Type.PATH_SEGMENT)).put(Database.class, db.toDefinition());
+
+            if (change < 0 && !uid.equalsIgnoreCase("")) {
+                buildClient("/processes/" + UriComponent.encode(uid, Type.PATH_SEGMENT)).delete();
+            }
         } catch (Exception e) {
             throw ApiException.toApiException(e);
         }
