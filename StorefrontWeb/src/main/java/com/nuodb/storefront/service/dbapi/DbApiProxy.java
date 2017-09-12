@@ -194,7 +194,7 @@ public class DbApiProxy implements IDbApi {
         }
 
         try {
-            buildClient("/databases/" + UriComponent.encode(db.name, Type.PATH_SEGMENT)).put(Database.class, db);
+            buildClient("/databases/" + UriComponent.encode(db.name, Type.PATH_SEGMENT)).put(Database.class, db.toDefinition());
         } catch (Exception e) {
             throw ApiException.toApiException(e);
         }
