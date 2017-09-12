@@ -311,6 +311,15 @@ def sync_to_s3(session, aws_region, bucket_name, name):
             print "FAILED to sync {} to {}".format(filename, bucket_name)
             raise e
 
+    target_dir = os.path.dirname(__file__) + "/../configScripts/"
+
+    for filename in os.listdir(target_dir):
+        try:
+            obj = s3.Object(bucket_name, "templates/" + name + "/scripts/" + filename)
+            obj.put(Body=open(os.path.join(target_dir, filename), 'rb'))
+        except Exception as e:
+            print "FAILED to sync {} to {}".format(filename, bucket_name)
+            raise e
 
 def create_cluster_name(number, args):
     '''Create a cluster name from the number on which we're working and the given command line args'''

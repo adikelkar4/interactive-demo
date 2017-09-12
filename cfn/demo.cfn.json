@@ -385,7 +385,8 @@
           "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] },
           "BrokerElbSecurityGroup" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbSecurityGroup"]},
 
-          "CWLogGroup" : { "Fn::GetAtt" : [ "Resources", "Outputs.CWLogGroup"]}
+          "CWLogGroup" : { "Fn::GetAtt" : [ "Resources", "Outputs.CWLogGroup"]},
+          "ElkPrivateIP" : { "Fn::GetAtt" : [ "ElkLogging", "Outputs.ElkPrivateIP"]}
         }
       }
     },
@@ -418,7 +419,8 @@
           "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
           "SubnetIds":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
           "peerAddress" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] },
-          "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] }
+          "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] },
+          "ElkPrivateIP" : { "Fn::GetAtt" : [ "ElkLogging", "Outputs.ElkPrivateIP"]}
         }
       }
     }

@@ -2,10 +2,7 @@
 
 package com.nuodb.storefront.exception;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,6 +24,15 @@ public class ApiException extends StorefrontException {
 
     public ApiException(Status errorCode, String message, Throwable cause) {
         super(errorCode, message, cause);
+    }
+
+    public String getStackTraceAsString() {
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw, true);
+
+        printStackTrace(pw);
+
+        return sw.getBuffer().toString();
     }
 
     public static ApiException toApiException(Exception e) {

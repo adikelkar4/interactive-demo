@@ -17,6 +17,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.nuodb.storefront.exception.ApiException;
 import org.apache.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -75,15 +76,16 @@ public class ProcessesApi extends BaseApi {
     public Response increaseHostCount(@Context HttpServletRequest req) {
         Logger log = getTenant(req).getLogger(this.getClass());
 
-        if (hostContainerCount < 5) {
-            moveHostCount(req, ++hostContainerCount);
-            log.info("Host count increased by 1");
+        try {
+            getDbApi(req).increaseTeCount();
+            log.warn("Host count increase requested");
+            putActivityLog("Host count increase requested");
             currentTopology.put("TE", Math.max(currentTopology.get("TE") + 1, 5));
+        } catch (ApiException e) {
+            log.error(e.getMessage() + "\n" + e.getStackTraceAsString());
 
-            return Response.ok().build();
+            return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
         }
-
-        log.warn("Host count increase requested when already maxed out");
 
         return Response.ok().build();
     }
@@ -94,14 +96,16 @@ public class ProcessesApi extends BaseApi {
     public Response decreaseHostCount(@Context HttpServletRequest req) {
         Logger log = getTenant(req).getLogger(this.getClass());
 
-        if (hostContainerCount > 1) {
-            moveHostCount(req, --hostContainerCount);
-            log.info("Host count decreased by 1");
+        try {
+            getDbApi(req).decreaseTeCount();
+            log.warn("Host count decrease requested");
+            putActivityLog("Host count decrease requested");
             currentTopology.put("TE", Math.max(currentTopology.get("TE") - 1, 1));
-            return Response.ok().build();
-        }
+        } catch (ApiException e) {
+            log.error(e.getMessage() + "\n" + e.getStackTraceAsString());
 
-        log.warn("Host count decrease requested when already at minimum");
+            return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
+        }
 
         return Response.ok().build();
     }
@@ -112,9 +116,16 @@ public class ProcessesApi extends BaseApi {
     public Response resetHostCount(@Context HttpServletRequest req) {
         Logger log = getTenant(req).getLogger(this.getClass());
 
-        moveHostCount(req, 1);
-        log.info("Host count reset to 1");
-        currentTopology = new HashMap<>(tourTopologies.get("tour-scale-out"));
+        try {
+            getDbApi(req).resetTeCount();
+            log.info("Host count reset requested");
+            putActivityLog("Host count reset requested");
+            currentTopology = new HashMap<>(tourTopologies.get("tour-scale-out"));
+        } catch (ApiException e) {
+            log.error(e.getMessage() + "\n" + e.getStackTraceAsString());
+
+            return Response.serverError().header("X-Exception-Message", e.getMessage()).build();
+        }
 
         return Response.ok().build();
     }
@@ -127,23 +138,14 @@ public class ProcessesApi extends BaseApi {
         return Response.ok().build();
     }
 
-    private void moveHostCount(HttpServletRequest req, int count) {
-        // TODO - Replace this with up/down code
+    private void putActivityLog(String message) {
+        Map<String, String> event = new HashMap<>();
+        event.put("Data", message);
+
+        AppInstanceApi app = new AppInstanceApi();
+        app.putLog(event);
 
         return;
-    }
-
-    private HostLauncher buildHostLauncher(HttpServletRequest req) {
-        HostLauncher launcher = null;
-        String host = req.getHeader("HOST");
-
-        if (host.contains("localhost")) {
-            return launcher;
-        }
-
-        launcher = new AwsHostLauncher();
-
-        return launcher;
     }
     
     public static boolean initializeTourInfrastructure(String tourName, HttpServletRequest req) {
