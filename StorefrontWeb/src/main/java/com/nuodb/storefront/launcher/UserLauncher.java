@@ -1,4 +1,4 @@
-package com.storefront.workload.launcher;
+package com.nuodb.storefront.launcher;
 
 import java.util.Map;
 

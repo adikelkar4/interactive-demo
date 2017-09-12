@@ -1,4 +1,4 @@
-package com.storefront.workload.launcher;
+package com.nuodb.storefront.launcher;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,7 +14,7 @@ import com.amazonaws.services.lambda.model.InvokeRequest;
 import com.amazonaws.services.lambda.model.InvokeResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class LambdaLauncher implements UserLauncher {
+public class AwsUserLauncher implements UserLauncher {
 	static {
 		File propertiesFile = new File(System.getProperty("catalina.base") + "/conf", "catalina.properties");
 		InputStream propertiesStream;
@@ -24,7 +24,6 @@ public class LambdaLauncher implements UserLauncher {
 			catalinaProperties = new Properties();
 			catalinaProperties.load(propertiesStream);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		if (catalinaProperties != null) {
@@ -132,18 +131,6 @@ public class LambdaLauncher implements UserLauncher {
 		}
 		public void setARG_ecsClusterName(String aRG_ecsClusterName) {
 			ARG_ecsClusterName = aRG_ecsClusterName;
-		}
-	}
-	
-	class LambdaOutput {
-		private String Data;
-
-		public String getData() {
-			return Data;
-		}
-
-		public void setData(String data) {
-			Data = data;
 		}
 	}
 }

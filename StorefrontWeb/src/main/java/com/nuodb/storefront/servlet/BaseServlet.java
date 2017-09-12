@@ -18,6 +18,7 @@ import org.hibernate.exception.GenericJDBCException;
 import org.hibernate.exception.SQLGrammarException;
 
 import com.nuodb.storefront.StorefrontTenantManager;
+import com.nuodb.storefront.api.ProcessesApi;
 import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.dto.Message;
 import com.nuodb.storefront.model.dto.PageConfig;
@@ -90,14 +91,12 @@ public abstract class BaseServlet extends HttpServlet {
         return count;
     }
 
-    protected static void showPage(HttpServletRequest req, HttpServletResponse resp, String pageTitle, String pageName, Object pageData)
-            throws ServletException, IOException {
-        showPage(req, resp, pageTitle, pageName, pageData, null);
-    }
-
     protected static void showPage(HttpServletRequest req, HttpServletResponse resp, String pageTitle, String pageName, Object pageData,
             Customer customer) throws ServletException, IOException {
 
+    	if (!ProcessesApi.initializeTourInfrastructure(pageName, req)) {
+    		getLogger(req, BaseServlet.class).warn("Tour was not initialized");
+    	}
         StorefrontWebApp.updateWebAppUrl(req);
         IStorefrontTenant tenant = getTenant(req);
         AppInstance appInstance = tenant.getAppInstance();
