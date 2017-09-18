@@ -53,6 +53,9 @@ node('aml') {
         if(env.BRANCH_NAME.equals("master")) {
            user.push("latest")
            web.push("latest")
+        } else if (env.BRANCH_NAME.equals("release")) {
+          user.push("release")
+          web.push("release")
         }
        }
      }
