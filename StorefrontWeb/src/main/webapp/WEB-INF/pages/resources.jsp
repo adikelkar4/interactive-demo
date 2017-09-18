@@ -3,6 +3,7 @@
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
 <t:page showHeader="false">
+    <t:messages></t:messages>
     <div class="header-logo"></div>
     <h1>RESOURCES</h1>
    	<div class="resource-table" style="width: 100%;height: 350px;">

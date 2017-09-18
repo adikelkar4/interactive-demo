@@ -3,6 +3,8 @@
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
 <t:page showHeader="false">
+<t:messages></t:messages>
+    <div class="header-logo"></div>
     <h1>CONTINUOUS AVAILABILITY</h1>
     <p>NuoDB’s architecture consists of a peer-to-peer network of transaction and storage process nodes. Create a redundant, resilient, continuously database by simply adding additional process nodes. If any of these nodes fails, overall database throughput will be impacted. However, NuoDB will continue to process transactions as long as it has at least one surviving transaction node and at least one storage node.</p>
 

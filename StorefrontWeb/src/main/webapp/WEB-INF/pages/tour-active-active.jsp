@@ -3,6 +3,8 @@
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
 <t:page showHeader="false">
+<t:messages></t:messages>
+    <div class="header-logo"></div>
     <h1>ACTIVE-ACTIVE</h1>
     
     <p>Active-active capabilities are a natural result of NuoDB’s peer-to-peer distributed, two-layer architectural design. NuoDB can be deployed as a single logical database within a data center, across multiple data centers, or even across hybrid cloud environments while maintaining ACID guarantees and serving up data at in-memory speeds. Watch how applications located in both environments can read and write to the database. Then, simulate a data center outage and see how the rest of the database (in the other datacenter) seamlessly takes over the workload with no downtime.</p>
