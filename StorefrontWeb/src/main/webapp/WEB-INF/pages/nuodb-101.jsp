@@ -5,6 +5,7 @@
 <t:page showHeader="false">
     <div class="header-logo"></div>
     <h1>NUODB 101</h1>
+    
    <h3>Introduction</h3>
         <p>NuoDB is an elastic SQL database for hybrid cloud applications.  The database scales-out on-demand, ensures continuous availability, and provides standard database interfaces, operations, and guarantees of consistency and durability. Applications access NuoDB via an ANSI SQL interface and as a single logical database, even across data centers or Amazon availability zones.</br></br>
         Particularly well-suited for hybrid cloud, distributed and microservices architectures, container environments, and dynamic operational workloads, NuoDB also preserves the best of the traditional database world via support of an ANSI SQL interface and full ACID compliance.
