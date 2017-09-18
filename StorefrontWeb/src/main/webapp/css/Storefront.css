@@ -42,6 +42,13 @@ form{
 	height:100px}
 .hidden{
 	display:none}
+.header-logo{
+	width: 100px;
+	height: 64px;
+	margin-bottom: 20px;
+	background-image: url(../img/nuodb-logo.png)
+}
+
 .home-tour-links{
 	width:44%;
 	height:auto;

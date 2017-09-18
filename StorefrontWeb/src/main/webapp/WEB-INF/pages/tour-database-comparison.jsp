@@ -3,7 +3,8 @@
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
 <t:page showHeader="false">
-
+<t:messages></t:messages>
+    <div class="header-logo"></div>
     <h1>DATABASE COMPARISON</h1>
     <p>Traditional relational databases are monolithic in nature, combine query processing and storage as a single service, and were designed for client-server systems.  While still maintaining full SQL data access, ACID transactions, and a relational model, NuoDB was designed to meet the modern performance requirements of today’s applications.  Learn how NuoDB performs compared to popular databases that were built on traditional, monolithic design principles - MySQL and Amazon Aurora.</p>
     

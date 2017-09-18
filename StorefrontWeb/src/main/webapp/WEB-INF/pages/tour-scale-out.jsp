@@ -3,6 +3,8 @@
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
 <t:page showHeader="false">
+    <t:messages></t:messages>
+    <div class="header-logo"></div>
     <h1>SCALE-OUT PERFORMANCE</h1>
     <p>NuoDB is designed to easily scale out and back in to maintain performance throughout dynamically changing workloads.  Simply add transaction engine process nodes to boost transaction performance of the database.  Scale back transaction nodes to conserve utilization and resources when workload demands are not as high.<br><br>With NuoDB, it’s straightforward to integrate with orchestration and management tooling, such as Amazon’s autoscaling services {what’s the name of this?}, Kurbernetes, Mesos, Nomad, Docker Swarm, via NuoDB’s RESTful services API.</p>
     <div class="row-fluid tour-figure tall">

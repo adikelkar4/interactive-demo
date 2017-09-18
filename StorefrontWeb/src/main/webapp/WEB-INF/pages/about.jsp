@@ -3,7 +3,8 @@
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
 <t:page showHeader="false">
-
+    <t:messages></t:messages>
+    <div class="header-logo"></div>
     <h1>ABOUT THIS DEMO</h1>
     
     <h3>Introduction</h3>

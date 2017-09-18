@@ -3,7 +3,8 @@
 <%@taglib prefix="t" tagdir="/WEB-INF/tags"%>
 
 <t:page showHeader="false">
-    <h1>NUODB INTERACTIVE DEMO</h1>
+    <div class="header-logo"></div>
+    <h1>NUODB ONLINE EXPERIENCE</h1>
     <t:messages />
     <div class="alert alert-block alert-info hide" id="api-box">
         <p>Before you can use this demo, you must specify domain credentials to connect to NuoDB.<br> &nbsp;</p>
@@ -70,7 +71,7 @@
     </div>
 
     <div id="welcome">
-        <p> Welcome to the NuoDB Interactive Online Demo!  In this demo, you control the applications to learn how NuoDB reacts to various scenarios. <br><br>For example, increase the workload and watch NuoDB automatically scale out to maintain high performance.  Simulate a datacenter failure and experience how NuoDB provides continuous availability to the application.  Learn how NuoDB compares to a traditional, monolithic database. <br><br> We hope you enjoy this interactive demo!  When you’ve finished exploring and are ready to dive deeper, build and test the demo in your own environment or try out our free Community Edition.</p>
+        <p> Welcome to the NuoDB Online Experience! In this demo, you control the applications to learn how NuoDB reacts to various scenarios. <br><br>For example, increase the workload and watch NuoDB automatically scale out to maintain high performance.  Simulate a datacenter failure and experience how NuoDB provides continuous availability to the application.  Learn how NuoDB compares to a traditional, monolithic database. <br><br> We hope you enjoy this interactive demo!  When you’ve finished exploring and are ready to dive deeper, build and test the demo in your own environment or try out our free Community Edition.</p>
 
         <h2>Select a tour to get started</h2>
         <div class="home-tour-links">
