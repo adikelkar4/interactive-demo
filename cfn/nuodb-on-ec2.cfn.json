@@ -329,8 +329,8 @@
                   "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
                   "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
                   "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
-                  "export ELASTIC_PORT='", { "Ref" : "elastic_port"}, "'\n",
-                  "export ELASTIC_INDEX='", { "Ref" : "elastic_index"}, "'\n"
+                  "export ELASTIC_PORT='", { "Ref" : "ElasticPort"}, "'\n",
+                  "export ELASTIC_INDEX='", { "Ref" : "ElasticIndex"}, "'\n"
 
                 ]]},
                 "mode" : "000400",
@@ -648,8 +648,8 @@
                   "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
                   "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
                   "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
-                  "export ELASTIC_PORT='", { "Ref" : "elastic_port"}, "'\n",
-                  "export ELASTIC_INDEX='", { "Ref" : "elastic_index"}, "'\n"
+                  "export ELASTIC_PORT='", { "Ref" : "ElasticPort"}, "'\n",
+                  "export ELASTIC_INDEX='", { "Ref" : "ElasticIndex"}, "'\n"
 
                 ]]},
                 "mode" : "000400",
@@ -827,6 +827,7 @@
           "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
           "export ELASTIC_PORT='", { "Ref" : "ElasticPort"}, "'\n",
           "export ELASTIC_INDEX='", { "Ref" : "ElasticIndex"}, "'\n",
+          "export POPULATE_NUODB=true\n",
 
           "VOL_ID=$( aws ec2 create-volume ",
           "  --region ${CFN_Region} --availability-zone ${AZ} ",
@@ -880,6 +881,7 @@
           "   -e \"ELASTIC_HOST=${ELASTIC_HOST}\" ",
           "   -e \"ELASTIC_PORT=${ELASTIC_PORT}\" ",
           "   -e \"ELASTIC_INDEX=${ELASTIC_INDEX}\" ",
+          "   -e \"POPULATE_NUODB=${POPULATE_NUODB}\" ",
           "   -p 48010:48010 ",
           "   -p 48004:48004 ",
           "   -p 48005:48005 ",
@@ -902,7 +904,7 @@
     },
 
     "NuoDBSMASG" : {
-      "DependsOn" : "NuoDBBrokerASG",
+      "DependsOn" : "NuoDBTEASG",
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "CreationPolicy": { "ResourceSignal": { "Count" : "1", "Timeout": "PT45M" } },
       "UpdatePolicy" : {
@@ -969,8 +971,8 @@
                   "export EcsClusterName='", { "Ref" : "EcsClusterName" }, "'\n",
                   "export NUODB_DOCKER='", { "Ref": "nuodbDocker" }, "'\n",
                   "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
-                  "export ELASTIC_PORT='", { "Ref" : "elastic_port"}, "'\n",
-                  "export ELASTIC_INDEX='", { "Ref" : "elastic_index"}, "'\n"
+                  "export ELASTIC_PORT='", { "Ref" : "ElasticPort"}, "'\n",
+                  "export ELASTIC_INDEX='", { "Ref" : "ElasticIndex"}, "'\n"
 
                 ]]},
                 "mode" : "000400",
@@ -1223,7 +1225,7 @@
     },
 
     "NuoDBTEASG" : {
-      "DependsOn" : "NuoDBSMASG",
+      "DependsOn" : "NuoDBBrokerASG",
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "CreationPolicy": { "ResourceSignal": { "Count" : "1", "Timeout": "PT45M" } },
       "UpdatePolicy" : {

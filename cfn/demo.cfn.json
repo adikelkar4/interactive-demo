@@ -338,7 +338,7 @@
           "StorefrontELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"]},
           "StorefrontURL" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontURL"]},
           "BrokerElbURL" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"]},
-          "brokerELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerELB"] },
+          "brokerELB" : { "Fn::If" : [ "CreateNuoDBonEC2", "", { "Fn::Join" : [ "", [{ "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerELB"] }, ","] ]} ]},
 
           "LambdaUserContinerArn" : { "Fn::GetAtt" : [ "LambdaFunctions", "Outputs.LambdaUserContinerArn"]},
           "ScaleTEService" : { "Fn::GetAtt" : [ "LambdaFunctions", "Outputs.ScaleTEService"]},
