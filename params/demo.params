@@ -9,6 +9,7 @@ EcsAmiId: ami-62745007
 EcsInstanceType: r4.8xlarge
 
 NuoDBInstanceAMI: ami-8a7859ef
+NuoDBInstanceType: c4.2xlarge
 
 # Environment Type options for deploying NuoDB: AWSECS, AWSEC2
 EnvironmentType: AWSEC2
@@ -22,7 +23,7 @@ EcsClusterName: interactive-demo-dewey-20170629-152634
 
 storeFrontWebDocker: docker.io/nuodb/storefrontweb-demo:master
 storeFrontUserDocker: docker.io/nuodb/storefrontuser-demo:master
-nuodbDocker: 248317454512.dkr.ecr.us-east-1.amazonaws.com/nuodb:3.0.0-36-4-1707
+nuodbDocker: 248317454512.dkr.ecr.us-east-1.amazonaws.com/nuodb:3.0.0-36-4-1717
 
 elkDocker: 248317454512.dkr.ecr.us-east-2.amazonaws.com/elk
 
