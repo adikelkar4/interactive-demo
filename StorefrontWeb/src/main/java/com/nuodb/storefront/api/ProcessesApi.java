@@ -17,12 +17,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.nuodb.storefront.exception.ApiException;
 import org.apache.log4j.Logger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.nuodb.storefront.launcher.AwsHostLauncher;
-import com.nuodb.storefront.launcher.HostLauncher;
+import com.nuodb.storefront.exception.ApiException;
 import com.nuodb.storefront.launcher.TourLauncher;
 import com.nuodb.storefront.model.db.Process;
 import com.nuodb.storefront.model.dto.ProcessDetail;

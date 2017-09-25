@@ -2,22 +2,14 @@
 
 package com.nuodb.storefront.servlet;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 
 import com.nuodb.storefront.StorefrontTenantManager;
-import com.nuodb.storefront.model.entity.Product;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.util.NetworkUtil;
 

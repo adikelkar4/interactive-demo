@@ -5,8 +5,6 @@ package com.nuodb.storefront.service;
 import java.util.List;
 
 import com.nuodb.storefront.exception.ApiException;
-import com.nuodb.storefront.exception.DataValidationException;
-import com.nuodb.storefront.exception.DatabaseNotFoundException;
 import com.nuodb.storefront.model.db.Database;
 import com.nuodb.storefront.model.db.Process;
 import com.nuodb.storefront.model.dto.ConnInfo;

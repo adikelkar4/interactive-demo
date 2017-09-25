@@ -18,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import com.nuodb.storefront.StorefrontTenantManager;
 import com.nuodb.storefront.api.BaseApi;
 import com.nuodb.storefront.model.dto.WorkloadStats;
-import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.model.entity.Customer;
 import com.nuodb.storefront.model.type.MessageSeverity;
 import com.nuodb.storefront.service.IStorefrontTenant;

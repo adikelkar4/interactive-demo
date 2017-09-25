@@ -10,21 +10,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
-import org.hibernate.exception.GenericJDBCException;
-import org.hibernate.exception.SQLGrammarException;
-
-import com.nuodb.storefront.exception.ApiConnectionException;
-import com.nuodb.storefront.exception.ApiException;
-import com.nuodb.storefront.exception.ApiUnauthorizedException;
 import com.nuodb.storefront.exception.ApiUnavailableException;
-import com.nuodb.storefront.exception.DatabaseNotFoundException;
 import com.nuodb.storefront.model.dto.ConnInfo;
 import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.entity.Customer;
-import com.nuodb.storefront.model.type.MessageSeverity;
 import com.nuodb.storefront.service.IStorefrontTenant;
 
 public class WelcomeServlet extends BaseServlet {

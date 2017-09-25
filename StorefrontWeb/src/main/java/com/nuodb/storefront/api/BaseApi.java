@@ -15,7 +15,6 @@ import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.dto.WorkloadStats;
 import com.nuodb.storefront.model.dto.WorkloadStep;
 import com.nuodb.storefront.service.IDbApi;
-import com.nuodb.storefront.service.IStorefrontService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 import com.nuodb.storefront.servlet.BaseServlet;
 import com.nuodb.storefront.util.PerformanceUtil;
@@ -36,9 +35,9 @@ public abstract class BaseApi {
 
     static {
         workloadDistribution = new HashMap<>();
-        workloadDistribution.put(WorkloadStep.MULTI_BROWSE.name(), "700");
-        workloadDistribution.put(WorkloadStep.MULTI_BROWSE_AND_REVIEW.name(), "700");
-        workloadDistribution.put(WorkloadStep.MULTI_SHOP.name(), "700");
+        workloadDistribution.put(WorkloadStep.MULTI_BROWSE.name(), "2000");
+        workloadDistribution.put(WorkloadStep.MULTI_BROWSE_AND_REVIEW.name(), "50");
+        workloadDistribution.put(WorkloadStep.MULTI_SHOP.name(), "50");
         workloadDistribution.put(WorkloadStep.ADMIN_RUN_REPORT.name(), "0");
         workloadStatHeap = new HashMap<>();
         transactionStatHeap = new HashMap<>();

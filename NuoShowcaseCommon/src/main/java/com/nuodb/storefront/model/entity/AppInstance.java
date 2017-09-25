@@ -2,7 +2,6 @@
 
 package com.nuodb.storefront.model.entity;
 
-import java.net.URL;
 import java.util.Calendar;
 import java.util.Date;
 

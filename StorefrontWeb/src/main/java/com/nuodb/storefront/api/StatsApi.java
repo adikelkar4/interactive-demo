@@ -2,7 +2,11 @@
 
 package com.nuodb.storefront.api;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,11 +21,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.nuodb.storefront.model.dto.DbFootprint;
 import com.nuodb.storefront.model.dto.RegionStats;
 import com.nuodb.storefront.model.dto.StatsPayload;
-import com.nuodb.storefront.model.dto.StorefrontStats;
 import com.nuodb.storefront.model.dto.StorefrontStatsReport;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.dto.WorkloadStats;
