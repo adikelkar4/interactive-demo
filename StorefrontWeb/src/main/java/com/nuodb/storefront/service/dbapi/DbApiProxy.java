@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -23,12 +22,9 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
 import com.nuodb.storefront.exception.ApiException;
-import com.nuodb.storefront.exception.DataValidationException;
-import com.nuodb.storefront.exception.DatabaseNotFoundException;
 import com.nuodb.storefront.model.db.Database;
 import com.nuodb.storefront.model.db.Host;
 import com.nuodb.storefront.model.db.Process;
-import com.nuodb.storefront.model.db.ProcessSpec;
 import com.nuodb.storefront.model.db.Region;
 import com.nuodb.storefront.model.db.Tag;
 import com.nuodb.storefront.model.dto.ConnInfo;
@@ -37,7 +33,6 @@ import com.nuodb.storefront.model.dto.DbFootprint;
 import com.nuodb.storefront.model.dto.RegionStats;
 import com.nuodb.storefront.service.IDbApi;
 import com.nuodb.storefront.service.IStorefrontTenant;
-import com.nuodb.storefront.servlet.StorefrontWebApp;
 import com.nuodb.storefront.util.NetworkUtil;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientHandlerException;
@@ -48,40 +43,16 @@ import com.sun.jersey.api.uri.UriComponent.Type;
 import com.sun.jersey.core.util.Base64;
 
 public class DbApiProxy implements IDbApi {
-    private static final String DBVAR_TAG_CONSTRAINT_GROUP_TE = "TEs";
-    private static final String DBVAR_TAG_CONSTRAINT_GROUP_SM = "SMs";
-    private static final String DBVAR_TAG_CONSTRAINT_TE = "TE_OK";
-    private static final String DBVAR_TAG_CONSTRAINT_SM = "SM_OK";
     private static final String DBVAR_TAG_EXISTS_CONSTRAINT = "ex:";
-    private static final String DBVAR_SM_MIN = "SM_MIN";
-    private static final String DBVAR_SM_MAX = "SM_MAX";
-    private static final String DBVAR_TE_MIN = "TE_MIN";
-    private static final String DBVAR_TE_MAX = "TE_MAX";
-    private static final String DBVAR_HOST = "HOST";
-    private static final String DBVAR_REGION = "REGION";
-
-    private static final String ARCHIVEVAR_ARCHIVE_DIR = "archiveDir";
-    private static final String ARCHIVE_DIR_SSM_SUFFIX = "_snapshot";
-
-    private static final String TEMPLATE_GEO_DISTRIBUTED = "Region Distribution";
-    private static final String TEMPLATE_MULTI_HOST = "Multi Host";
-    private static final String TEMPLATE_SINGLE_HOST = "Single Host";
-    private static final String OPTIONS_PING_TIMEOUT = "ping-timeout";
-    private static final String OPTIONS_STORAGE_GROUP = "storage-group";
-
     private static final String PROCESS_TRANSACTION_ENGINE = "TE";
     private static final String PROCESS_STORAGE_MANAGER = "SM";
     private static final String PROCESS_SNAPSHOT_STORAGE_MANAGER = "SSM";
-
-    private static final String STORAGE_GROUP_ALL = "ALL";
 
     private final IStorefrontTenant tenant;
     private final ConnInfo apiConnInfo;
     private final DbConnInfo dbConnInfo;
     private final Logger logger;
     private final RequestLogger requestLogger;
-    private int ssmFailCount = 0;
-
     public DbApiProxy(IStorefrontTenant tenant) {
         this.tenant = tenant;
         this.apiConnInfo = tenant.getApiConnInfo();
@@ -431,47 +402,5 @@ public class DbApiProxy implements IDbApi {
                 .resource(apiConnInfo.getUrl() + path)
                 .header(HttpHeaders.AUTHORIZATION, authHeader)
                 .type(MediaType.APPLICATION_JSON);
-    }
-
-    private static Map<String, String> buildTagMustExistConstraint(String tagName) {
-        Map<String, String> constraints = new HashMap<String, String>();
-        constraints.put(tagName, DBVAR_TAG_EXISTS_CONSTRAINT);
-        return constraints;
-    }
-
-    private static int applyVariables(Map<String, String> src, Map<String, String> vars) {
-        int changeCount = 0;
-        for (Map.Entry<String, String> varPair : vars.entrySet()) {
-            if (varPair.getValue() == null) {
-                if (src.remove(varPair.getKey()) != null) {
-                    changeCount++;
-                }
-            } else {
-                if (!varPair.getValue().equals(src.put(varPair.getKey(), varPair.getValue()))) {
-                    changeCount++;
-                }
-            }
-        }
-        return changeCount;
-    }
-
-    private static int applyMapVariables(Map<String, Map<String, String>> src, Map<String, Map<String, String>> vars) {
-        int changeCount = 0;
-        for (Map.Entry<String, Map<String, String>> varPair : vars.entrySet()) {
-            String key = varPair.getKey();
-            Map<String, String> value = varPair.getValue();
-
-            if (value == null) {
-                if (src.remove(value) != null) {
-                    changeCount++;
-                }
-            } else if (!src.containsKey(key)) {
-                src.put(key, value);
-                changeCount += value.size();
-            } else {
-                changeCount += applyVariables(src.get(key), value);
-            }
-        }
-        return changeCount;
     }
 }

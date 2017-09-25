@@ -361,11 +361,11 @@
               },
               {
                 "Name" : "ARG_workloadmulti_browseusers",
-                "Value" : "700"
+                "Value" : "2000"
               },
               {
                 "Name" : "ARG_workloadmulti_shopusers",
-                "Value" : "700"
+                "Value" : "50"
               },
               {
                 "Name" : "ARG_workloadadmin_run_reportusers",
@@ -373,7 +373,7 @@
               },
               {
                 "Name" : "ARG_workloadmulti_browse_and_reviewusers",
-                "Value" : "700"
+                "Value" : "50"
               }
             ]
           }

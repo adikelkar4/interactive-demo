@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.util.Map;
 import java.util.Properties;
 
 import com.amazonaws.services.lambda.AWSLambda;
