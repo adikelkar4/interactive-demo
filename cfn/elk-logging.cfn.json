@@ -327,8 +327,14 @@
           "  --stack \"${CFN_StackName}\" ",
           "  --resource NuoDBBrokerASG ",
           "  --reason \"CFN config setup exited with value $?.\" \n"
-        ]]}}
-        }
+        ]]}},
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join" : [ " - ", [ { "Ref": "AWS::StackName" }, "Kibana-ElasticSearch" ]] }
+          }
+        ]
+      }
     },
 
     "ElkCNAME" : {

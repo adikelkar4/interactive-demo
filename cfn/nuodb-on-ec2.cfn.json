@@ -105,6 +105,15 @@
     "NuoDBInstanceType" : {
       "Type" : "String"
     },
+
+    "SMStorageSize" : {
+      "Type" : "Number"
+    },
+
+    "SMStorageType" : {
+      "Type" : "String"
+    },
+
     "KeyName" : {
       "Type" : "String"
     },
@@ -117,6 +126,9 @@
       "Type" : "CommaDelimitedList"
     },
 
+    "Az1" : {
+      "Type" : "String"
+    },
     "BrokerElbSecurityGroup" : {
       "Type" : "String"
     },
@@ -612,6 +624,21 @@
       }
     },
 
+    "SMStorageVolume" : {
+      "Type":"AWS::EC2::Volume",
+      "Properties" : {
+        "AvailabilityZone" : { "Ref" : "Az1" },
+        "Size" : { "Ref" : "SMStorageSize"},
+        "Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : { "Fn::Join" : [ "-", [ { "Ref" : "AWS::StackName"}, "SM-Storage-Volume"]]}
+          }
+        ],
+        "VolumeType" : { "Ref" : "SMStorageType" }
+      }
+    },
+
     "NuoDBSMLaunchConfig": {
       "Type" : "AWS::AutoScaling::LaunchConfiguration",
       "Metadata" :
@@ -829,23 +856,14 @@
           "export ELASTIC_INDEX='", { "Ref" : "ElasticIndex"}, "'\n",
           "export POPULATE_NUODB=true\n",
 
-          "VOL_ID=$( aws ec2 create-volume ",
-          "  --region ${CFN_Region} --availability-zone ${AZ} ",
-          "  --volume-type gp2 --size ", { "Ref" : "VolumeSize" }, " ${ENC_ARGS} ",
-          " | grep VolumeId | cut -d \\\" -f 4 )\n",
-
-          "aws ec2 create-tags --region ${CFN_Region}  --resources ${VOL_ID} --tags Key=Name,Value='",
-          { "Fn::Join" : [ " - ", [ { "Ref": "AWS::StackName" }, "NuoDB Volume" ] ] } ,"'\n",
-
-          "aws ec2 create-tags --region ${CFN_Region}  --resources ${VOL_ID} --tags Key=CustomerID,Value='",{ "Ref": "EcsClusterName" },"'\n",
 
           "sleep 10\n",
-          "while ! [ \"available\" = $(aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ${VOL_ID} --query Volumes[0].State | tr \\\" ' ' ) ]; do\n",
+          "while ! [ \"available\" = $(aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ", { "Ref" : "SMStorageVolume" }, " --query Volumes[0].State | tr \\\" ' ' ) ]; do\n",
           "   sleep 1;\n",
           "done\n",
 
           "aws ec2 attach-volume --region ${CFN_Region}  ",
-          "  --volume-id ${VOL_ID} --instance-id ${INSTANCE_ID} ",
+          "  --volume-id ", { "Ref" : "SMStorageVolume" }, " --instance-id ${INSTANCE_ID} ",
           "  --device /dev/xvdf \n",
 
           "aws ec2 modify-instance-attribute --region ${CFN_Region} ",
@@ -855,9 +873,11 @@
           "while ! [ -r /dev/xvdf ]; do sleep 1; done\n",
           "/sbin/mkfs.ext4 /dev/xvdf && mount /dev/xvdf /local\n",
 
-          "aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ${VOL_ID} \n",
+          "aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ", { "Ref" : "SMStorageVolume" }, "\n",
 
           "mkdir -p /local/log\n",
+          "mkdir -p /local/production-archives\n",
+          "chown 1000:root /local/production-archives\n",
 
           "yum install docker -y\n",
 
@@ -882,6 +902,7 @@
           "   -e \"ELASTIC_PORT=${ELASTIC_PORT}\" ",
           "   -e \"ELASTIC_INDEX=${ELASTIC_INDEX}\" ",
           "   -e \"POPULATE_NUODB=${POPULATE_NUODB}\" ",
+          "   -v /local/production-archives:/opt/nuodb/var/opt/production-archives ",
           "   -p 48010:48010 ",
           "   -p 48004:48004 ",
           "   -p 48005:48005 ",
@@ -904,7 +925,7 @@
     },
 
     "NuoDBSMASG" : {
-      "DependsOn" : "NuoDBTEASG",
+      "DependsOn" : "NuoDBBrokerASG",
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "CreationPolicy": { "ResourceSignal": { "Count" : "1", "Timeout": "PT45M" } },
       "UpdatePolicy" : {
@@ -1225,7 +1246,7 @@
     },
 
     "NuoDBTEASG" : {
-      "DependsOn" : "NuoDBBrokerASG",
+      "DependsOn" : "NuoDBSMASG",
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "CreationPolicy": { "ResourceSignal": { "Count" : "1", "Timeout": "PT45M" } },
       "UpdatePolicy" : {
