@@ -130,6 +130,18 @@
       "Default" : "m4.large"
     },
 
+    "SMStorageSize" : {
+      "Type" : "Number",
+      "Description" : "SM Storage Volume Size",
+      "Default" : "100"
+    },
+
+    "SMStorageType" : {
+      "Type" : "String",
+      "Description" : "SM Storage Volume Type",
+      "Default" : "gp2"
+    },
+
     "KeyName" : {
       "Type" : "String",
       "Description" : "Optional - Name of an existing EC2 KeyPair to enable SSH access to the ECS instances",
@@ -147,6 +159,12 @@
     "SubnetIds" : {
       "Type" : "CommaDelimitedList",
       "Description" : "Optional - Comma separated list of existing VPC Subnet Ids where ECS instances will run",
+      "Default" : ""
+    },
+
+    "Az1" : {
+      "Type" : "String",
+      "Description" : "PublicSubnetAz1 availability zone",
       "Default" : ""
     },
 
@@ -377,9 +395,12 @@
           "EnvironmentType":  { "Ref" : "EnvironmentType" },
           "NuoDBInstanceAMI":   { "Ref" : "NuoDBInstanceAMI" },
           "NuoDBInstanceType":   { "Ref" : "NuoDBInstanceType" },
+          "SMStorageSize" : { "Ref" : "SMStorageSize"},
+          "SMStorageType" : { "Ref" : "SMStorageType"},
           "KeyName":  { "Ref" : "KeyName" },
           "VpcId" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
           "SubnetIds":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
+          "Az1":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.Az1"] }, { "Ref" : "Az1" } ] },
           "peerAddress" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] },
           "brokerELB" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerELB"] },
           "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] },

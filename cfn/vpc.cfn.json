@@ -227,8 +227,16 @@
       "Value" :  { "Ref" : "PubSubnetAz1"}
     },
     "PublicSubnetAz2" : {
-      "Description" : "Public Subnet AZ1 created in VPC",
+      "Description" : "Public Subnet AZ2 created in VPC",
       "Value" :  { "Ref" : "PubSubnetAz2"}
+    },
+    "Az1" : {
+      "Description" : "PublicSubnetAz1 availability zone",
+      "Value" : { "Fn::GetAtt" : ["PubSubnetAz1", "AvailabilityZone"]}
+    },
+    "Az2" : {
+      "Description" : "PublicSubnetAz2 availability zone",
+      "Value" : { "Fn::GetAtt" : ["PubSubnetAz2", "AvailabilityZone"]}
     },
     "RouteTableID" : {
       "Description" : "Route table ID",
