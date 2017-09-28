@@ -868,10 +868,10 @@
 
           "aws ec2 modify-instance-attribute --region ${CFN_Region} ",
           "  --instance-id $INSTANCE_ID --block-device-mappings ",
-          "  '[{\"DeviceName\":\"/dev/xvdf\",\"Ebs\": {\"DeleteOnTermination\":true} }]'\n",
+          "  '[{\"DeviceName\":\"/dev/xvdf\",\"Ebs\": {\"DeleteOnTermination\":false} }]'\n",
 
           "while ! [ -r /dev/xvdf ]; do sleep 1; done\n",
-          "/sbin/mkfs.ext4 /dev/xvdf && mount /dev/xvdf /local\n",
+          "mount /dev/xvdf /local\n",
 
           "aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ", { "Ref" : "SMStorageVolume" }, "\n",
 
@@ -1264,7 +1264,7 @@
         "LaunchConfigurationName" : { "Ref" : "NuoDBTELaunchConfig" },
         "MinSize" : "1",
         "MaxSize" : "5",
-        "DesiredCapacity" : "5",
+        "DesiredCapacity" : "1",
         "HealthCheckGracePeriod" : "600",
         "HealthCheckType" : "EC2",
         "Tags": [
