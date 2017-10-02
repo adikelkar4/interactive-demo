@@ -302,7 +302,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 	}
 	
 	public void startStatsService() {		
-		executor.scheduleAtFixedRate(getStatsSvc(), 0, 1000, TimeUnit.MILLISECONDS);
+		executor.scheduleAtFixedRate(getStatsSvc(), 0, 500, TimeUnit.MILLISECONDS);
 	}
 
 	protected String getDbApiHost() {
