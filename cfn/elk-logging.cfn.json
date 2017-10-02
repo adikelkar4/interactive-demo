@@ -144,6 +144,23 @@
               ]
             }
           },
+          {
+            "PolicyName": "elasticSearchBackup",
+            "PolicyDocument": {
+              "Statement":
+              [
+                {
+                  "Action": [  "*" ],
+                  "Effect": "Allow",
+                  "Resource":
+                  [
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":s3:::interactive-demo-elasticsearch-logs"]]},
+                    { "Fn::Join": [ "", [ "arn:", { "Fn::FindInMap" : [ "ARNNamespace", { "Ref" : "AWS::Region" },  "Partition" ] }, ":s3:::interactive-demo-elasticsearch-logs/*"]]}
+                  ]
+                }
+              ]
+            }
+          },
 
           {
             "PolicyName": "cloudwatchLogs",
@@ -295,11 +312,11 @@
 
           "aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ${VOL_ID} \n",
 
-          "mkdir -p /local/log\n",
-
-          "mkdir -p /local/scripts\n",
+          "mkdir -p /local/{log,scripts,backup} && chmod 777 /local/backup\n",
 
           "aws s3 sync s3://", { "Ref" : "Bucket"}, "/templates/", { "Ref" : "EcsClusterName"}, "/scripts /local/scripts\n",
+
+          "chmod -R +x /local/scripts\n",
 
           "sysctl -w vm.max_map_count=262144\n",
 
@@ -309,15 +326,30 @@
 
           "cmd='$(aws ecr get-login --region ${CFN_Region})' && eval $cmd && docker pull ${ELK_DOCKER} \n",
 
-          "docker run -d --ulimit nofile=65536 -p 5601:5601 -p 9200:9200 -p 5044:5044 ${ELK_DOCKER} \n",
+          "docker run -d --ulimit nofile=65536 ",
+          "  -p 5601:5601 ",
+          "  -p 9200:9200 ",
+          "  -p 5044:5044 ",
+          "  -v /local/scripts/elasticsearch.yml:/etc/elasticsearch/elasticsearch.yml ",
+          "  -v /local/backup:/tmp/backup ",
+          "  ${ELK_DOCKER}\n",
 
           "sleep 30\n",
 
           "curl -XPUT http://localhost:9200/interactive-demo?pretty -H 'Content-Type: application/json' -d \"@/local/scripts/nuodbElasticIndex.json\"\n",
 
+          "curl -XPUT http://localhost:9200/_snapshot/index_backup -d '{ \"type\": \"fs\", \"settings\": { \"location\": \"/tmp/backup\", \"compress\": true } }'\n",
+
+          "crontab -l > cronjobs\n",
+          "echo \"* * * * * aws s3 --region ", { "Ref" : "AWS::Region" }, "  sync /local/backup s3://interactive-demo-elasticsearch-logs/", { "Ref" : "EcsClusterName" }, "\" >> cronjobs\n",
+          "echo \"*/5 * * * * /local/scripts/exportElasticSearch.sh\" >> cronjobs\n",
+          "crontab cronjobs\n",
+
+          "service crond restart\n",
+
           "/opt/aws/bin/cfn-init ",
           "   --stack ${CFN_StackId} ",
-          "   --resource NuoDBBrokerLaunchConfig ",
+          "   --resource ElkEc2Instance ",
           "   --region ${CFN_Region} ",
           "   --configsets deploy_by_ansible\n",
 
@@ -325,7 +357,7 @@
           "/opt/aws/bin/cfn-signal -e $? ",
           "  --region ${CFN_Region} ",
           "  --stack \"${CFN_StackName}\" ",
-          "  --resource NuoDBBrokerASG ",
+          "  --resource ElkEc2Instance ",
           "  --reason \"CFN config setup exited with value $?.\" \n"
         ]]}},
         "Tags": [
