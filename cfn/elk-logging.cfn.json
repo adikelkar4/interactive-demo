@@ -338,7 +338,7 @@
 
           "curl -XPUT http://localhost:9200/interactive-demo?pretty -H 'Content-Type: application/json' -d \"@/local/scripts/nuodbElasticIndex.json\"\n",
 
-          "curl -XPOST -H 'Content-Type: application/json' 'http://localhost:9200/.kibana/index-pattern/interactive-demo*' -d'{\"title\":\"interactive-demo*\",\"timeFieldName\":\"\",\"notExpandable\":true}'\n",
+          "curl -XPOST -H 'Content-Type: application/json' 'http://localhost:9200/.kibana/index-pattern/interactive-demo*' -d'{\"title\":\"interactive-demo*\",\"timeFieldName\":\"\",\"notExpandable\":false}'\n",
 
           "curl -XPUT http://localhost:9200/.kibana/visualization/NuoDB-Visual1 -H 'Content-Type: application/json' -d \"@/local/scripts/es-visuals-1.json\"\n",
           "curl -XPUT http://localhost:9200/.kibana/visualization/NuoDB-Visual2 -H 'Content-Type: application/json' -d \"@/local/scripts/es-visuals-2.json\"\n",
