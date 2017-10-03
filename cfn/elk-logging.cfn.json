@@ -338,6 +338,16 @@
 
           "curl -XPUT http://localhost:9200/interactive-demo?pretty -H 'Content-Type: application/json' -d \"@/local/scripts/nuodbElasticIndex.json\"\n",
 
+          "curl -XPOST -H 'Content-Type: application/json' 'http://localhost:9200/.kibana/index-pattern/interactive-demo*' -d'{\"title\":\"interactive-demo*\",\"timeFieldName\":\"\",\"notExpandable\":false}'\n",
+
+          "curl -XPUT http://localhost:9200/.kibana/visualization/NuoDB-Visual1 -H 'Content-Type: application/json' -d \"@/local/scripts/es-visuals-1.json\"\n",
+          "curl -XPUT http://localhost:9200/.kibana/visualization/NuoDB-Visual2 -H 'Content-Type: application/json' -d \"@/local/scripts/es-visuals-2.json\"\n",
+          "curl -XPUT http://localhost:9200/.kibana/visualization/NuoDB-Visual3 -H 'Content-Type: application/json' -d \"@/local/scripts/es-visuals-3.json\"\n",
+          "curl -XPUT http://localhost:9200/.kibana/visualization/NuoDB-Visual4 -H 'Content-Type: application/json' -d \"@/local/scripts/es-visuals-4.json\"\n",
+          "curl -XPUT http://localhost:9200/.kibana/visualization/NuoDB-Visual5 -H 'Content-Type: application/json' -d \"@/local/scripts/es-visuals-5.json\"\n",
+          "curl -XPUT http://localhost:9200/.kibana/visualization/NuoDB-Visual6 -H 'Content-Type: application/json' -d \"@/local/scripts/es-visuals-6.json\"\n",
+          "curl -XPUT http://localhost:9200/.kibana/visualization/NuoDB-Visual7 -H 'Content-Type: application/json' -d \"@/local/scripts/es-visuals-7.json\"\n",
+
           "curl -XPUT http://localhost:9200/_snapshot/index_backup -d '{ \"type\": \"fs\", \"settings\": { \"location\": \"/tmp/backup\", \"compress\": true } }'\n",
 
           "crontab -l > cronjobs\n",
