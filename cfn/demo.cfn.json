@@ -156,6 +156,12 @@
       "ConstraintDescription" : "VPC Id must begin with 'vpc-' or leave blank to have a new VPC created"
     },
 
+    "VpcCidrs" : {
+      "Type" : "String",
+      "Description" : "Default VPC network block",
+      "Default" : "VpcCidrs"
+    },
+
     "SubnetIds" : {
       "Type" : "CommaDelimitedList",
       "Description" : "Optional - Comma separated list of existing VPC Subnet Ids where ECS instances will run",
@@ -202,6 +208,17 @@
       "Type" : "String",
       "Description" : "Optional - CIDR/IP range for EcsPort and ElbPort - defaults to 0.0.0.0/0",
       "Default" : "10.0.0.0/0"
+    },
+    "RedhatSubscriptionUserName": {
+      "Type" : "String",
+      "Description": "Red Hat Subscription User Name",
+      "Default" : "None"
+    },
+    "RedhatSubscriptionPassword": {
+      "Type" : "String",
+      "NoEcho": "true",
+      "Description": "Red Hat Subscription Password",
+      "Default" : "None"
     }
 
   },
@@ -209,7 +226,12 @@
   "Conditions" : {
     "CreateVpcResources" : { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] },
     "CreateNuoDBonECS" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSECS" ]},
-    "CreateNuoDBonEC2" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSEC2" ]}
+    "CreateNuoDBonEC2" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSEC2" ]},
+    "CreateNuoDBonOS" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSOPENSHIFT" ]},
+    "CreateECS" : {"Fn::Or" : [
+      { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSECS" ]},
+      { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSEC2" ]}
+    ]}
   },
 
   "Resources" : {
@@ -324,7 +346,37 @@
       }
     },
 
+    "NuoDBonOpenShift" : {
+      "Condition" : "CreateNuoDBonOS",
+      "Type" : "AWS::CloudFormation::Stack",
+      "DependsOn" : ["Loadbalancers", "ElkLogging"],
+      "Properties" : {
+        "TemplateURL" : { "Fn::Join" : ["", [
+          { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
+          {"Ref" : "Bucket"},
+          "/templates/",
+          {"Ref" : "AWS::StackName"},
+          "/nuodb-on-openshift.cfn.json"
+        ]]},
+        "Parameters" : {
+
+
+          "RedhatSubscriptionUserName" : { "Ref" : "RedhatSubscriptionUserName"},
+          "RedhatSubscriptionPassword" : { "Ref" : "RedhatSubscriptionPassword"},
+
+
+          "KeyPairName":  { "Ref" : "KeyName" },
+          "VPCID" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
+          "VPCCIDR" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcCidrs"] }, { "Ref" : "VpcCidrs" } ] },
+          "RemoteAccessCIDR" : "0.0.0.0/0",
+          "PublicSubnet1ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] }
+
+        }
+      }
+    },
+
     "EcsCluster" : {
+      "Condition" : "CreateECS",
       "Type" : "AWS::CloudFormation::Stack",
       "DependsOn" : ["LambdaFunctions", "ElkLogging"],
       "Properties" : {

@@ -241,6 +241,10 @@
     "RouteTableID" : {
       "Description" : "Route table ID",
       "Value" : { "Ref" : "RouteViaIgw" }
+    },
+    "VpcCidrs" : {
+      "Description" : "VPC network block",
+      "Value" : { "Fn::FindInMap" : [ "VpcCidrs", { "Ref" : "AWS::Region" }, "vpc" ] }
     }
   }
 }

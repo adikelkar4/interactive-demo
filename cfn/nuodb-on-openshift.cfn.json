@@ -10,12 +10,7 @@
         "Parameters": [
           "VPCID",
           "VPCCIDR",
-          "PrivateSubnet1ID",
-          "PrivateSubnet2ID",
-          "PrivateSubnet3ID",
           "PublicSubnet1ID",
-          "PublicSubnet2ID",
-          "PublicSubnet3ID",
           "RemoteAccessCIDR"
         ]
       },
@@ -73,23 +68,9 @@
         "KeyPairName": {
           "default": "SSH Key Name"
         },
-        "PrivateSubnet1ID": {
-          "default": "Private Subnet 1 ID"
-        },
-        "PrivateSubnet2ID": {
-          "default": "Private Subnet 2 ID"
-        },
-        "PrivateSubnet3ID": {
-          "default": "Private Subnet 3 ID"
-        },
+
         "PublicSubnet1ID": {
           "default": "Public Subnet 1 ID"
-        },
-        "PublicSubnet2ID": {
-          "default": "Public Subnet 2 ID"
-        },
-        "PublicSubnet3ID": {
-          "default": "Public Subnet 3 ID"
         },
         "QSS3BucketName": {
           "default": "Quick Start S3 Bucket Name"
@@ -147,30 +128,12 @@
       "Description": "Name of an existing EC2 key pair. All instances will launch with this key pair.",
       "Type": "AWS::EC2::KeyPair::KeyName"
     },
-    "PrivateSubnet1ID": {
-      "Description": "ID of private subnet 1 in Availability Zone 1 for the Workload (e.g., subnet-a0246dcd)",
-      "Type": "AWS::EC2::Subnet::Id"
-    },
-    "PrivateSubnet2ID": {
-      "Description": "ID of private subnet 2 in Availability Zone 2 for the Workload (e.g., subnet-b1f432cd)",
-      "Type": "AWS::EC2::Subnet::Id"
-    },
-    "PrivateSubnet3ID": {
-      "Description": "ID of private subnet 2 in Availability Zone 3 for the Workload (e.g., subnet-b1f4a2cd)",
-      "Type": "AWS::EC2::Subnet::Id"
-    },
+
     "PublicSubnet1ID": {
       "Description": "ID of public subnet 1 in Availability Zone 1 for the ELB load balancer (e.g., subnet-9bc642ac)",
       "Type": "AWS::EC2::Subnet::Id"
     },
-    "PublicSubnet2ID": {
-      "Description": "ID of public subnet 2 in Availability Zone 2 for the ELB load balancer (e.g., subnet-e3246d8e)",
-      "Type": "AWS::EC2::Subnet::Id"
-    },
-    "PublicSubnet3ID": {
-      "Description": "ID of public subnet 2 in Availability Zone 3 for the ELB load balancer (e.g., subnet-e324ad8e)",
-      "Type": "AWS::EC2::Subnet::Id"
-    },
+
     "QSS3BucketName": {
       "AllowedPattern": "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$",
       "ConstraintDescription": "Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
@@ -202,7 +165,8 @@
     },
     "RedhatSubscriptionPoolID": {
       "Description": "Enter Redhat RHN PoolID",
-      "Type": "String"
+      "Type": "String",
+      "Default" : "8a85f9815b58a400015b58e392315383"
     },
     "AnsiblePlaybookType": {
       "Description": "Note:This QuickStart only supports OpenSource-Version for Development Purposes!",
@@ -572,14 +536,8 @@
           "Value": "openshift-master"
         }],
         "VPCZoneIdentifier": [{
-          "Ref": "PrivateSubnet1ID"
-        },
-          {
-            "Ref": "PrivateSubnet2ID"
-          },
-          {
-            "Ref": "PrivateSubnet3ID"
-          }
+          "Ref": "PublicSubnet1ID"
+        }
         ]
       }
     },
@@ -603,14 +561,8 @@
           "Value": "openshift-etcd"
         }],
         "VPCZoneIdentifier": [{
-          "Ref": "PrivateSubnet1ID"
-        },
-          {
-            "Ref": "PrivateSubnet2ID"
-          },
-          {
-            "Ref": "PrivateSubnet3ID"
-          }
+          "Ref": "PublicSubnet1ID"
+        }
         ]
       }
     },
@@ -637,14 +589,8 @@
           "Value": "openshift-nodes"
         }],
         "VPCZoneIdentifier": [{
-          "Ref": "PrivateSubnet1ID"
-        },
-          {
-            "Ref": "PrivateSubnet2ID"
-          },
-          {
-            "Ref": "PrivateSubnet3ID"
-          }
+          "Ref": "PublicSubnet1ID"
+        }
         ]
       }
     },
@@ -967,6 +913,9 @@
                 "echo \"\t------------------[] Completed: QuickStart Common Utils \"\n",
                 "\n",
 
+                "echo \"--------------------[] Disabled THP: tuned-adm \"\n",
+                "tuned-adm off\n",
+
                 "echo \"========================================================================================================================\"\n",
                 "echo \"\t------------------[]Attach to Subscription pool\"\n",
                 "SCRIPT_PATH=",
@@ -1200,12 +1149,7 @@
         "CrossZone": true,
         "Subnets": [{
           "Ref": "PublicSubnet1ID"
-        }, {
-          "Ref": "PublicSubnet2ID"
-        },
-          {
-            "Ref": "PublicSubnet3ID"
-          }
+        }
         ],
         "SecurityGroups": [{
           "Ref": "OpenShiftSecurityGroup"
@@ -1253,13 +1197,8 @@
         "CrossZone": true,
         "Scheme": "internal",
         "Subnets": [{
-          "Ref": "PrivateSubnet1ID"
-        }, {
-          "Ref": "PrivateSubnet2ID"
-        },
-          {
-            "Ref": "PrivateSubnet3ID"
-          }
+          "Ref": "PublicSubnet1ID"
+        }
         ],
         "SecurityGroups": [{
           "Ref": "OpenShiftInternalSecurityGroup"
@@ -1302,14 +1241,8 @@
       "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties": {
         "Subnets": [{
-          "Ref": "PrivateSubnet1ID"
-        },
-          {
-            "Ref": "PrivateSubnet2ID"
-          },
-          {
-            "Ref": "PrivateSubnet3ID"
-          }
+          "Ref": "PublicSubnet1ID"
+        }
         ],
         "Scheme": "internal",
         "SecurityGroups": [{
