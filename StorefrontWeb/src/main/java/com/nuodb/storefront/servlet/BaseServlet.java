@@ -14,19 +14,15 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
-import org.hibernate.exception.GenericJDBCException;
-import org.hibernate.exception.SQLGrammarException;
 
 import com.nuodb.storefront.StorefrontTenantManager;
 import com.nuodb.storefront.api.ProcessesApi;
-import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.dto.Message;
 import com.nuodb.storefront.model.dto.PageConfig;
 import com.nuodb.storefront.model.entity.AppInstance;
 import com.nuodb.storefront.model.entity.Customer;
 import com.nuodb.storefront.model.type.MessageSeverity;
 import com.nuodb.storefront.service.IDbApi;
-import com.nuodb.storefront.service.IStorefrontService;
 import com.nuodb.storefront.service.IStorefrontTenant;
 
 public abstract class BaseServlet extends HttpServlet {
@@ -36,10 +32,7 @@ public abstract class BaseServlet extends HttpServlet {
     public static final String ATTR_BASE_HREF = "baseHref";
 
     private static final String ATTR_CUSTOMER = "customer";
-    private static final String COOKIE_CUSTOMER_ID = "customerId";
     private static final String SESSION_MESSAGES = "messages";
-    private static final String SESSION_CUSTOMER_ID = "customerId";
-    private static final int COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 31; // 1 month
     private static final long serialVersionUID = 1452096145544476070L;
     protected static Object s_schemaUpdateLock = new Object();
 

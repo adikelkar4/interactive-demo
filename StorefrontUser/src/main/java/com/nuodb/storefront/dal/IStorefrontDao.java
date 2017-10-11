@@ -4,7 +4,6 @@ package com.nuodb.storefront.dal;
 
 import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 
 import com.googlecode.genericdao.search.SearchResult;
 import com.nuodb.storefront.model.dto.Category;

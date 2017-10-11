@@ -12,7 +12,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.Callable;
 
 import org.hibernate.Hibernate;
@@ -22,7 +21,6 @@ import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.type.BigDecimalType;
 import org.hibernate.type.IntegerType;
 import org.hibernate.type.LongType;
-import org.hibernate.type.StringType;
 
 import com.googlecode.genericdao.search.SearchResult;
 import com.nuodb.storefront.StorefrontApp;
