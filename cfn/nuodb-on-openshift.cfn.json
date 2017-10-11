@@ -647,6 +647,7 @@
 
       },
       "Properties": {
+        "AssociatePublicIpAddress" : "true",
         "KeyName": {
           "Ref": "KeyPairName"
         },
@@ -821,6 +822,7 @@
 
       },
       "Properties": {
+        "AssociatePublicIpAddress" : "true",
         "KeyName": {
           "Ref": "KeyPairName"
         },
@@ -863,6 +865,16 @@
             "Fn::Join": [
               "", [
                 "#!/bin/bash",
+                "\n",
+
+                "mkdir -p /etc/tuned/myprofile-nothp\n",
+                "touch /etc/tuned/myprofile-nothp/tuned.conf \n",
+                "echo \"[main]\" >> /etc/tuned/myprofile-nothp/tuned.conf \n",
+                "echo \"include= throughput-performance\" >> /etc/tuned/myprofile-nothp/tuned.conf \n",
+                "echo \"[vm]\" >> /etc/tuned/myprofile-nothp/tuned.conf \n",
+                "echo \"transparent_hugepages=never\" >> /etc/tuned/myprofile-nothp/tuned.conf \n",
+                "chmod +x /etc/tuned/myprofile-nothp/tuned.conf \n",
+                "tuned-adm profile myprofile-nothp \n",
                 "\n",
 
                 "echo \"========================================================================================================================\"\n",
@@ -912,9 +924,6 @@
                 "echo \"========================================================================================================================\"\n",
                 "echo \"\t------------------[] Completed: QuickStart Common Utils \"\n",
                 "\n",
-
-                "echo \"--------------------[] Disabled THP: tuned-adm \"\n",
-                "#tuned-adm off\n",
 
                 "echo \"========================================================================================================================\"\n",
                 "echo \"\t------------------[]Attach to Subscription pool\"\n",
@@ -1019,6 +1028,7 @@
 
       },
       "Properties": {
+        "AssociatePublicIpAddress" : "true",
         "KeyName": {
           "Ref": "KeyPairName"
         },
