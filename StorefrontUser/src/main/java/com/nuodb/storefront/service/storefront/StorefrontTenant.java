@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
 import org.codehaus.jackson.map.DeserializationConfig;
@@ -27,7 +26,6 @@ import com.nuodb.storefront.dal.DriverNameEnum;
 import com.nuodb.storefront.dal.IStorefrontDao;
 import com.nuodb.storefront.dal.StorefrontDao;
 import com.nuodb.storefront.dal.UpperCaseNamingStrategy;
-import com.nuodb.storefront.model.dto.ConnInfo;
 import com.nuodb.storefront.model.dto.DbConnInfo;
 import com.nuodb.storefront.model.dto.TransactionStats;
 import com.nuodb.storefront.model.entity.AppInstance;
@@ -58,7 +56,6 @@ public class StorefrontTenant implements IStorefrontTenant {
 	private SessionFactory sessionFactory;
 	private ISimulatorService simulatorSvc;
 	private HeartbeatService heartbeatSvc;
-	private ConnInfo apiConnInfo;
 	private ScheduledExecutorService executor;
 	private final StringWriter logWriter = new StringWriter();
 	private final Map<String, TransactionStats> transactionStatsMap = new HashMap<String, TransactionStats>();
@@ -125,34 +122,16 @@ public class StorefrontTenant implements IStorefrontTenant {
 	}
 
 	public void startUp() {
-		synchronized (lock) {
-			if (executor == null) {
-				executor = Executors.newSingleThreadScheduledExecutor();
-				executor.scheduleAtFixedRate(getHeartbeatService(), 0, StorefrontApp.HEARTBEAT_INTERVAL_SEC,
-						TimeUnit.SECONDS);
+		if (executor == null) {
+			executor = Executors.newSingleThreadScheduledExecutor();
+			executor.scheduleAtFixedRate(getHeartbeatService(), 0, StorefrontApp.HEARTBEAT_INTERVAL_SEC,
+					TimeUnit.SECONDS);
 
-				Runnable sampler = PerformanceUtil.createSampler();
-				if (sampler != null) {
-					executor.scheduleAtFixedRate(sampler, 0, StorefrontApp.CPU_SAMPLING_INTERVAL_SEC, TimeUnit.SECONDS);
-				}
+			Runnable sampler = PerformanceUtil.createSampler();
+			if (sampler != null) {
+				executor.scheduleAtFixedRate(sampler, 0, StorefrontApp.CPU_SAMPLING_INTERVAL_SEC, TimeUnit.SECONDS);
 			}
 		}
-	}
-
-	public void shutDown() {
-		synchronized (lock) {
-			if (executor != null) {
-				executor.shutdown();
-			}
-			if (simulatorSvc != null) {
-				simulatorSvc.removeAll();
-			}
-			if (sessionFactory != null) {
-				sessionFactory.close();
-			}
-		}
-		Thread thread = new Thread(statsSvc);
-		thread.run();
 	}
 
 	public DbConnInfo getDbConnInfo() {
@@ -174,52 +153,6 @@ public class StorefrontTenant implements IStorefrontTenant {
 		return info;
 	}
 
-	public void setDbConnInfo(DbConnInfo dbConnInfo) {
-		hibernateCfg.setProperty(Environment.USER, dbConnInfo.getUsername());
-		hibernateCfg.setProperty(Environment.PASS, dbConnInfo.getPassword());
-		hibernateCfg.setProperty(Environment.URL, dbConnInfo.getUrl());
-
-		synchronized (lock) {
-			if (sessionFactory != null) {
-				sessionFactory.close();
-				sessionFactory = null;
-			}
-		}
-	}
-
-	public ConnInfo getApiConnInfo() {
-		synchronized (lock) {
-			if (apiConnInfo == null) {
-				String host = getDbApiHost();
-				int port = StorefrontApp.DBAPI_PORT;
-				ConnInfo info = new ConnInfo();
-				info.setUsername(StorefrontApp.DBAPI_USERNAME);
-				info.setPassword(StorefrontApp.DBAPI_PASSWORD);
-				info.setUrl("http://" + host + ":" + port + "/api/1");
-				apiConnInfo = info;
-			}
-		}
-		return new ConnInfo(apiConnInfo);
-	}
-
-	public void setApiConnInfo(ConnInfo info) {
-		synchronized (lock) {
-			apiConnInfo = new ConnInfo(info);
-		}
-	}
-
-	public String getAdminConsoleUrl() {
-		String host = getDbApiHost();
-		int port = StorefrontApp.DBAPI_PORT;
-		return "http://" + host + ":" + port + "/console";
-	}
-
-	public String getSqlExplorerUrl() {
-		String host = getDbApiHost();
-		int port = StorefrontApp.SQLEXPLORER_PORT;
-		return "http://" + host + ":" + port + "/explorer.jsp";
-	}
-
 	public SchemaExport createSchemaExport() {
 		SchemaExport export = new SchemaExport(hibernateCfg);
 		export.setDelimiter(";");
@@ -234,12 +167,10 @@ public class StorefrontTenant implements IStorefrontTenant {
 		return new StorefrontService(appInstance, createStorefrontDao());
 	}
 
-	public ISimulatorService getSimulatorService() {
+	public synchronized ISimulatorService getSimulatorService() {
 		if (simulatorSvc == null) {
-			synchronized (lock) {
-				if (simulatorSvc == null) {
-					simulatorSvc = new SimulatorService(createStorefrontService());
-				}
+			if (simulatorSvc == null) {
+				simulatorSvc = new SimulatorService(createStorefrontService());
 			}
 		}
 		return simulatorSvc;
@@ -267,9 +198,7 @@ public class StorefrontTenant implements IStorefrontTenant {
 
 	protected HeartbeatService getHeartbeatService() {
 		if (heartbeatSvc == null) {
-			synchronized (lock) {
-				heartbeatSvc = new HeartbeatService(this);
-			}
+			heartbeatSvc = new HeartbeatService(this);
 		}
 		return heartbeatSvc;
 	}
@@ -303,11 +232,6 @@ public class StorefrontTenant implements IStorefrontTenant {
 	
 	public void startStatsService() {		
 		executor.scheduleAtFixedRate(getStatsSvc(), 0, 500, TimeUnit.MILLISECONDS);
-	}
-
-	protected String getDbApiHost() {
-		String apiHost = StorefrontApp.DBAPI_HOST;
-		return (!StringUtils.isEmpty(apiHost)) ? apiHost : getDbConnInfo().getHost();
 	}
 
 	public Map<String, String> getAppSettings() {

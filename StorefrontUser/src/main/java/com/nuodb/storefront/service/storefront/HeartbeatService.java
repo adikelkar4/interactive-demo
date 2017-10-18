@@ -163,17 +163,15 @@ public class HeartbeatService implements Runnable {
                     // Success. We're done in this region.
                     break;
                 } catch (Exception e) {
-                    synchronized (warnList) {
-                        boolean warn = false;
-                        if (!warnList.contains(peerStorefrontUrl)) {
-                            warnList.add(peerStorefrontUrl);
-                            warn = true;
-                        }
-                        if (warn) {
-                            ApiException ae = ApiException.toApiException(e);
-                            logger.warn(tenantName + ": Unable to contact peer Storefront [" + peerStorefrontUrl + "] in the " + region + " region: "
-                                    + ae.getMessage());
-                        }
+                    boolean warn = false;
+                    if (!warnList.contains(peerStorefrontUrl)) {
+                        warnList.add(peerStorefrontUrl);
+                        warn = true;
+                    }
+                    if (warn) {
+                        ApiException ae = ApiException.toApiException(e);
+                        logger.warn(tenantName + ": Unable to contact peer Storefront [" + peerStorefrontUrl + "] in the " + region + " region: "
+                                + ae.getMessage());
                     }
                 }
 

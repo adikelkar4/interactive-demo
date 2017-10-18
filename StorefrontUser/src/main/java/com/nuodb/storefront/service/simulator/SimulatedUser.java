@@ -66,6 +66,7 @@ public class SimulatedUser implements IWorker, Runnable {
 	}
 
 	public long doWork() throws InterruptedException {
+		customer = simulator.getService().getOrCreateCustomer((customer == null) ? 0 : customer.getId(), workloadType);
 		WorkloadStep[] steps = workloadType.getSteps();
 
 		if (steps.length == 0) {
@@ -133,7 +134,6 @@ public class SimulatedUser implements IWorker, Runnable {
 	}
 
 	protected void doWork(WorkloadStep step) {
-		customer = simulator.getService().getOrCreateCustomer((customer == null) ? 0 : customer.getId(), workloadType);
 
 		switch (step) {
 		case BROWSE:

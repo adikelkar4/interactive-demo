@@ -50,13 +50,6 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 		}
 	}
 
-	public Workload getWorkload(String name) {
-		synchronized (workloadStatsMap) {
-			WorkloadStats stats = workloadStatsMap.get(name);
-			return (stats == null) ? null : stats.getWorkload();
-		}
-	}
-
 	public void adjustWorkers(Workload workload, int minActiveWorkers, Integer activeWorkerLimit) {
 		logger.info("Adjusting " + workload.getName() + " to " + minActiveWorkers);
 
@@ -87,37 +80,21 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 		}
 	}
 
-	public void removeAll() {
-		synchronized (workloadStatsMap) {
-			threadPool.shutdownNow();
-			threadPool = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 10);
-
-			for (WorkloadStats stats : workloadStatsMap.values()) {
-				stats.setActiveWorkerLimit(0);
-				stats.setActiveWorkerCount(0);
-			}
-		}
-	}
-
 	public Map<String, WorkloadStats> getWorkloadStats() {
 		return workloadStatsMap;
 	}
 
 	public int getActiveWorkerLimit() {
 		int limit = 0;
-		synchronized (workloadStatsMap) {
-			for (WorkloadStats workload : workloadStatsMap.values()) {
-					limit += workload.getActiveWorkerLimit();
-			}
+		for (WorkloadStats workload : workloadStatsMap.values()) {
+				limit += workload.getActiveWorkerLimit();
 		}
 		return limit;
 	}
 
 	public void stopAll() {
-		synchronized (workloadStatsMap) {
-			for (WorkloadStats workload : workloadStatsMap.values()) {
-				workload.setActiveWorkerLimit(0);
-			}
+		for (WorkloadStats workload : workloadStatsMap.values()) {
+			workload.setActiveWorkerLimit(0);
 		}
 	}
 
@@ -177,7 +154,7 @@ public class SimulatorService implements ISimulator, ISimulatorService {
 
 	public void updateWorkloadStats(Workload type, String state, long duration) {
 		WorkloadStats stats = getOrCreateWorkloadStats(type);
-		synchronized (workloadStatsMap) {
+		synchronized (stats) {
 			switch (state.toUpperCase()) {
 			case "COMPLETE":
 				stats.setCompletedWorkerCount(stats.getCompletedWorkerCount() + 1);
