@@ -41,47 +41,25 @@ public class StorefrontTenantManager {
 		return tenant;
 	}
 
-	public static List<IStorefrontTenant> getAllTenants() {
-		synchronized (s_tenantMap) {
-			return new ArrayList<IStorefrontTenant>(s_tenantMap.values());
-		}
-	}
-
 	public static IStorefrontTenant createTenant(String tenantName, Map<String, String> dbSettings) {
-		synchronized (s_tenantMap) {
-			if (s_tenantMap.containsKey(tenantName)) {
-				throw new DataValidationException("Tenant \"" + tenantName + "\" already exists");
-			}
-
-			if (!Pattern.matches("^[0-9A-Za-z\\-]+$", tenantName)) {
-				throw new DataValidationException("Tenant name can contain only letters, numbers, and dashes.");
-			}
-
-			// Configure app instance
-			AppInstance tenantApp = new AppInstance(s_defaultAppInstance.getRegion(), tenantName, true);
-			tenantApp.setUrl(s_defaultAppInstance.getUrl());
-
-			// Build and start tenant
-			StorefrontTenant tenant = new StorefrontTenant(tenantApp, dbSettings);
-			tenant.setDbType(dbSettings.containsKey("db.type") ? dbSettings.get("db.type") : "nuodb");
-			s_tenantMap.put(tenantName, tenant);
-			tenant.startUp();
-			return tenant;
-		}
-	}
-
-	public static void destroyTenant(String tenantName) {
-		IStorefrontTenant tenant;
-
-		synchronized (s_tenantMap) {
-			tenant = s_tenantMap.get(tenantName);
-			if (tenant == null) {
-				throw new DataValidationException("Tenant \"" + tenantName + "\" does not exist");
-			}
-			s_tenantMap.remove(tenantName);
+		if (s_tenantMap.containsKey(tenantName)) {
+			throw new DataValidationException("Tenant \"" + tenantName + "\" already exists");
 		}
 
-		tenant.shutDown();
+		if (!Pattern.matches("^[0-9A-Za-z\\-]+$", tenantName)) {
+			throw new DataValidationException("Tenant name can contain only letters, numbers, and dashes.");
+		}
+
+		// Configure app instance
+		AppInstance tenantApp = new AppInstance(s_defaultAppInstance.getRegion(), tenantName, true);
+		tenantApp.setUrl(s_defaultAppInstance.getUrl());
+
+		// Build and start tenant
+		StorefrontTenant tenant = new StorefrontTenant(tenantApp, dbSettings);
+		tenant.setDbType(dbSettings.containsKey("db.type") ? dbSettings.get("db.type") : "nuodb");
+		s_tenantMap.put(tenantName, tenant);
+		tenant.startUp();
+		return tenant;
 	}
 
 	public static final String TENANT_PARAM_NAME = "tenant";

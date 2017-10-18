@@ -394,7 +394,7 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
     }
 
     @Override
-    protected void onTransactionComplete(String transactionName, long startTimeMs, boolean success) {
+    protected void onTransactionComplete(String transactionName, long duration, boolean success) {
         if (transactionName == null) {
             return;
         }
@@ -404,7 +404,7 @@ public class StorefrontDao extends BaseDao implements IStorefrontDao {
             if (stats == null) {
                 transactionStatsMap.put(transactionName, stats = new TransactionStats());
             }
-            stats.incrementCount(transactionName, System.currentTimeMillis() - startTimeMs, success);
+            stats.incrementCount(transactionName, duration, success);
         }
     }
 }
