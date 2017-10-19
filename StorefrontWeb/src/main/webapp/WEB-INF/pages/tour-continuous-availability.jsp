@@ -6,25 +6,29 @@
 <t:messages></t:messages>
     <div class="header-logo"></div>
     <h1>CONTINUOUS AVAILABILITY</h1>
-    <p>NuoDB’s architecture consists of a peer-to-peer network of transaction and storage process nodes. Create a redundant, resilient, continuously database by simply adding additional process nodes. If any of these nodes fails, overall database throughput will be impacted. However, NuoDB will continue to process transactions as long as it has at least one surviving transaction node and at least one storage node.</p>
-
-    <img src="img/continuous-availability-diagram.png" style="width: 100%;"/>
-    <br><br>
-    <p>When integrated with orchestration and management technologies, losing a node will trigger another process node to be spun up and automatically added back to the database. This allows the database to once again provide high levels of throughput for the application.</p>
-    <h3>Try it yourself:</h3>
-    <t:messages />
-    <p>Add and shutdown processes to watch how the database provides continuous availability to the application.</p>
-    <ol class="tour-steps">
-        <li>In the TE Processes box, click on the &ldquo;up&rdquo; arrow to increase the number of NuoDB transaction nodes. Watch as throughput increases and latency decreases </li>
-        <li>{add other steps and descriptions, pending information about what the user will do to experience CA}</li>
-    </ol>
-
-    <h3>Learn More:</h3>
+    <p>
+        NuoDB provides continuous availability within and across data centers for both planned and unplanned failures. Since NuoDB is a peer-to-peer distributed architecture, with no single point of failure and with built-in data replication, the loss of any server or process does not impact application availability. As seen in the <a href="/tour-active-active" style="color:#36af75;font-weight:700;">Active-Active tour</a>, this also includes protection against data center failures with no outages. In addition, NuoDB does not require any offline database maintenance tasks including upgrades. The database can be upgraded in a rolling fashion.
+    </p>
+    <img src="img/ca-a.png" style="width: 100%;"/>
+    <h3>About The Tour</h3>
+    <p>
+        Use this Continuous Availability tour to simulate various types of failures and watch how NuoDB provides continuous availability database service to the application.
+    </p>
+    
+    <h3>Try It Yourself</h3>
+    <p>This tour is not available yet.</p>
+    <a href="/vote-ca" style="color:#36af75;font-weight:700;">Vote for this tour next!</a>
+    
+    <h3>Next Steps</h3>
     <ul class="tour-links">
-        <li>See <a href="http://doc.nuodb.com/display/21V/Start+and+Stop+NuoDB+Services" target="_blank">NuoDB documentation</a> to learn how to increase the number of available hosts
-        </li>
-        <li>See <a href="control-panel-processes${qs}">Hosts &amp; Processes</a> in the Storefront Control Panel
-        </li>
+        <li>Download the Online Experience from GitHub to explore and deploy it in your own AWS environment</li>
+        <li>Download the NuoDB Community Edition to evaluate NuoDB with your own application.</li>
     </ul>
+    <a href="hhttps://github.com/nuodb/interactive-demo" target="_blank">
+        <button class="button button1">Download the Code</button>
+    </a>
+    <a href="https://www.nuodb.com/product/evaluate-nuodb?utm_source=demo&utm_content=so" target="_blank">
+        <button class="button button1">Download Community Edition</button>
+    </a>
 
 </t:page>

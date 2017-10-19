@@ -1,12 +1,11 @@
 body{
 	overflow-y:scroll;
-	padding:20px 6px 10px}
+	padding:20px 6px 10px;}
 body.nuo-header-visible{
 	padding-top:70px}
 .about-right{
 	float:right;
-	width:66%;
-}
+	width:66%;}
 .container-fluid{
 	min-width:940px}
 .dropdown>a{
@@ -46,9 +45,7 @@ form{
 	width: 100px;
 	height: 64px;
 	margin-bottom: 20px;
-	background-image: url(../img/nuodb-logo.png)
-}
-
+	background-image: url(../img/nuodb-logo.png)}
 .home-tour-links{
 	width:44%;
 	height:auto;
@@ -233,7 +230,7 @@ textarea.no-resize-x{
 .footer{
 	border-top:solid 1px #eee;padding:5px;margin:20px 0 10px;color:#aaa;letter-spacing:.1em;font-size:11px;text-align:center}
 #welcome p{
-	color:#282827;line-height:1.5em}
+	color:#282827;line-height:1.5em;}
 #control-panel .label{
 	text-align:right}
 #control-panel .label-status{

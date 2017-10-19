@@ -45,7 +45,7 @@ Ext.define('App.view.NavBar', {
         href: '/resources'
     }, {
         title: 'Download CE',
-        href: 'http://www.nuodb.com/product/evaluate-nuodb'
+        href: 'https://www.nuodb.com/product/evaluate-nuodb?utm_source=demo&utm_content=nav'
     }
     ],
 
