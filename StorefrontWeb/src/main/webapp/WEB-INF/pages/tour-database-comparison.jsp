@@ -6,25 +6,31 @@
 <t:messages></t:messages>
     <div class="header-logo"></div>
     <h1>DATABASE COMPARISON</h1>
-    <p>Traditional relational databases are monolithic in nature, combine query processing and storage as a single service, and were designed for client-server systems.  While still maintaining full SQL data access, ACID transactions, and a relational model, NuoDB was designed to meet the modern performance requirements of today’s applications.  Learn how NuoDB performs compared to popular databases that were built on traditional, monolithic design principles - MySQL and Amazon Aurora.</p>
+    <p>
+        In the <a href="/tour-scale-out" style="color:#36af75;font-weight:700;">Scale-Out Performance tour</a>, you can see how NuoDB easily accommodates increases in application workloads by simply scaling out with additional nodes. In contrast, traditional databases must be migrated to a larger server with more resources once the original deployment resources are fully utilized.
+    </p>
+    <div style="float:left;width:500px;padding-right:5%;padding-bottom:0%;padding-top:0%;">
+        <img src="img/db-a.png" style="width: 500px;"/>
+    </div>
+    <h3>About The Tour</h3>
+    <p>
+        In this Database Comparison tour, you will compare how NuoDB can scale-out to address additional application workload demands compared to a traditional database deployed on a single server where the application workload cannot be increased.  
+    </p>
+    <br><br><br><br>
+    <h3>Try It Yourself</h3>
+    <p>This tour is not available yet.</p>
+    <a href="/vote-dbc" style="color:#36af75;font-weight:700;">Vote for this tour next!</a>
     
-    <img src="img/db-comparison-diagram.png" style="width: 50%;"/>
-
-
-    <h3>Try it yourself:</h3>
-    <t:messages />
-    <p>Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum. Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum. </p>
-    <ol class="tour-steps">
-        <li>{this will change depending on what we’re showing and how we’re showing it}</li>
-        <li>{this will change depending on what we’re showing and how we’re showing it}</li>
-        <li>{this will change depending on what we’re showing and how we’re showing it}</li>
-    </ol>
-    
-    <h3>To learn more:</h3>
+    <h3>Next Steps</h3>
     <ul class="tour-links">
-        <li>See <a href="http://doc.nuodb.com/display/21V/Start+and+Stop+NuoDB+Services" target="_blank">NuoDB documentation</a> to learn how to increase the number of available hosts</li>
-        <li>See <a href="control-panel-processes${qs}">Hosts &amp; Processes</a> in the Storefront Control Panel</li>
+        <li>Download the Online Experience from GitHub to explore and deploy it in your own AWS environment</li>
+        <li>Download the NuoDB Community Edition to evaluate NuoDB with your own application.</li>
     </ul>
-
+    <a href="hhttps://github.com/nuodb/interactive-demo" target="_blank">
+        <button class="button button1">Download the Code</button>
+    </a>
+    <a href="https://www.nuodb.com/product/evaluate-nuodb?utm_source=demo&utm_content=so" target="_blank">
+        <button class="button button1">Download Community Edition</button>
+    </a>
 
 </t:page>

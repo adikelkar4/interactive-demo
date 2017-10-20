@@ -4,7 +4,7 @@
 
 <t:page showHeader="false">
     <div class="header-logo"></div>
-    <h1>NUODB ONLINE EXPERIENCE</h1>
+        <h1>NUODB ONLINE EXPERIENCE</h1>
     <t:messages />
     <div class="alert alert-block alert-info hide" id="api-box">
         <p>Before you can use this demo, you must specify domain credentials to connect to NuoDB.<br> &nbsp;</p>
@@ -71,23 +71,38 @@
     </div>
 
     <div id="welcome">
-        <p> Welcome to the NuoDB Online Experience! In this demo, you control the applications to learn how NuoDB reacts to various scenarios. <br><br>For example, increase the workload and watch NuoDB automatically scale out to maintain high performance.  Simulate a datacenter failure and experience how NuoDB provides continuous availability to the application.  Learn how NuoDB compares to a traditional, monolithic database. <br><br> We hope you enjoy this interactive demo!  When you’ve finished exploring and are ready to dive deeper, build and test the demo in your own environment or try out our free Community Edition.</p>
+        <h5> Welcome to the NuoDB Online Experience!</h5>
+        <p>The NuoDB Online Experience allows you to quickly exercise and evaluate NuoDB’s unique capabilities. NuoDB is an SQL OLTP database that:</p>
+        <ol>
+            <li> Elastically scales out (and back in) on-demand to outperform traditional single-server databases and easily meet changing performance demands.</li>
+            <li>Supports active-active workloads, which increases performance and server utilization while providing non-stop disaster recovery (DR) protection.</li>
+            <li>Provides continuous availability for planned and unplanned outages within and across multiple data centers (DC).</li>
+        </ol>
+        <p>NuoDB natively provides these benefits without forcing you to give up familiar database benefits such as full ACID guarantees and SQL transaction support. We hope you enjoy your Online Experience!</p>
+
+        <h5>When you are ready to dive deeper you can:</h5>
+        <ul>
+            <li>Download the Online Experience from <a href="https://github.com/nuodb/interactive-demo" style="color:#36af75;font-weight:700;" target="_blank">GitHub</a> to explore and deploy it in your own AWS environment</li>
+        <li>Download the <a href="https://www.nuodb.com/product/evaluate-nuodb?utm_source=demo&utm_content=welcome" style="color:#36af75;font-weight:700;" target="_blank">NuoDB Community Edition</a> to evaluate NuoDB with your own application.</li>
+        </ul>
+        <p> <em><strong>[NOTE] </strong>This Online Experience environment is deployed and hosted specifically for you and will automatically become unavailable one hour after the Online Experience environment is deployed. If you need additional time to evaluate NuoDB using  the Online Experience, please contact <a href="mailto:sales@nuodb.com" target="_top" style="color:#36af75;font-weight:700;">sales@nuodb.com</a></em></p>
 
         <h2>Select a tour to get started</h2>
-        <div class="home-tour-links">
+        <div class="home-tour-links" style="padding-bottom:10%;">
             <div class="home-page-btn">
                 <a href="/tour-scale-out"><img src="img/scale-btn.png"/></a>
             </div>
             <div class="home-page-btn-text">
-                <h5>Scale-Out Performance</h5>
-                <p>Increase the workload on the database and watch the effects on performance as NuoDB scales out.</p>
+                <a href="/tour-scale-out" style="color:#282828;text-decoration:none;"><h5>Scale-Out Performance</h5>
+                <p>Dynamically adjust both application  workload and database resources to see how NuoDB can dynamically scale to maintain high performance and low latencies.</p></a>
             </div>
             <div class="home-page-btn">
-                <a href="/tour-database-comparison"><img src="img/db-comparison-btn.png" /></a>
+                <a href="/tour-database-comparison"><img src="img/db-comparison-btn-grey.png" /></a>
             </div>
             <div class="home-page-btn-text">    
-                <h5 style="color:#98a0ad;">Database Comparison [COMING SOON]</h5>
-                <p style="color:#98a0ad;">Compare how NuoDB performs and scales out compared to mySQL, PostgreSQL and, and Microsoft SQL Server.</p>
+                <h5 style="color:#98a0ad;">Database Comparison<br>[COMING SOON]</h5>
+                <p style="color:#98a0ad;">Discover how  NuoDB scale out can out-perform a traditional single node database once the single node resources are saturated by the application workload.</p>
+                <a href="/vote-dbc" style="color:#36af75;font-weight:700;">Vote for this tour next!</a>
             </div>
         </div>    
         <div class="home-tour-links">
@@ -95,15 +110,17 @@
                 <a href="/tour-active-active"><img src="img/active-active-btn.png" /></a>
             </div>
             <div class="home-page-btn-text">
-                <h5 style="color:#98a0ad;">Active-Active [COMING SOON]</h5>
-                <p style="color:#98a0ad;">Watch how NuoDB provides active-active capabilities within and across multiple deployment environments without needing any additional technology or configuration.</p>
+                <h5 style="color:#98a0ad;">Active-Active<br>[COMING SOON]</h5>
+                <p style="color:#98a0ad;">Scale your workload and NuoDB database across multiple AWS Availability Zones  to provide active-active capabilities.</p>
+                <a href="/vote-aa" style="color:#36af75;font-weight:700;">Vote for this tour next!</a>
             </div>
             <div class="home-page-btn">
-                <a href="/tour-continuous-availability"><img src="img/ca-btn.png" /></a>
+                <a href="/tour-continuous-availability"><img src="img/ca-btn-grey.png" /></a>
             </div>
             <div class="home-page-btn-text">                    
-                <h5 style="color:#98a0ad;">Continuous Availability [COMING SOON]</h5>
-                <p style="color:#98a0ad;">Deploy NuoDB across multiple environments, simulate an outage scenario, and watch how NuoDB continues to provide uninterrupted service to the application.</p>
+                <h5 style="color:#98a0ad;">Continuous Availability<br>[COMING SOON]</h5>
+                <p style="color:#98a0ad;">Induce various types of failure modes and watch how NuoDB provides uninterrupted service to the application</p>
+                <a href="/vote-ca" style="color:#36af75;font-weight:700;">Vote for this tour next!</a>
             </div>
         </div>
     </div>
