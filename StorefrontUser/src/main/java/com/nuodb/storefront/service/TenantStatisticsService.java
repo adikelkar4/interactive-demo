@@ -62,8 +62,6 @@ public class TenantStatisticsService implements Runnable {
 		payload.put("stepStats", stepStats);
 		allStats.setDatabaseType(this.dbType);
 		allStats.setPayload(payload);
-		allStats.setUid(StorefrontApp.INSTANCE_UID.toString());
-		allStats.setTimestamp(new Date());
 		try {
 			postStatsAsJson(this.tenant.getAppSettings(), allStats);
 		} catch (IOException e) {
