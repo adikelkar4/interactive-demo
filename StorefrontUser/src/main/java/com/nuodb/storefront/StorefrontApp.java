@@ -109,47 +109,50 @@ public class StorefrontApp {
 		tenant.setAppSettings(appSettings);
 		ISimulatorService simulator = tenant.getSimulatorService();
 		executeTasks(tenant, simulator, workloadSettings);
-		while(true) {
+		while (true) {
 			Thread.sleep(HEARTBEAT_INTERVAL_SEC * 1000);
 		}
 	}
 
-	public static void executeTasks(IStorefrontTenant tenant, ISimulatorService simulator, Map<String, String> workloadSettings)
-			throws InterruptedException {
+	public static void executeTasks(IStorefrontTenant tenant, ISimulatorService simulator,
+			Map<String, String> workloadSettings) throws InterruptedException {
 		for (String setting : workloadSettings.keySet()) {
-			WorkloadStep step = WorkloadStep.valueOf(setting.split("\\.")[1].toUpperCase());
-			simulator.adjustWorkers(simulator.getWorkloadStats().get(step.name()).getWorkload(),
-					Integer.parseInt(workloadSettings.get(setting)), Integer.parseInt(workloadSettings.get(setting)));
+			Thread taskThread = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					WorkloadStep step = WorkloadStep.valueOf(setting.split("\\.")[1].toUpperCase());
+					simulator.adjustWorkers(simulator.getWorkloadStats().get(step.name()).getWorkload(),
+							Integer.parseInt(workloadSettings.get(setting)),
+							Integer.parseInt(workloadSettings.get(setting)));
+				}
+			});
+			taskThread.start();
 		}
 		tenant.startStatsService();
 	}
-	
-    public static void printSimulatorStats(ISimulatorService simulator, PrintStream out) {
-        out.println();
-        out.println(String.format("%-30s %8s %8s %8s %8s | %7s %9s %7s %9s", "Workload", "Active", "Failed", "Killed", "Complete", "Steps",
-                "Avg (s)", "Work", "Avg (s)"));
-        for (Map.Entry<String, WorkloadStats> statsEntry : simulator.getWorkloadStats().entrySet()) {
-            String workloadName = statsEntry.getKey();
-            WorkloadStats stats = statsEntry.getValue();
 
-            out.println(String.format("%-30s %8d %8d %8d %8d | %7d %9.3f %7d %9.3f",
-                    workloadName,
-                    stats.getActiveWorkerCount(),
-                    stats.getFailedWorkerCount(),
-                    stats.getKilledWorkerCount(),
-                    stats.getCompletedWorkerCount(),
-                    stats.getWorkInvocationCount(),
-                    (stats.getAvgWorkTimeMs() != null) ? stats.getAvgWorkTimeMs() / 1000f : null,
-                    stats.getWorkCompletionCount(),
-                    (stats.getAvgWorkCompletionTimeMs() != null) ? stats.getAvgWorkCompletionTimeMs() / 1000f : null));
-        }
+	public static void printSimulatorStats(ISimulatorService simulator, PrintStream out) {
+		out.println();
+		out.println(String.format("%-30s %8s %8s %8s %8s | %7s %9s %7s %9s", "Workload", "Active", "Failed", "Killed",
+				"Complete", "Steps", "Avg (s)", "Work", "Avg (s)"));
+		for (Map.Entry<String, WorkloadStats> statsEntry : simulator.getWorkloadStats().entrySet()) {
+			String workloadName = statsEntry.getKey();
+			WorkloadStats stats = statsEntry.getValue();
 
-        out.println();
-        out.println(String.format("%-25s %20s", "Step:", "# Completions:"));
-        for (Map.Entry<WorkloadStep, WorkloadStepStats> statsEntry : simulator.getWorkloadStepStats().entrySet()) {
-            WorkloadStep step = statsEntry.getKey();
-            WorkloadStepStats stats = statsEntry.getValue();
-            out.println(String.format("%-25s %20d", step.name(), stats.getCompletionCount()));
-        }
-    }
+			out.println(String.format("%-30s %8d %8d %8d %8d | %7d %9.3f %7d %9.3f", workloadName,
+					stats.getActiveWorkerCount(), stats.getFailedWorkerCount(), stats.getKilledWorkerCount(),
+					stats.getCompletedWorkerCount(), stats.getWorkInvocationCount(),
+					(stats.getAvgWorkTimeMs() != null) ? stats.getAvgWorkTimeMs() / 1000f : null,
+					stats.getWorkCompletionCount(),
+					(stats.getAvgWorkCompletionTimeMs() != null) ? stats.getAvgWorkCompletionTimeMs() / 1000f : null));
+		}
+
+		out.println();
+		out.println(String.format("%-25s %20s", "Step:", "# Completions:"));
+		for (Map.Entry<WorkloadStep, WorkloadStepStats> statsEntry : simulator.getWorkloadStepStats().entrySet()) {
+			WorkloadStep step = statsEntry.getKey();
+			WorkloadStepStats stats = statsEntry.getValue();
+			out.println(String.format("%-25s %20d", step.name(), stats.getCompletionCount()));
+		}
+	}
 }
