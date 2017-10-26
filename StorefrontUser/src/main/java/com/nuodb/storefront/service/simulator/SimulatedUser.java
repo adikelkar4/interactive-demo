@@ -76,11 +76,8 @@ public class SimulatedUser implements IWorker, Runnable {
 		try {
 			for (int i = 0; i < steps.length; i++) {				
 				doWork(steps[i]);
-//				logger.info(workloadType.getName() + ": Sleeping for " + sleepTime + "ms between steps " + i + " and " + (i+1));
-				Thread.sleep(500);
+				Thread.sleep(workloadType.calcNextThinkTimeMs());
 			}
-			long sleepTime = workloadType.calcNextThinkTimeMs();
-			Thread.sleep(sleepTime);
 		} catch (RuntimeException e) {
 			if (isExceptionRecoverable(e)) {
 				recoverFromException(e);
