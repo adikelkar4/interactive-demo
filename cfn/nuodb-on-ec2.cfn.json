@@ -572,6 +572,7 @@
           "   -e \"ELASTIC_HOST=${ELASTIC_HOST}\" ",
           "   -e \"ELASTIC_PORT=${ELASTIC_PORT}\" ",
           "   -e \"ELASTIC_INDEX=${ELASTIC_INDEX}\" ",
+          "   --name broker ",
           "   -p 48004:48004 ",
           "   -p 8888:8888 ${NUODB_DOCKER} \n",
 
@@ -854,13 +855,14 @@
           "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
           "export ELASTIC_PORT='", { "Ref" : "ElasticPort"}, "'\n",
           "export ELASTIC_INDEX='", { "Ref" : "ElasticIndex"}, "'\n",
-          "export POPULATE_NUODB=true\n",
-
 
           "sleep 10\n",
           "while ! [ \"available\" = $(aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ", { "Ref" : "SMStorageVolume" }, " --query Volumes[0].State | tr \\\" ' ' ) ]; do\n",
           "   sleep 1;\n",
           "done\n",
+
+          "mkdir -p /local\n",
+          "chmod 755 /local\n",
 
           "aws ec2 attach-volume --region ${CFN_Region}  ",
           "  --volume-id ", { "Ref" : "SMStorageVolume" }, " --instance-id ${INSTANCE_ID} ",
@@ -871,13 +873,17 @@
           "  '[{\"DeviceName\":\"/dev/xvdf\",\"Ebs\": {\"DeleteOnTermination\":false} }]'\n",
 
           "while ! [ -r /dev/xvdf ]; do sleep 1; done\n",
-          "mount /dev/xvdf /local\n",
+
+          "STATUS=\"$( file -s /dev/xvdf )\"\n",
+          "if [ \"$STATUS\" == \"/dev/xvdf: data\" ]; then\n",
+          "    /sbin/mkfs.ext4 /dev/xvdf && mount /dev/xvdf /local\n",
+          "else\n",
+          "    mount /dev/xvdf /local\n",
+          "fi\n",
 
           "aws ec2 describe-volumes --region ${CFN_Region} --volume-ids ", { "Ref" : "SMStorageVolume" }, "\n",
 
-          "mkdir -p /local/log\n",
-          "mkdir -p /local/production-archives\n",
-          "chown 1000:root /local/production-archives\n",
+          "mkdir /local/nuodb && chmod 777 /local/nuodb\n",
 
           "yum install docker -y\n",
 
@@ -901,8 +907,8 @@
           "   -e \"ELASTIC_HOST=${ELASTIC_HOST}\" ",
           "   -e \"ELASTIC_PORT=${ELASTIC_PORT}\" ",
           "   -e \"ELASTIC_INDEX=${ELASTIC_INDEX}\" ",
-          "   -e \"POPULATE_NUODB=${POPULATE_NUODB}\" ",
-          "   -v /local/production-archives:/opt/nuodb/var/opt/production-archives ",
+          "   --name sm ",
+          "   -v /local/nuodb:/opt/nuodb/var/opt ",
           "   -p 48010:48010 ",
           "   -p 48004:48004 ",
           "   -p 48005:48005 ",
@@ -1171,6 +1177,7 @@
           "export ELASTIC_HOST='", { "Ref" : "ElkPrivateIP"}, "'\n",
           "export ELASTIC_PORT='", { "Ref" : "ElasticPort"}, "'\n",
           "export ELASTIC_INDEX='", { "Ref" : "ElasticIndex"}, "'\n",
+          "export POPULATE_NUODB=true\n",
 
           "VOL_ID=$( aws ec2 create-volume ",
           "  --region ${CFN_Region} --availability-zone ${AZ} ",
@@ -1224,6 +1231,8 @@
           "   -e \"ELASTIC_HOST=${ELASTIC_HOST}\" ",
           "   -e \"ELASTIC_PORT=${ELASTIC_PORT}\" ",
           "   -e \"ELASTIC_INDEX=${ELASTIC_INDEX}\" ",
+          "   -e \"POPULATE_NUODB=${POPULATE_NUODB}\" ",
+          "   --name te ",
           "   -p 48010:48010 ",
           "   -p 48004:48004 ",
           "   -p 48005:48005 ",
@@ -1264,7 +1273,7 @@
         "LaunchConfigurationName" : { "Ref" : "NuoDBTELaunchConfig" },
         "MinSize" : "1",
         "MaxSize" : "5",
-        "DesiredCapacity" : "1",
+        "DesiredCapacity" : "5",
         "HealthCheckGracePeriod" : "600",
         "HealthCheckType" : "EC2",
         "Tags": [
