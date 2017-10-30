@@ -37,7 +37,7 @@ public class BaseDao extends GeneralDAOImpl implements IBaseDao {
             prepareSession(transactionType);
             T result = c.call();
             t.commit();
-            onTransactionComplete(name, startTime, true);
+            onTransactionComplete(name, System.currentTimeMillis() - startTime, true);
             return result;
         } catch (Exception e) {
             if (t != null) {
@@ -49,7 +49,7 @@ public class BaseDao extends GeneralDAOImpl implements IBaseDao {
             		}
             	}
             }
-            onTransactionComplete(name, startTime, false);
+            onTransactionComplete(name, System.currentTimeMillis() - startTime, false);
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             }

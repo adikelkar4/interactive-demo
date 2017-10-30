@@ -20,17 +20,9 @@ public interface IStorefrontTenant {
     
     public void startUp();
 
-    public void shutDown();
-
     // Connection management
     
     public DbConnInfo getDbConnInfo();
-
-    public void setDbConnInfo(DbConnInfo dbConnInfo);
-
-    public ConnInfo getApiConnInfo();
-
-    public void setApiConnInfo(ConnInfo info);
 
     // Schema management
     

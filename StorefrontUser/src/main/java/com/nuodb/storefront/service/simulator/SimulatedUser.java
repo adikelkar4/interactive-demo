@@ -66,6 +66,7 @@ public class SimulatedUser implements IWorker, Runnable {
 	}
 
 	public long doWork() throws InterruptedException {
+		customer = simulator.getService().getOrCreateCustomer((customer == null) ? 0 : customer.getId(), workloadType);
 		WorkloadStep[] steps = workloadType.getSteps();
 
 		if (steps.length == 0) {
@@ -75,9 +76,7 @@ public class SimulatedUser implements IWorker, Runnable {
 		try {
 			for (int i = 0; i < steps.length; i++) {				
 				doWork(steps[i]);
-				long sleepTime = workloadType.calcNextThinkTimeMs();
-//				logger.info(workloadType.getName() + ": Sleeping for " + sleepTime + "ms between steps " + i + " and " + (i+1));
-				Thread.sleep(sleepTime);
+				Thread.sleep(workloadType.calcNextThinkTimeMs());
 			}
 		} catch (RuntimeException e) {
 			if (isExceptionRecoverable(e)) {
@@ -133,7 +132,6 @@ public class SimulatedUser implements IWorker, Runnable {
 	}
 
 	protected void doWork(WorkloadStep step) {
-		customer = simulator.getService().getOrCreateCustomer((customer == null) ? 0 : customer.getId(), workloadType);
 
 		switch (step) {
 		case BROWSE:

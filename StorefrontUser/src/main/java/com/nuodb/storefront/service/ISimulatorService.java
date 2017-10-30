@@ -12,9 +12,6 @@ import com.nuodb.storefront.model.dto.WorkloadStep;
 import com.nuodb.storefront.model.dto.WorkloadStepStats;
 
 public interface ISimulatorService {
-    /** Looks up a workload by name */
-    public Workload getWorkload(String name);
-
     /**
      * Adjusts the workers associated with a workload.
      * 
@@ -29,11 +26,6 @@ public interface ISimulatorService {
      *            {@link #addWorkers(Workload, int, int)} or some other means , they are immediately killed.
      */
     public void adjustWorkers(Workload workload, int minActiveWorkers, Integer activeWorkerLimit);
-
-    /**
-     * Removes all workers across all workloads, including those currently running, and sets the active worker limit to 0 across all workloads.
-     */
-    public void removeAll();
     
     /**
      * Gets the sum of active worker limits across all workloads.  Workloads without limits do not contribute to this count.

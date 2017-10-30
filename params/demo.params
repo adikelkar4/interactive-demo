@@ -23,7 +23,7 @@ EcsClusterName: interactive-demo-dewey-20170629-152634
 
 storeFrontWebDocker: docker.io/nuodb/storefrontweb-demo:master
 storeFrontUserDocker: docker.io/nuodb/storefrontuser-demo:master
-nuodbDocker: 248317454512.dkr.ecr.us-east-1.amazonaws.com/nuodb:3.0.0-36-4-1724
+nuodbDocker: 248317454512.dkr.ecr.us-east-1.amazonaws.com/nuodb:3.0.0-36-4-1728
 
 elkDocker: 248317454512.dkr.ecr.us-east-2.amazonaws.com/elk
 
