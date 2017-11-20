@@ -369,7 +369,8 @@
           "VPCID" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
           "VPCCIDR" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcCidrs"] }, { "Ref" : "VpcCidrs" } ] },
           "RemoteAccessCIDR" : "0.0.0.0/0",
-          "PublicSubnet1ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] }
+          "PublicSubnet1ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
+          "PublicSubnet2ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }, { "Ref" : "SubnetIds" } ] }
 
         }
       }

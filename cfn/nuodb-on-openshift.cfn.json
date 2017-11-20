@@ -72,6 +72,9 @@
         "PublicSubnet1ID": {
           "default": "Public Subnet 1 ID"
         },
+        "PublicSubnet2ID": {
+          "default": "Public Subnet 2 ID"
+        },
         "QSS3BucketName": {
           "default": "Quick Start S3 Bucket Name"
         },
@@ -130,6 +133,10 @@
     },
 
     "PublicSubnet1ID": {
+      "Description": "ID of public subnet 1 in Availability Zone 1 for the ELB load balancer (e.g., subnet-9bc642ac)",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "PublicSubnet2ID": {
       "Description": "ID of public subnet 1 in Availability Zone 1 for the ELB load balancer (e.g., subnet-9bc642ac)",
       "Type": "AWS::EC2::Subnet::Id"
     },
@@ -248,16 +255,16 @@
       "Type": "String"
     },
     "NumberOfMaster": {
-      "Default": "3",
+      "Default": "1",
       "Description": "This Deployment requires 3 OpenShift Master instances",
       "Type": "Number",
-      "AllowedValues": ["3"]
+      "AllowedValues": ["1","2","3"]
     },
     "NumberOfEtcd": {
-      "Default": "3",
+      "Default": "1",
       "Description": "This Deployment requires 3 OpenShift Etcd instances",
       "Type": "Number",
-      "AllowedValues": ["3"]
+      "AllowedValues": ["1","2","3"]
     },
     "NumberOfNodes": {
       "Default": "3",
@@ -523,10 +530,8 @@
         "DesiredCapacity": {
           "Ref": "NumberOfMaster"
         },
-        "MaxSize": {
-          "Ref": "NumberOfMaster"
-        },
-        "MinSize": "2",
+        "MaxSize": "3",
+        "MinSize": "1",
         "LaunchConfigurationName": {
           "Ref": "OpenShiftMasterASLaunchConfig"
         },
@@ -535,9 +540,8 @@
           "PropagateAtLaunch": "true",
           "Value": "openshift-master"
         }],
-        "VPCZoneIdentifier": [{
-          "Ref": "PublicSubnet1ID"
-        }
+        "VPCZoneIdentifier": [
+          {"Ref": "PublicSubnet1ID"}
         ]
       }
     },
@@ -548,10 +552,8 @@
         "DesiredCapacity": {
           "Ref": "NumberOfEtcd"
         },
-        "MaxSize": {
-          "Ref": "NumberOfEtcd"
-        },
-        "MinSize": "2",
+        "MaxSize": "3",
+        "MinSize": "1",
         "LaunchConfigurationName": {
           "Ref": "OpenShiftEtcdLaunchConfig"
         },
@@ -560,9 +562,8 @@
           "PropagateAtLaunch": "true",
           "Value": "openshift-etcd"
         }],
-        "VPCZoneIdentifier": [{
-          "Ref": "PublicSubnet1ID"
-        }
+        "VPCZoneIdentifier": [
+          {"Ref": "PublicSubnet1ID"}
         ]
       }
     },
@@ -576,10 +577,8 @@
         "DesiredCapacity": {
           "Ref": "NumberOfNodes"
         },
-        "MaxSize": {
-          "Ref": "NumberOfNodes"
-        },
-        "MinSize": "2",
+        "MaxSize": "5",
+        "MinSize": "1",
         "LaunchConfigurationName": {
           "Ref": "OpenShiftNodesLaunchConfig"
         },
@@ -588,9 +587,8 @@
           "PropagateAtLaunch": "true",
           "Value": "openshift-nodes"
         }],
-        "VPCZoneIdentifier": [{
-          "Ref": "PublicSubnet1ID"
-        }
+        "VPCZoneIdentifier": [
+          {"Ref": "PublicSubnet1ID"}
         ]
       }
     },
@@ -1157,9 +1155,8 @@
           "IdleTimeout": 1200
         },
         "CrossZone": true,
-        "Subnets": [{
-          "Ref": "PublicSubnet1ID"
-        }
+        "Subnets": [
+          {"Ref": "PublicSubnet1ID"}
         ],
         "SecurityGroups": [{
           "Ref": "OpenShiftSecurityGroup"
@@ -1206,9 +1203,8 @@
         },
         "CrossZone": true,
         "Scheme": "internal",
-        "Subnets": [{
-          "Ref": "PublicSubnet1ID"
-        }
+        "Subnets": [
+          {"Ref": "PublicSubnet1ID"}
         ],
         "SecurityGroups": [{
           "Ref": "OpenShiftInternalSecurityGroup"
@@ -1250,9 +1246,8 @@
     "OpenShiftNodeELB": {
       "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties": {
-        "Subnets": [{
-          "Ref": "PublicSubnet1ID"
-        }
+        "Subnets": [
+          {"Ref": "PublicSubnet1ID"}
         ],
         "Scheme": "internal",
         "SecurityGroups": [{
@@ -1386,9 +1381,7 @@
           "GroupSet": [{
             "Ref": "OpenShiftSecurityGroup"
           }],
-          "SubnetId": {
-            "Ref": "PublicSubnet1ID"
-          }
+          "SubnetId": {"Ref": "PublicSubnet1ID"}
         }],
         "UserData": {
           "Fn::Base64": {
