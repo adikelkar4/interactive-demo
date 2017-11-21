@@ -555,7 +555,7 @@
 
           "service docker restart\n",
 
-          "cmd='$(aws ecr get-login --region us-east-1)' && eval $cmd && docker pull ${NUODB_DOCKER} \n",
+          "cmd='$(aws ecr get-login --region us-east-1 | sed -e \"s/-e none//g\" )' && eval $cmd && docker pull ${NUODB_DOCKER} \n",
 
           "docker run -d -e \"DOMAIN_PASSWORD=${DOMAIN_PASSWORD}\" ",
           "   -e \"AGENT_PORT=${AGENT_PORT}\" ",
@@ -889,7 +889,7 @@
 
           "service docker restart\n",
 
-          "cmd='$(aws ecr get-login --region us-east-1)' && eval $cmd && docker pull ${NUODB_DOCKER} \n",
+          "cmd='$(aws ecr get-login --region us-east-1 | sed -e \"s/-e none//g\" )' && eval $cmd && docker pull ${NUODB_DOCKER} \n",
 
           "docker run -d -e \"DOMAIN_PASSWORD=${DOMAIN_PASSWORD}\" ",
           "   -e \"AGENT_PORT=${AGENT_PORT}\" ",
@@ -1213,7 +1213,7 @@
 
           "service docker restart\n",
 
-          "cmd='$(aws ecr get-login --region us-east-1)' && eval $cmd && docker pull ${NUODB_DOCKER} \n",
+          "cmd='$(aws ecr get-login --region us-east-1 | sed -e \"s/-e none//g\" )' && eval $cmd && docker pull ${NUODB_DOCKER} \n",
 
           "docker run -d -e \"DOMAIN_PASSWORD=${DOMAIN_PASSWORD}\" ",
           "   -e \"AGENT_PORT=${AGENT_PORT}\" ",

@@ -324,7 +324,7 @@
 
           "service docker restart\n",
 
-          "cmd='$(aws ecr get-login --region ${CFN_Region})' && eval $cmd && docker pull ${ELK_DOCKER} \n",
+          "cmd='$(aws ecr get-login --region ${CFN_Region} | sed -e \"s/-e none//g\" )' && eval $cmd && docker pull ${ELK_DOCKER} \n",
 
           "docker run -d --ulimit nofile=65536 ",
           "  -p 5601:5601 ",
