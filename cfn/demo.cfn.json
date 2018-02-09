@@ -364,7 +364,8 @@
           "RedhatSubscriptionUserName" : { "Ref" : "RedhatSubscriptionUserName"},
           "RedhatSubscriptionPassword" : { "Ref" : "RedhatSubscriptionPassword"},
 
-
+          "EcsClusterName": { "Ref" : "EcsClusterName"},
+          "Bucket" : { "Ref" : "Bucket"},
           "KeyPairName":  { "Ref" : "KeyName" },
           "VPCID" :  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcID"] }, { "Ref" : "VpcId" } ] },
           "VPCCIDR" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcCidrs"] }, { "Ref" : "VpcCidrs" } ] },
