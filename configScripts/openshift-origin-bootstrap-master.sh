@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -x
 
-env
-
-systemctl start NetworkManager
-systemctl enable NetworkManager
 
 #### set ssh keys
 touch /root/.ssh/public.key
@@ -20,11 +16,6 @@ chmod 400 /root/.ssh/id_rsa
 groupadd docker
 usermod -aG docker centos
 
-#### configure docker network
-sed -i '/OPTIONS=.*/c\\OPTIONS="--selinux-enabled --insecure-registry 172.30.0.0/16"' /etc/sysconfig/docker
-
-systemctl start docker
-systemctl enable docker
 
 #### allow root login
 sed -i -- "s/#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
@@ -38,54 +29,56 @@ systemctl restart sshd
 ### run on master
 if [ "${NODE_TYPE}" == "MASTER" ]; then
 
-    #### clone ansible repo
-    mkdir -p /local/workspace && cd /local/workspace
-    git clone http://github.com/openshift/openshift-ansible
-    cd openshift-ansible
-    git checkout release-3.7
-
     #### grab the IP addresses of deployed nodes
     function getInstanceIp {
         count=1
         while [ "$instanceIp" == "" ]; do
             instanceIp="$( aws autoscaling describe-auto-scaling-instances --region ${REGION} --output text \
-              --query """AutoScalingInstances[?AutoScalingGroupName=='${NODEASGID}'].InstanceId""" \
-               | xargs -n1 aws ec2 describe-instances --instance-ids $ID --region ${REGION} \
-                --query Reservations[].Instances[].PrivateDnsName --output text )"
+              --query """AutoScalingInstances[?AutoScalingGroupName=='${NODEASGID}'].InstanceId""" )"
             sleep 5
-            if [ "$count" == 10 ]; then
+            if [ "$count" == 30 ]; then
                 echo "timed out getting node list"
                 exit 1
             fi
             ((count++))
         done
 
-        echo $instanceIp
+        aws autoscaling describe-auto-scaling-instances --region ${REGION} --output text \
+              --query """AutoScalingInstances[?AutoScalingGroupName=='${NODEASGID}'].InstanceId""" \
+               | xargs -n1 aws ec2 describe-instances --instance-ids $ID --region ${REGION} \
+                --query 'Reservations[].Instances[].[PrivateDnsName, Placement.AvailabilityZone]' --output text >>/tmp/hostlist.txt
+
+        cat /tmp/hostlist.txt
     }
 
-    #make sure all nodes are in list
-    while [ "$listCount" != "$DESIRED" ]; do
-        InstanceList=$(getInstanceIp)
-        listCount="$( echo $InstanceList | wc -l )"
-        sleep 5
+    while [ -z "$isPopulated" ]; do
+        isPopulated=$( getInstanceIp )
     done
 
-    touch /tmp/nodes.txt
+    MASTERIP="$( curl http://169.254.169.254/latest/meta-data/local-hostname/ )"
+    sed -i -- "s/@@master@@/$MASTERIP/g" /local/ansible/inventory/hosts.cluster
 
-    #### configure inventory
-    for ip in $InstanceList
-    do
-        echo "$ip  openshift_schedulable=true openshift_node_labels=\"{'region': ''${REGION}'', 'zone': 'default'}\"" >>/tmp/nodes.txt
-    done
+    #populate node list
+    while read p; do
+        echo $p | awk '{ print $1 " openshift_schedulable=true openshift_node_labels=\"{`region`: `infra`, `zone`: `" $2 "`}\"" }' >>/local/ansible/inventory/hosts.cluster
+    done </tmp/hostlist.txt
 
-    nodelist=$(</tmp/nodes.txt)
+#    #populate glusterfs list
+#    echo "" >>/local/ansible/inventory/hosts.cluster
+#    echo "[glusterfs]" >>/local/ansible/inventory/hosts.cluster
+#    echo $MASTER " glusterfs_devices=\"[ `/dev/xvdf` ]\"" >>/local/ansible/inventory/hosts.cluster
+#    while read p; do
+#        echo $p | awk '{ print $1 " glusterfs_devices=\"[ `/dev/xvdf` ]\"" }' >>/local/ansible/inventory/hosts.cluster
+#    done </tmp/hostlist.txt
 
-    echo $nodelist
+    #fix quotes
+    sed -i -- "s/\`/\'/g" /local/ansible/inventory/hosts.cluster
 
-    MASTERIP="$( curl http://169.254.169.254/latest/meta-data/public-ipv4/ )"
-    sed -i -- "s/@@master@@/$MASTERIP/g" /local/scripts/openshift-inventory.erb
-    sed -i -- "s/@@nodes@@/$nodeslist/g" /local/scripts/openshift-inventory.erb
+    while read p; do
 
-    #### run ansible to deploy openshift cluster
-    ansible-playbook -i /local/scripts/openshift-inventory.erb /local/workspace/openshift-ansible/playbooks/byo/config.yml -vvv >>/local/deploy-cluster.log
+        echo $p | awk '{ print "ssh " $1 " /local/scripts/disable_thp.sh" }' >>/local/scripts/ssh.sh
+
+    done </tmp/hostlist.txt
+
+    chmod +x /local/scripts/ssh.sh
 fi

@@ -114,7 +114,7 @@
     "EcsClusterName": {
       "Description": "S3 key prefix for the Quick Start assets",
       "Type": "String",
-      "Default": "interactive-demo-bhiggins-20180110-1141-1"
+      "Default": "none"
     },
     "RemoteAccessCIDR": {
       "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/([0-9]|[1-2][0-9]|3[0-2]))$",
@@ -138,14 +138,19 @@
 
     "CWLogGroup" : {
       "Type" : "String",
-      "Default": "interactive-demo-bhiggins-20180110-1141-1-Resources-1RL1BGO2QVO2C"
+      "Default": "none"
+    },
+
+    "SpotPrice" : {
+      "Type" : "Number",
+      "Default" : "0.20"
     },
 
     "MasterInstanceType": {
-      "Default": "m4.xlarge",
+      "Default": "m4.large",
       "AllowedValues": [
         "t2.large",
-        "m4.xlarge",
+        "m4.large",
         "m4.2xlarge",
         "m4.4xlarge",
         "m4.10xlarge",
@@ -161,18 +166,18 @@
     },
 
     "NodesInstanceType": {
-      "Default": "m4.xlarge",
+      "Default": "r4.4xlarge",
       "AllowedValues": [
         "t2.large",
         "m4.xlarge",
         "m4.2xlarge",
         "m4.4xlarge",
         "m4.10xlarge",
-        "c4.large",
-        "c4.xlarge",
-        "c4.2xlarge",
-        "c4.4xlarge",
-        "c4.8xlarge"
+        "r4.large",
+        "r4.xlarge",
+        "r4.2xlarge",
+        "r4.4xlarge",
+        "r4.8xlarge"
       ],
       "ConstraintDescription": "Must contain valid instance type",
       "Description": "Type of EC2 instance for the Node instances",
@@ -185,7 +190,7 @@
       "AllowedValues": ["1","2","3"]
     },
     "NumberOfNodes": {
-      "Default": "3",
+      "Default": "6",
       "Description": "The desired capacity for the OpenShift node instances",
       "Type": "Number"
     }
@@ -488,7 +493,8 @@
           "Value": "openshift-master"
         }],
         "VPCZoneIdentifier": [
-          {"Ref": "PublicSubnet1ID"}
+          {"Ref": "PublicSubnet1ID"},
+          {"Ref": "PublicSubnet2ID"}
         ]
       }
     },
@@ -499,7 +505,7 @@
         "DesiredCapacity": {
           "Ref": "NumberOfNodes"
         },
-        "MaxSize": "5",
+        "MaxSize": "10",
         "MinSize": "1",
         "LaunchConfigurationName": {
           "Ref": "OpenShiftNodesLaunchConfig"
@@ -510,7 +516,8 @@
           "Value": "openshift-nodes"
         }],
         "VPCZoneIdentifier": [
-          {"Ref": "PublicSubnet1ID"}
+          {"Ref": "PublicSubnet1ID"},
+          {"Ref": "PublicSubnet2ID"}
         ]
       }
     },
@@ -611,6 +618,7 @@
 
       },
       "Properties": {
+        "SpotPrice" : { "Ref" : "SpotPrice" },
         "AssociatePublicIpAddress" : "true",
         "KeyName": {
           "Ref": "KeyPairName"
@@ -644,7 +652,7 @@
           "Ref": "SetupRoleProfile"
         },
         "InstanceType": {
-          "Ref": "MasterInstanceType"
+          "Ref": "NodesInstanceType"
         },
         "SecurityGroups": [{
           "Ref": "OpenShiftSecurityGroup"
@@ -655,20 +663,29 @@
               "", [
                 "#!/bin/bash -v\n",
 
+                "export PEM=\"", { "Fn::GetAtt": ["GetRSA", "PEM"] }, "\"\n",
+                "export PUB=\"", { "Fn::GetAtt": ["GetRSA", "PUB"] }, "\"\n",
                 "export REGION=", { "Ref" : "AWS::Region"}, "\n",
                 "export AZ=\"$( curl http://169.254.169.254/latest/meta-data/placement/availability-zone/ )\"\n",
                 "export INSTANCE_ID=\"$( curl http://169.254.169.254/latest/meta-data/instance-id/ )\"\n",
+                "export HOSTNAME=\"$( curl http://169.254.169.254/latest/meta-data/local-hostname/ )\"\n",
+                "export DESIRED=", { "Ref" : "NumberOfNodes"}, "\n",
                 "export NODE_TYPE=NODE\n",
+                "export SHELL=/bin/bash\n",
+                "export USER=root\n",
+                "export PATH=$PATH:/sbin:/bin:/root/bin\n",
 
                 "yum update -y\n",
                 "\n",
                 "yum install -y epel-release\n",
                 "yum update -y\n",
-                "yum install -y ansible docker git python-boto pyOpenSSL python-cryptography python-lxml openssl-dev httpd-tools origin-docker-excluder NetworkManager\n",
-                "yum install -y python-pip origin-clients centos-release-openshift-origin atomic-openshift-utils python-passlib java-1.8.0-openjdk-headless\n",
-
+                "yum install -y ansible docker git python-boto pyOpenSSL openssl-dev httpd-tools python-cryptography python-lxml origin-docker-excluder NetworkManager unzip\n",
+                "yum install -y python-pip origin-clients centos-release-openshift-origin atomic-openshift-utils python-passlib java-1.8.0-openjdk-headless ntp chrony\n",
 
                 "pip install awscli\n",
+
+                "systemctl enable NetworkManager\n",
+                "systemctl start NetworkManager\n",
 
                 "VOL_ID=$( aws ec2 create-volume ",
                 "  --region ${REGION} --availability-zone ${AZ} ",
@@ -695,18 +712,16 @@
                 "/sbin/mkfs.ext4 /dev/xvdf && mount /dev/xvdf /local\n",
 
                 "aws ec2 describe-volumes --region ${REGION} --volume-ids ${VOL_ID} \n",
+
                 "aws s3 sync s3://", { "Ref" : "Bucket"}, "/templates/", { "Ref" : "EcsClusterName"}, "/scripts /local/scripts\n",
+                "aws s3 sync s3://", { "Ref" : "Bucket"}, "/templates/", { "Ref" : "EcsClusterName"}, "/ansible /local/ansible\n",
+
                 "chmod +x -R /local/scripts\n",
 
-                "#### set ssh keys\n",
-                "touch /root/.ssh/public.key\n",
-                "echo \"", { "Fn::GetAtt": ["GetRSA", "PUB"] }, "\" >>/root/.ssh/public.key\n",
-                "cat /root/.ssh/public.key >>/root/.ssh/authorized_keys\n",
-                "chmod 400 /root/.ssh/public.key\n",
+                "curl -LS https://github.com/openshift/openshift-ansible/archive/openshift-ansible-3.9.0-0.46.0.tar.gz -o /tmp/openshift-ansible.tgz\n",
+                "mkdir /local/openshift-ansible && tar -zxvf /tmp/openshift-ansible.tgz -C /local/openshift-ansible --strip-components=1\n",
 
-                "touch /root/.ssh/id_rsa\n",
-                "echo \"", { "Fn::GetAtt": ["GetRSA", "PEM"] }, "\" >>/root/.ssh/id_rsa\n",
-                "chmod 400 /root/.ssh/id_rsa\n",
+                "chmod +x -R /local/scripts\n",
 
                 "bash /local/scripts/openshift-origin-bootstrap-master.sh"
               ]
@@ -987,17 +1002,30 @@
                 "export NODEASGID=",  { "Ref" : "OpenShiftNodeASG"}, "\n",
                 "export AZ=\"$( curl http://169.254.169.254/latest/meta-data/placement/availability-zone/ )\"\n",
                 "export INSTANCE_ID=\"$( curl http://169.254.169.254/latest/meta-data/instance-id/ )\"\n",
+                "export HOSTNAME=\"$( curl http://169.254.169.254/latest/meta-data/local-hostname/ )\"\n",
                 "export DESIRED=", { "Ref" : "NumberOfNodes"}, "\n",
                 "export NODE_TYPE=MASTER\n",
+                "export SHELL=/bin/bash\n",
+                "export USER=root\n",
+                "export PATH=$PATH:/sbin:/bin:/root/bin\n",
+
 
                 "yum update -y\n",
                 "\n",
                 "yum install -y epel-release\n",
                 "yum update -y\n",
-                "yum install -y ansible docker git python-boto pyOpenSSL openssl-dev httpd-tools python-cryptography python-lxml origin-docker-excluder NetworkManager\n",
-                "yum install -y python-pip origin-clients centos-release-openshift-origin atomic-openshift-utils python-passlib java-1.8.0-openjdk-headless\n",
+                "yum install -y ansible docker git python-boto pyOpenSSL openssl-dev httpd-tools python-cryptography python-lxml origin-docker-excluder NetworkManager unzip\n",
+                "yum install -y python-pip origin-clients centos-release-openshift-origin atomic-openshift-utils python-passlib java-1.8.0-openjdk-headless ntp chrony\n",
 
                 "pip install awscli\n",
+
+                "systemctl enable NetworkManager\n",
+                "systemctl start NetworkManager\n",
+                "timedatectl set-ntp true\n",
+                "systemctl enable ntpd\n",
+                "systemctl start ntpd\n",
+                "systemctl unmask chronyd\n",
+                "systemctl restart chronyd\n",
 
                 "VOL_ID=$( aws ec2 create-volume ",
                 "  --region ${REGION} --availability-zone ${AZ} ",
@@ -1024,10 +1052,36 @@
                 "/sbin/mkfs.ext4 /dev/xvdf && mount /dev/xvdf /local\n",
 
                 "aws ec2 describe-volumes --region ${REGION} --volume-ids ${VOL_ID} \n",
+
                 "aws s3 sync s3://", { "Ref" : "Bucket"}, "/templates/", { "Ref" : "EcsClusterName"}, "/scripts /local/scripts\n",
+                "aws s3 sync s3://", { "Ref" : "Bucket"}, "/templates/", { "Ref" : "EcsClusterName"}, "/ansible /local/ansible\n",
+
                 "chmod +x -R /local/scripts\n",
 
-                "bash /local/scripts/openshift-origin-bootstrap-master.sh"
+                "curl -LS https://github.com/openshift/openshift-ansible/archive/openshift-ansible-3.9.0-0.46.0.tar.gz -o /tmp/openshift-ansible.tgz\n",
+                "mkdir /local/openshift-ansible && tar -zxvf /tmp/openshift-ansible.tgz -C /local/openshift-ansible --strip-components=1\n",
+
+                "#workaroud\n",
+                "sed -i -- \"s/True/False/g\" /local/openshift-ansible/roles/openshift_clock/defaults/main.yml\n",
+                "#disable tuned role\n",
+                "#sed -i -- \"s/- role: tuned/#- role: tuned/g\" /local/openshift-ansible/playbooks/openshift-node/private/configure_nodes.yml\n",
+
+                "bash /local/scripts/openshift-origin-bootstrap-master.sh\n",
+
+                "ansible-playbook -i /local/ansible/inventory/hosts.cluster /local/openshift-ansible/playbooks/prerequisites.yml >> /local/prereq.log\n",
+
+                "buildError=\"firstRun\"\n",
+                "count=1\n",
+                "while [ ! -z \"$buildError\" ]; do\n",
+                "    ansible-playbook -i /local/ansible/inventory/hosts.cluster /local/openshift-ansible/playbooks/deploy_cluster.yml -vvv > /local/cluster.log\n",
+                "    buildError=$( cat /local/cluster.log | grep Failure )\n",
+                "    if [ \"$count\" == \"5\" ]; then\n",
+                "        echo \"Failed to build cluster\"\n",
+                "        buildError=\"\"\n",
+                "    fi\n",
+                "    ((count++))\n",
+                "done\n",
+                "bash /local/scripts/disable_thp.sh\n"
               ]
             ]
           }
@@ -1042,7 +1096,8 @@
         },
         "CrossZone": true,
         "Subnets": [
-          {"Ref": "PublicSubnet1ID"}
+          {"Ref": "PublicSubnet1ID"},
+          {"Ref": "PublicSubnet2ID"}
         ],
         "SecurityGroups": [{
           "Ref": "OpenShiftSecurityGroup"

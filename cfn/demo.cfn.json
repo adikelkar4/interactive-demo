@@ -69,6 +69,13 @@
       "Default" : "sebp/elk"
     },
 
+    "DeployElk" : {
+      "Description" : "Opt out of ELK deployment",
+      "Type" : "String",
+      "Default" : "false",
+      "AllowedValues" : ["true", "false"]
+    },
+
     "VolumeSize" : {
       "Description" : "EBS Attached volume size",
       "Type" : "Number",
@@ -117,6 +124,12 @@
       "Type" : "String",
       "Description" : "EC2 instance type",
       "Default" : "m4.large"
+    },
+
+    "SpotPrice" : {
+      "Type" : "Number",
+      "Description" : "Spot instance Bid price",
+      "Default" : "0.20"
     },
 
     "EcsAmiId" : {
@@ -208,23 +221,13 @@
       "Type" : "String",
       "Description" : "Optional - CIDR/IP range for EcsPort and ElbPort - defaults to 0.0.0.0/0",
       "Default" : "10.0.0.0/0"
-    },
-    "RedhatSubscriptionUserName": {
-      "Type" : "String",
-      "Description": "Red Hat Subscription User Name",
-      "Default" : "None"
-    },
-    "RedhatSubscriptionPassword": {
-      "Type" : "String",
-      "NoEcho": "true",
-      "Description": "Red Hat Subscription Password",
-      "Default" : "None"
     }
 
   },
 
   "Conditions" : {
     "CreateVpcResources" : { "Fn::Equals" : [ { "Ref" : "VpcId" }, "" ] },
+    "CreateElk" : { "Fn::Equals" : [ { "Ref" : "DeployElk"}, "true "] },
     "CreateNuoDBonECS" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSECS" ]},
     "CreateNuoDBonEC2" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSEC2" ]},
     "CreateNuoDBonOS" : { "Fn::Equals" : [ {"Ref" : "EnvironmentType"}, "AWSOPENSHIFT" ]},
@@ -272,6 +275,7 @@
     "ElkLogging" : {
       "Type" : "AWS::CloudFormation::Stack",
       "DependsOn" : "VPC",
+      "Condition" : "CreateElk",
       "Properties" : {
         "TemplateURL" : { "Fn::Join" : ["", [
           { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
@@ -349,7 +353,7 @@
     "NuoDBonOpenShift" : {
       "Condition" : "CreateNuoDBonOS",
       "Type" : "AWS::CloudFormation::Stack",
-      "DependsOn" : ["Loadbalancers", "ElkLogging"],
+      "DependsOn" : ["Loadbalancers"],
       "Properties" : {
         "TemplateURL" : { "Fn::Join" : ["", [
           { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
@@ -360,10 +364,6 @@
         ]]},
         "Parameters" : {
 
-
-          "RedhatSubscriptionUserName" : { "Ref" : "RedhatSubscriptionUserName"},
-          "RedhatSubscriptionPassword" : { "Ref" : "RedhatSubscriptionPassword"},
-
           "EcsClusterName": { "Ref" : "EcsClusterName"},
           "Bucket" : { "Ref" : "Bucket"},
           "KeyPairName":  { "Ref" : "KeyName" },
@@ -371,8 +371,9 @@
           "VPCCIDR" : { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.VpcCidrs"] }, { "Ref" : "VpcCidrs" } ] },
           "RemoteAccessCIDR" : "0.0.0.0/0",
           "PublicSubnet1ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
-          "PublicSubnet2ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }, { "Ref" : "SubnetIds" } ] }
-
+          "PublicSubnet2ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }, { "Ref" : "SubnetIds" } ] },
+          "NumberOfNodes" : "6",
+          "SpotPrice" : { "Ref" : "SpotPrice" }
         }
       }
     },
@@ -380,7 +381,7 @@
     "EcsCluster" : {
       "Condition" : "CreateECS",
       "Type" : "AWS::CloudFormation::Stack",
-      "DependsOn" : ["LambdaFunctions", "ElkLogging"],
+      "DependsOn" : ["LambdaFunctions"],
       "Properties" : {
         "TemplateURL" : { "Fn::Join" : ["", [
           { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
@@ -427,7 +428,7 @@
     "NuoDBonEc2" : {
       "Condition" : "CreateNuoDBonEC2",
       "Type" : "AWS::CloudFormation::Stack",
-      "DependsOn" : ["Loadbalancers", "ElkLogging"],
+      "DependsOn" : ["Loadbalancers"],
       "Properties" : {
         "TemplateURL" : { "Fn::Join" : ["", [
           { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
@@ -461,7 +462,7 @@
           "BrokerElbSecurityGroup" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbSecurityGroup"]},
 
           "CWLogGroup" : { "Fn::GetAtt" : [ "Resources", "Outputs.CWLogGroup"]},
-          "ElkPrivateIP" : { "Fn::GetAtt" : [ "ElkLogging", "Outputs.ElkPrivateIP"]}
+          "ElkPrivateIP" : { "Fn::If" : [ "CreateElk", { "Fn::GetAtt": ["ElkLogging", "Outputs.ElkPrivateIP"] }, "NONE"] }
         }
       }
     },
@@ -469,7 +470,7 @@
     "NuoDBonEcs" : {
       "Condition" : "CreateNuoDBonECS",
       "Type" : "AWS::CloudFormation::Stack",
-      "DependsOn" : ["EcsCluster", "ElkLogging"],
+      "DependsOn" : ["EcsCluster"],
       "Properties" : {
         "TemplateURL" : { "Fn::Join" : ["", [
           { "Fn::FindInMap" : [ "S3Endpoints", { "Ref" : "AWS::Region" },  "Endpoint" ] } ,
@@ -495,7 +496,7 @@
           "SubnetIds":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
           "peerAddress" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.BrokerElbURL"] },
           "StorefrontElb" : { "Fn::GetAtt" : ["Loadbalancers", "Outputs.StorefrontELB"] },
-          "ElkPrivateIP" : { "Fn::GetAtt" : [ "ElkLogging", "Outputs.ElkPrivateIP"]}
+          "ElkPrivateIP" : { "Fn::If" : [ "CreateElk", { "Fn::GetAtt": ["ElkLogging", "Outputs.ElkPrivateIP"] }, "NONE"] }
         }
       }
     }
@@ -514,7 +515,7 @@
     },
     "ElkURL" : {
       "Description" : "Elk logging URL address",
-      "Value" : { "Fn::GetAtt" : ["ElkLogging", "Outputs.ELKCNAME"]}
+      "Value" : { "Fn::If" : [ "CreateElk", { "Fn::GetAtt": ["ElkLogging", "Outputs.ELKCNAME"] }, "NONE"] }
     }
   }
 }

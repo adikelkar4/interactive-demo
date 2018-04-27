@@ -1,5 +1,7 @@
 #deployment buckets
 Bucket: nuodb-oa-cloud-deployment
+
+#Bucket: nuodb-oa-cloud-deployment-se
 BucketRegion: us-east-1
 
 #amzn-ami-2016.09.g-amazon-ecs-optimized with ecs agent installed
@@ -25,6 +27,7 @@ storeFrontWebDocker: docker.io/nuodb/storefrontweb-demo:master
 storeFrontUserDocker: docker.io/nuodb/storefrontuser-demo:master
 nuodbDocker: docker.io/nuodb/nuodb-ce:3.0.1-8-dev-3
 
+DeployElk: false
 elkDocker: 248317454512.dkr.ecr.us-east-2.amazonaws.com/elk
 
 
@@ -34,6 +37,3 @@ dbpassword: StorefrontUser
 dbname: Storefront
 
 Hostname: nuodb.io
-
-RedhatSubscriptionUserName:
-RedhatSubscriptionPassword:
