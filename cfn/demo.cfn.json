@@ -372,7 +372,7 @@
           "RemoteAccessCIDR" : "0.0.0.0/0",
           "PublicSubnet1ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
           "PublicSubnet2ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }, { "Ref" : "SubnetIds" } ] },
-          "NumberOfNodes" : "6",
+          "NumberOfNodes" : "10",
           "SpotPrice" : { "Ref" : "SpotPrice" }
         }
       }

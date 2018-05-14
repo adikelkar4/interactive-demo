@@ -679,8 +679,8 @@
                 "\n",
                 "yum install -y epel-release\n",
                 "yum update -y\n",
-                "yum install -y ansible docker git python-boto pyOpenSSL openssl-dev httpd-tools python-cryptography python-lxml origin-docker-excluder NetworkManager unzip\n",
-                "yum install -y python-pip origin-clients centos-release-openshift-origin atomic-openshift-utils python-passlib java-1.8.0-openjdk-headless ntp chrony\n",
+                "yum install -y ansible git python-boto pyOpenSSL openssl-dev httpd-tools python-cryptography python-lxml NetworkManager unzip\n",
+                "yum install -y python-pip python-passlib java-1.8.0-openjdk-headless ntp chrony\n",
 
                 "pip install awscli\n",
 
@@ -1014,8 +1014,8 @@
                 "\n",
                 "yum install -y epel-release\n",
                 "yum update -y\n",
-                "yum install -y ansible docker git python-boto pyOpenSSL openssl-dev httpd-tools python-cryptography python-lxml origin-docker-excluder NetworkManager unzip\n",
-                "yum install -y python-pip origin-clients centos-release-openshift-origin atomic-openshift-utils python-passlib java-1.8.0-openjdk-headless ntp chrony\n",
+                "yum install -y ansible git python-boto pyOpenSSL openssl-dev httpd-tools python-cryptography python-lxml NetworkManager unzip\n",
+                "yum install -y python-pip python-passlib java-1.8.0-openjdk-headless ntp chrony\n",
 
                 "pip install awscli\n",
 
