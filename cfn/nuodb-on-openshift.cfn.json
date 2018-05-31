@@ -193,6 +193,12 @@
       "Default": "6",
       "Description": "The desired capacity for the OpenShift node instances",
       "Type": "Number"
+    },
+    "Hostname" : {
+      "Type" : "String"
+    },
+    "CustomerID" : {
+      "Type" : "String"
     }
   },
   "Rules": {
@@ -226,13 +232,16 @@
         "CENTOS7HVM": "ami-bb9a6bc2"
       },
       "us-east-1": {
-        "CENTOS7HVM": "ami-c998b6b2"
+        "CENTOS7HVM": "ami-dc4d2aa3"
       },
       "us-east-2": {
         "CENTOS7HVM": "ami-e0eac385"
       },
       "us-west-2": {
         "CENTOS7HVM": "ami-9fa343e7"
+      },
+      "eu-west-1": {
+        "CENTOS7HVM": "ami-1bccf562"
       }
     },
     "ARNNamespace": {
@@ -256,7 +265,8 @@
       },
         "us-gov-west-1"
       ]
-    }
+    },
+    "HasHostedZone" : { "Fn::Not": [{"Fn::Equals" : [{ "Ref" : "Hostname" },   "NONE"]}]}
   },
   "Resources": {
     "LambdaExecutionRole": {
@@ -474,7 +484,7 @@
     },
     "OpenShiftMasterASG": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
-      "DependsOn": [ "OpenShiftNodeASG"],
+      "DependsOn": [ "OpenShiftNodeASG", "OpenShiftMasterELB"],
       "Properties": {
         "LoadBalancerNames": [{
           "Ref": "OpenShiftMasterELB"
@@ -635,7 +645,7 @@
         "BlockDeviceMappings": [{
           "DeviceName": "/dev/sda1",
           "Ebs": {
-            "VolumeSize": "80",
+            "VolumeSize": "100",
             "VolumeType": "gp2"
           }
         },
@@ -675,12 +685,29 @@
                 "export USER=root\n",
                 "export PATH=$PATH:/sbin:/bin:/root/bin\n",
 
-                "yum update -y\n",
                 "\n",
                 "yum install -y epel-release\n",
                 "yum update -y\n",
-                "yum install -y ansible git python-boto pyOpenSSL openssl-dev httpd-tools python-cryptography python-lxml NetworkManager unzip\n",
-                "yum install -y python-pip python-passlib java-1.8.0-openjdk-headless ntp chrony\n",
+                "yum install -y git docker python-boto pyOpenSSL openssl-dev httpd-tools python-cryptography python-lxml NetworkManager unzip\n",
+                "yum install -y python-pip  python-passlib java-1.8.0-openjdk-headless ntp chrony centos-release-openshift-origin37\n",
+
+                "#packages for docker 1.12.6\n",
+                "#yum install -y yum-utils\n",
+                "#yum-config-manager --add-repo https://yum.dockerproject.org/repo/main/centos/7\n",
+                "#yum -y update\n",
+                "#yum -y --nogpgcheck install docker-engine-1.12.6-1.el7.centos.x86_64\n",
+                "#systemctl start docker\n",
+
+                "#packages for ansible\n",
+                "yum install -y python-crypto python-httplib2 python-keyczar python-paramiko python2-jmespath sshpass bash-completion conntrack-tools socat libpthread.so.0\n",
+
+                "rpm -i http://cbs.centos.org/kojifiles/packages/ansible/2.5.2/1.el7/noarch/ansible-2.5.2-1.el7.noarch.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/x86_64/origin-clients-3.7.2-1.el7.git.0.cd74924.x86_64.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/x86_64/origin-3.7.2-1.el7.git.0.cd74924.x86_64.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/noarch/origin-docker-excluder-3.7.2-1.el7.git.0.cd74924.noarch.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/noarch/origin-excluder-3.7.2-1.el7.git.0.cd74924.noarch.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/x86_64/tuned-profiles-origin-node-3.7.2-1.el7.git.0.cd74924.x86_64.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/x86_64/origin-node-3.7.2-1.el7.git.0.cd74924.x86_64.rpm\n",
 
                 "pip install awscli\n",
 
@@ -977,7 +1004,7 @@
         "BlockDeviceMappings": [{
           "DeviceName": "/dev/sda1",
           "Ebs": {
-            "VolumeSize": "80"
+            "VolumeSize": "100"
           }
         }],
         "InstanceMonitoring": "true",
@@ -1009,14 +1036,31 @@
                 "export USER=root\n",
                 "export PATH=$PATH:/sbin:/bin:/root/bin\n",
 
+                "export OPENSHIFTURL=", { "Fn::If": ["HasHostedZone", {"Ref": "OpenShiftCNAME"}, { "Fn::GetAtt" : ["OpenShiftMasterELB", "DNSName"] }]}, "\n",
 
-                "yum update -y\n",
                 "\n",
                 "yum install -y epel-release\n",
                 "yum update -y\n",
-                "yum install -y ansible git python-boto pyOpenSSL openssl-dev httpd-tools python-cryptography python-lxml NetworkManager unzip\n",
-                "yum install -y python-pip python-passlib java-1.8.0-openjdk-headless ntp chrony\n",
+                "yum install -y git docker python-boto pyOpenSSL openssl-dev httpd-tools python-cryptography python-lxml NetworkManager unzip\n",
+                "yum install -y python-pip python-passlib java-1.8.0-openjdk-headless ntp chrony centos-release-openshift-origin37\n",
 
+                "#packages for docker 1.12.6\n",
+                "#yum install -y yum-utils\n",
+                "#yum-config-manager --add-repo https://yum.dockerproject.org/repo/main/centos/7\n",
+                "#yum -y update\n",
+                "#yum -y --nogpgcheck install docker-engine-1.12.6-1.el7.centos.x86_64\n",
+                "#systemctl start docker\n",
+
+                "#packages for ansible\n",
+                "yum install -y python-crypto python-httplib2 python-keyczar python-paramiko python2-jmespath sshpass bash-completion conntrack-tools socat\n",
+
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/x86_64/origin-clients-3.7.2-1.el7.git.0.cd74924.x86_64.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/x86_64/origin-3.7.2-1.el7.git.0.cd74924.x86_64.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/ansible/2.5.2/1.el7/noarch/ansible-2.5.2-1.el7.noarch.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/noarch/origin-docker-excluder-3.7.2-1.el7.git.0.cd74924.noarch.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/noarch/origin-excluder-3.7.2-1.el7.git.0.cd74924.noarch.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/x86_64/tuned-profiles-origin-node-3.7.2-1.el7.git.0.cd74924.x86_64.rpm\n",
+                "rpm -i http://cbs.centos.org/kojifiles/packages/origin/3.7.2/1.el7.git.0.cd74924/x86_64/origin-node-3.7.2-1.el7.git.0.cd74924.x86_64.rpm\n",
                 "pip install awscli\n",
 
                 "systemctl enable NetworkManager\n",
@@ -1135,18 +1179,29 @@
           "Timeout": "3"
         }
       }
+    },
+    "OpenShiftCNAME" : {
+      "Condition" : "HasHostedZone",
+      "DependsOn" : "OpenShiftMasterELB",
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+        "HostedZoneName" : { "Fn::Join" : [ "", [ { "Ref" : "Hostname" }, "." ] ]
+        },
+        "Comment" : "CNAME for Storefront ELB.",
+        "Name" : { "Fn::Join": ["", [{"Ref" : "CustomerID"}, ".", { "Ref" : "Hostname" }, "." ]]},
+        "Type" : "CNAME",
+        "TTL" : "300",
+        "ResourceRecords" : [ { "Fn::GetAtt" : ["OpenShiftMasterELB", "DNSName"] } ]
+      }
     }
 
   },
   "Outputs": {
     "OpenShiftUI": {
       "Description": "The URL OpenShiftUI",
-      "Value": {
-        "Fn::Join": ["", ["https://",
-          {
-            "Fn::GetAtt": ["OpenShiftMasterELB", "DNSName"]
-          }, ":8443/"
-        ]]
+      "Value" : { "Fn::If": [ "HasHostedZone",
+        { "Fn::Join": [ "", [ "https://", {"Ref": "OpenShiftCNAME"}, ":8443/" ]]},
+        { "Fn::Join": [ "", [ "https://", { "Fn::GetAtt" : ["OpenShiftMasterELB", "DNSName"] }, ":8443/" ]]}]
       }
     }
   }

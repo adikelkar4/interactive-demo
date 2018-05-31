@@ -58,6 +58,9 @@ if [ "${NODE_TYPE}" == "MASTER" ]; then
     MASTERIP="$( curl http://169.254.169.254/latest/meta-data/local-hostname/ )"
     sed -i -- "s/@@master@@/$MASTERIP/g" /local/ansible/inventory/hosts.cluster
 
+    sed -i "s/@@URL@@/${OPENSHIFTURL}/g" /local/ansible/inventory/hosts.cluster
+
+
     #populate node list
     while read p; do
         echo $p | awk '{ print $1 " openshift_schedulable=true openshift_node_labels=\"{`region`: `infra`, `zone`: `" $2 "`}\"" }' >>/local/ansible/inventory/hosts.cluster

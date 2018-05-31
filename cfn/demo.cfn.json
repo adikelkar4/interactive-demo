@@ -129,7 +129,7 @@
     "SpotPrice" : {
       "Type" : "Number",
       "Description" : "Spot instance Bid price",
-      "Default" : "0.20"
+      "Default" : "0.35"
     },
 
     "EcsAmiId" : {
@@ -221,6 +221,12 @@
       "Type" : "String",
       "Description" : "Optional - CIDR/IP range for EcsPort and ElbPort - defaults to 0.0.0.0/0",
       "Default" : "10.0.0.0/0"
+    },
+
+    "CustomerID" : {
+      "Type" : "String",
+      "Description" : "Name of customer for custom URL",
+      "Default" : "nuodb"
     }
 
   },
@@ -372,8 +378,10 @@
           "RemoteAccessCIDR" : "0.0.0.0/0",
           "PublicSubnet1ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
           "PublicSubnet2ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }, { "Ref" : "SubnetIds" } ] },
-          "NumberOfNodes" : "10",
-          "SpotPrice" : { "Ref" : "SpotPrice" }
+          "NumberOfNodes" : "2",
+          "SpotPrice" : { "Ref" : "SpotPrice" },
+          "Hostname" : { "Ref" : "Hostname" },
+          "CustomerID": {"Ref" : "CustomerID" }
         }
       }
     },
