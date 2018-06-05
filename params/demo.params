@@ -15,6 +15,7 @@ NuoDBInstanceType: c4.2xlarge
 
 # Environment Type options for deploying NuoDB: AWSECS, AWSEC2, AWSOPENSHIFT
 EnvironmentType: AWSOPENSHIFT
+NumberOfNodes: 10
 
 KeyName: interactive-demo
 
@@ -37,4 +38,4 @@ dbpassword: StorefrontUser
 dbname: Storefront
 
 Hostname: nuodb.io
-CustomerID: deutschebank2
+CustomerID: cit-eu-west-1

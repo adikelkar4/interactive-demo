@@ -11,6 +11,8 @@ etcd
 #ansible_python_interpreter=/usr/bin/python3
 openshift_deployment_type=origin
 openshift_release=3.7
+openshift_pkg_version=-3.7.2-1.el7.git.0.cd74924
+
 osm_cluster_network_cidr=10.128.0.0/14
 openshift_portal_net=172.30.0.0/16
 osm_host_subnet_length=9

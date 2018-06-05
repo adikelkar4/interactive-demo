@@ -242,6 +242,9 @@
       },
       "eu-west-1": {
         "CENTOS7HVM": "ami-1bccf562"
+      },
+      "eu-central-1" : {
+         "CENTOS7HVM" : "ami-9a183671"
       }
     },
     "ARNNamespace": {
@@ -628,7 +631,7 @@
 
       },
       "Properties": {
-        "SpotPrice" : { "Ref" : "SpotPrice" },
+
         "AssociatePublicIpAddress" : "true",
         "KeyName": {
           "Ref": "KeyPairName"
@@ -1114,18 +1117,9 @@
 
                 "ansible-playbook -i /local/ansible/inventory/hosts.cluster /local/openshift-ansible/playbooks/prerequisites.yml >> /local/prereq.log\n",
 
-                "buildError=\"firstRun\"\n",
-                "count=1\n",
-                "while [ ! -z \"$buildError\" ]; do\n",
-                "    ansible-playbook -i /local/ansible/inventory/hosts.cluster /local/openshift-ansible/playbooks/deploy_cluster.yml -vvv > /local/cluster.log\n",
-                "    buildError=$( cat /local/cluster.log | grep Failure )\n",
-                "    if [ \"$count\" == \"5\" ]; then\n",
-                "        echo \"Failed to build cluster\"\n",
-                "        buildError=\"\"\n",
-                "    fi\n",
-                "    ((count++))\n",
-                "done\n",
-                "bash /local/scripts/disable_thp.sh\n"
+                "ansible-playbook -i /local/ansible/inventory/hosts.cluster /local/openshift-ansible/playbooks/deploy_cluster.yml -vvv > /local/cluster.log\n",
+
+                "bash /local/scripts/configure_openebs.sh\n"
               ]
             ]
           }

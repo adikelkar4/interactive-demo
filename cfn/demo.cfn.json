@@ -126,6 +126,12 @@
       "Default" : "m4.large"
     },
 
+    "NumberOfNodes" : {
+      "Type" : "Number",
+      "Description" : "Number of Nodes in Openshift Cluster",
+      "Default" : "2"
+    },
+
     "SpotPrice" : {
       "Type" : "Number",
       "Description" : "Spot instance Bid price",
@@ -378,7 +384,7 @@
           "RemoteAccessCIDR" : "0.0.0.0/0",
           "PublicSubnet1ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz1"] }, { "Ref" : "SubnetIds" } ] },
           "PublicSubnet2ID":  { "Fn::If" : [ "CreateVpcResources", { "Fn::GetAtt": ["VPC", "Outputs.PublicSubnetAz2"] }, { "Ref" : "SubnetIds" } ] },
-          "NumberOfNodes" : "2",
+          "NumberOfNodes" : { "Ref" : "NumberOfNodes"},
           "SpotPrice" : { "Ref" : "SpotPrice" },
           "Hostname" : { "Ref" : "Hostname" },
           "CustomerID": {"Ref" : "CustomerID" }
