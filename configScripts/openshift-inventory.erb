@@ -1,0 +1,26 @@
+[OSEv3:children]
+masters
+nodes
+etcd
+
+[masters]
+@@master@@ openshift_schedulable=true
+
+[nodes]
+@@nodes@@
+
+[etcd]
+@@master@@
+
+[OSEv3:vars]
+ansible_user=openshift
+ansible_ssh_user=root
+
+openshift_deployment_type=origin
+containerized=True
+
+openshift_disable_check=disk_availability,docker_storage,memory_availability,docker_image_availability,package_version
+
+openshift_release=v3.7.0
+openshift_pkg_version=v3.7.0
+openshift_image_tag=v3.7.0

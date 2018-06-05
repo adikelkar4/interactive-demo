@@ -321,6 +321,11 @@ def sync_to_s3(session, aws_region, bucket_name, name):
             print "FAILED to sync {} to {}".format(filename, bucket_name)
             raise e
 
+
+    #ship tar file to s3
+    syncComand = "aws s3 sync " + os.path.dirname(__file__) + "/../ansible s3://" + bucket_name + "/templates/" + name + "/ansible/"
+    subprocess.Popen(syncComand, shell=True)
+
 def create_cluster_name(number, args):
     '''Create a cluster name from the number on which we're working and the given command line args'''
     if args.suffix:

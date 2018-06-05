@@ -1,0 +1,35 @@
+#bare minimum hostfile
+
+[OSEv3:children]
+masters
+nodes
+etcd
+#glusterfs
+
+[OSEv3:vars]
+# if your target hosts are Fedora uncomment this
+#ansible_python_interpreter=/usr/bin/python3
+openshift_deployment_type=origin
+openshift_release=3.7
+openshift_pkg_version=-3.7.2-1.el7.git.0.cd74924
+
+osm_cluster_network_cidr=10.128.0.0/14
+openshift_portal_net=172.30.0.0/16
+osm_host_subnet_length=9
+#openshift_image_tag=v3.7.2
+#containerized=true
+
+# custom URL
+openshift_master_cluster_public_hostname=@@URL@@
+
+# localhost likely doesn't meet the minimum requirements
+openshift_disable_check=disk_availability,memory_availability,docker_storage,package_version,docker_image_availability
+
+[masters]
+@@master@@ ansible_connection=local
+
+[etcd]
+@@master@@ ansible_connection=local
+
+[nodes]
+@@master@@ ansible_connection=local openshift_schedulable=true openshift_node_labels="{'region': 'infra'}"
