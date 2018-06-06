@@ -7,35 +7,37 @@ BucketRegion: us-east-1
 #amzn-ami-2016.09.g-amazon-ecs-optimized with ecs agent installed
 #us-east-1EcsAmiId: ami-275ffe31
 
+# storefront ECS AMI
 EcsAmiId: ami-62745007
 EcsInstanceType: r4.8xlarge
 
+# Storefront EC2 AMI
 NuoDBInstanceAMI: ami-8a7859ef
 NuoDBInstanceType: c4.2xlarge
 
 # Environment Type options for deploying NuoDB: AWSECS, AWSEC2, AWSOPENSHIFT
 EnvironmentType: AWSOPENSHIFT
-NumberOfNodes: 10
 
+# Number and instance type of Openshift nodes
+NumberOfNodes: 10
+NodesInstanceType: r4:4xlarge
+
+# SSH Key pair
 KeyName: interactive-demo
 
-EcsClusterName: interactive-demo-dewey-20170629-152634
-
-
-#docker container images
-
+#docker container images (storefront demo only)
 storeFrontWebDocker: docker.io/nuodb/storefrontweb-demo:master
 storeFrontUserDocker: docker.io/nuodb/storefrontuser-demo:master
 nuodbDocker: docker.io/nuodb/nuodb-ce:3.0.1-8-dev-3
 
+# deploy elk for storefront demo
 DeployElk: false
 elkDocker: 248317454512.dkr.ecr.us-east-2.amazonaws.com/elk
 
-
-
+# Storefront database info
 dbuser: StorefrontUser
 dbpassword: StorefrontUser
 dbname: Storefront
 
 Hostname: nuodb.io
-CustomerID: cit-eu-west-1
+CustomerID: cit2-dev

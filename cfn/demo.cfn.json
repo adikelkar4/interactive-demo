@@ -233,6 +233,12 @@
       "Type" : "String",
       "Description" : "Name of customer for custom URL",
       "Default" : "nuodb"
+    },
+
+    "NodesInstanceType" : {
+      "Type" : "String",
+      "Description" : "OCP Instance type",
+      "Default" : "r4:4xlarge"
     }
 
   },
@@ -387,7 +393,8 @@
           "NumberOfNodes" : { "Ref" : "NumberOfNodes"},
           "SpotPrice" : { "Ref" : "SpotPrice" },
           "Hostname" : { "Ref" : "Hostname" },
-          "CustomerID": {"Ref" : "CustomerID" }
+          "CustomerID": { "Ref" : "CustomerID" },
+          "NodesInstanceType" : { "Ref" : "NodesInstanceType"}
         }
       }
     },
