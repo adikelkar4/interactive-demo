@@ -20,7 +20,7 @@ EnvironmentType: AWSOPENSHIFT
 
 # Number and instance type of Openshift nodes
 NumberOfNodes: 10
-NodesInstanceType: r4:4xlarge
+NodesInstanceType: r4.4xlarge
 
 # SSH Key pair
 KeyName: interactive-demo
