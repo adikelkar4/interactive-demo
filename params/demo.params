@@ -19,7 +19,7 @@ NuoDBInstanceType: c4.2xlarge
 EnvironmentType: AWSOPENSHIFT
 
 # Number and instance type of Openshift nodes
-NumberOfNodes: 10
+NumberOfNodes: 3
 NodesInstanceType: r4.4xlarge
 
 # SSH Key pair
@@ -40,4 +40,4 @@ dbpassword: StorefrontUser
 dbname: Storefront
 
 Hostname: nuodb.io
-CustomerID: cit2-dev
+CustomerID: cit-dev1

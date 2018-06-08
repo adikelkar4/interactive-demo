@@ -1,5 +1,7 @@
 #!/bin/bash
 
+oc login https://${MASTERIP}:8443 -u system:admin
+
 # create cluster admin to setup environment with
 
 oc adm policy add-cluster-role-to-user cluster-admin admin --as=system:admin

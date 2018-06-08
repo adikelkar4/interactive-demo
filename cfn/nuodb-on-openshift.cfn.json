@@ -229,19 +229,20 @@
         "CENTOS7HVM": "ami-ccecf5af"
       },
       "eu-west-1": {
-        "CENTOS7HVM": "ami-bb9a6bc2"
+        "CENTOS7HVM": "ami-4c457735"
       },
+      "eu-west-2": {
+        "CENTOS7HVM": "ami-4726cb20"
+      },
+
       "us-east-1": {
-        "CENTOS7HVM": "ami-dc4d2aa3"
+        "CENTOS7HVM": "ami-d5bf2caa"
       },
       "us-east-2": {
         "CENTOS7HVM": "ami-e0eac385"
       },
       "us-west-2": {
         "CENTOS7HVM": "ami-9fa343e7"
-      },
-      "eu-west-1": {
-        "CENTOS7HVM": "ami-1bccf562"
       },
       "eu-central-1" : {
          "CENTOS7HVM" : "ami-9a183671"

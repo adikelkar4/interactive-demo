@@ -56,6 +56,7 @@ if [ "${NODE_TYPE}" == "MASTER" ]; then
     done
 
     MASTERIP="$( curl http://169.254.169.254/latest/meta-data/local-hostname/ )"
+    export MASTERIP=$MASTERIP
     sed -i -- "s/@@master@@/$MASTERIP/g" /local/ansible/inventory/hosts.cluster
 
     sed -i "s/@@URL@@/${OPENSHIFTURL}/g" /local/ansible/inventory/hosts.cluster

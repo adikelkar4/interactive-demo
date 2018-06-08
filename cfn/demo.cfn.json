@@ -24,6 +24,7 @@
       "us-west-2":      { "Endpoint": "https://s3.amazonaws.com/" },
       "us-west-1":      { "Endpoint": "https://s3.amazonaws.com/" },
       "eu-west-1":      { "Endpoint": "https://s3.amazonaws.com/" },
+      "eu-west-2":      { "Endpoint": "https://s3.amazonaws.com/" },
       "eu-central-1":   { "Endpoint": "https://s3.amazonaws.com/" },
       "ap-southeast-1": { "Endpoint": "https://s3.amazonaws.com/" },
       "ap-northeast-1": { "Endpoint": "https://s3.amazonaws.com/" },
