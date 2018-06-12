@@ -107,7 +107,7 @@
     "EnvironmentType" : {
       "Description" : "Environment NuoDB container is deployed to",
       "Type" : "String",
-      "Default" : "AWSECS"
+      "Default" : "AWSOPENSHIFT"
     },
 
     "Hostname" : {
@@ -529,6 +529,7 @@
   "Outputs" : {
     "StorefrontElbURL" : {
       "Description" : "Load Balancer for ECS Service",
+      "Condition" : "CreateECS",
       "Value" : { "Fn::GetAtt" : [ "Loadbalancers", "Outputs.StorefrontCNAME"]}
     },
     "BrokerElbURL" : {
@@ -537,7 +538,13 @@
     },
     "ElkURL" : {
       "Description" : "Elk logging URL address",
-      "Value" : { "Fn::If" : [ "CreateElk", { "Fn::GetAtt": ["ElkLogging", "Outputs.ELKCNAME"] }, "NONE"] }
+      "Condition" : "CreateElk",
+      "Value" : { "Fn::GetAtt": ["ElkLogging", "Outputs.ELKCNAME"] }
+    },
+    "OpenShiftURL" : {
+      "Description" : "OpenShift UI Address",
+      "Condition" : "CreateNuoDBonOS",
+      "Value" : { "Fn::GetAtt" : ["NuoDBonOpenShift", "Outputs.OpenShiftUI"] }
     }
   }
 }
