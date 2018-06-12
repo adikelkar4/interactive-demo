@@ -349,11 +349,11 @@ Create one or more clusters as requested
 
     statuses = pool.map(lambda name: wait_for_stack(name, cf, cfr, args), names)
 
-    bye=True
+    bye = True
     for i, result in enumerate(statuses):
         print "Waiting for {} returned {}".format(names[i], result)
-        bye=False
-        
+        bye = bye and result
+
     return bye
 
 @cache
@@ -411,7 +411,8 @@ the command to return successfully.
 
     # Override the parameters we need to
     params['EcsClusterName'] = name
-    params['KeyName'] = args.key_name
+    if args.key_name is not None:
+        params['KeyName'] = args.key_name
 
     # Now turn our dict into an array suitable for passing to create_stack
     paramArgs = [dict(ParameterKey=x, ParameterValue=y) for x,y in params.items()]
@@ -474,16 +475,19 @@ args -- command line arguments
         for y in stack.outputs:
             print(y['OutputKey'], y['OutputValue'])
         return True
-                 
-    except:
-        print "%s: creation FAILED" % name
+
+    except (boto3.ClientError, boto3.WaiterError) as ex:
+        template = "ERROR: Cloud Formation stack (%s) creation FAILED. An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(name, type(ex).__name__, ex.args)
+        print message
         return False
-    
+
 
 def main():
     '''The main event!'''
     parser = argparse.ArgumentParser(description="Manage Demo Clusters")
 
+    parser.add_argument("--debug", help="Enables debug output", default=False)
     parser.add_argument("--profile", help="The AWS profile to use", )
     parser.add_argument("--parallel", help="Number of operations to perform in parallel", default=40)
     parser.add_argument("--url-property", help="Name of the StorefrontURL CloudFormation export property", default="StorefrontElbURL")
@@ -498,12 +502,9 @@ def main():
     selectParser.add_argument("--status", help="include only stacks with the given word in the status")
     selectParser.add_argument("--no-filter-names", help="Do not filter the stacks by the conventional naming pattern", action='store_true')
 
-
     fileChoiceParser = argparse.ArgumentParser(add_help=False)
     fileChoiceParser.add_argument("--params-file", help="Parameters file", default="params/demo.params")
     fileChoiceParser.add_argument("--template", help="CFN Template file", default="cfn/demo.cfn.json")
-
-
 
     subs = parser.add_subparsers(help='sub-command help')
 
@@ -522,8 +523,8 @@ def main():
         else:
             raise argparse.ArgumentTypeError("--delete-after must end in 'h'")
 
-    parse_create.add_argument("--user", help="user name to include in cluster name", nargs=1, default=os.environ['USER'])
-    parse_create.add_argument("--prefix", help="cluster name prefix", nargs=1, default='interactive-demo')
+    parse_create.add_argument("--user", help="user name to include in cluster name", default=os.environ['USER'])
+    parse_create.add_argument("--prefix", help="cluster name prefix", default='interactive-demo')
     parse_create.add_argument("--no-wait", help="Do not wait for cluster completion", action='store_true')
     parse_create.add_argument("--dry-run", help="Do not actually create the stack", action='store_true')
     parse_create.add_argument("--delete-after", help="Hours until the cluster should be deleted", type=check_delete_after)
@@ -531,10 +532,16 @@ def main():
     group = parse_create.add_mutually_exclusive_group()
     group.add_argument("--count", help="number of clusters to create", type=int,  default=1)
     group.add_argument("--suffix", help="cluster name suffix.  Default is a timestamp")
-    group.add_argument("--key-name", help="SSH key name for instance", default="interactive-demo")
-
+    group.add_argument("--key-name", help="SSH key name for instance", default=None)
 
     args = parser.parse_args()
+
+    level = boto3.logging.INFO
+    if args.debug:
+        level = boto3.logging.DEBUG
+    boto3.set_stream_logger('boto3', level=level)
+    boto3.set_stream_logger('botocore', level=level)
+    boto3.set_stream_logger('boto3.resources', level=level)
 
     if args.profile:
         session = boto3.Session(profile_name=args.profile)
@@ -542,8 +549,10 @@ def main():
         session = boto3.Session()
 
     if args.function(session, args):
+        print("SUCCESS: Deployed cluster %s" % args.function)
         sys.exit(0)
     else:
+        print("ERROR: Failed to deploy the cluster @ running %s" % args.function)
         sys.exit(1)
 
 if __name__ == "__main__":

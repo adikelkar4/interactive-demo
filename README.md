@@ -384,6 +384,80 @@ $ bin/cluster --profile nuodb_profile  list
 interactive-demo-dewey-20170629-152634 CREATE_COMPLETE http://interacti-Storefro-1C7H76P7HVOZB-1318389021.us-east-2.elb.amazonaws.com/StorefrontWeb/
 ```
 
+# AWS IAM Policy Requirements
+
+The following IAM policy is required in order to launch this demo:
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "autoscaling:CreateAutoScalingGroup",
+        "autoscaling:CreateLaunchConfiguration",
+        "autoscaling:DescribeScalingActivities",
+        "autoscaling:DescribeAutoScalingGroups",
+        "autoscaling:DescribeLaunchConfigurations",
+        "autoscaling:UpdateAutoScalingGroup",
+        "cloudformation:CreateStack",
+        "cloudformation:DescribeStacks",
+        "ec2:AssociateRouteTable",
+        "ec2:AttachInternetGateway",
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:createTags",
+        "ec2:CreateInternetGateway",
+        "ec2:CreateRoute",
+        "ec2:CreateRouteTable",
+        "ec2:CreateSecurityGroup",
+        "ec2:CreateSubnet",
+        "ec2:CreateVpc",
+        "ec2:DescribeAccountAttributes",
+        "ec2:DescribeAvailabilityZones",
+        "ec2:DescribeInstances",
+        "ec2:DescribeInternetGateways",
+        "ec2:DescribeKeyPairs",
+        "ec2:DescribeRouteTables",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeVpcs",
+        "ec2:ModifyVpcAttribute",
+        "elasticloadbalancing:ConfigureHealthCheck",
+        "elasticloadbalancing:CreateLoadBalancer",
+        "elasticloadbalancing:DescribeLoadBalancers",
+        "elasticloadbalancing:ModifyLoadBalancerAttributes",
+        "elasticloadbalancing:SetLoadBalancerPoliciesOfListener",
+        "iam:AddRoleToInstanceProfile",
+        "iam:CreateInstanceProfile",
+        "iam:CreateRole",
+        "iam:GetRole",
+        "iam:PassRole",
+        "iam:PutRolePolicy",
+        "lambda:CreateFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:InvokeFunction",
+        "logs:CreateLogGroup",
+        "logs:DescribeLogGroups",
+        "logs:PutRetentionPolicy",
+        "route53:ListHostedZones",
+        "s3:ListAllMyBuckets",
+        "s3:PutObject",
+        "s3:PutObjectAcl"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
 
 Known issues
 ============
