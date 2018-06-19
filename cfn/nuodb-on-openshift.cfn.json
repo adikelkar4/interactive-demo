@@ -1149,9 +1149,9 @@
 
                 "bash /local/scripts/openshift-origin-bootstrap-master.sh\n",
 
-                "ansible-playbook -i /local/ansible/inventory/hosts.cluster /local/openshift-ansible/playbooks/prerequisites.yml >> /local/prereq.log\n",
+                "ansible-playbook -i /local/ansible/inventory/hosts.cluster /local/openshift-ansible/playbooks/prerequisites.yml \n",
 
-                "ansible-playbook -i /local/ansible/inventory/hosts.cluster /local/openshift-ansible/playbooks/deploy_cluster.yml -vvv > /local/cluster.log\n",
+                "ansible-playbook -i /local/ansible/inventory/hosts.cluster /local/openshift-ansible/playbooks/deploy_cluster.yml -vvv \n",
 
                 "bash /local/scripts/configure_openebs.sh\n"
               ]
